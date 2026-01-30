@@ -11,6 +11,14 @@ export type OrderSide = 'yes' | 'no';
 export type OrderType = 'limit' | 'market';
 export type OrderStatus = 'open' | 'filled' | 'partial' | 'cancelled';
 
+export interface MarketOutcome {
+  id: string;
+  name: string;
+  probability: number; // 0-100
+  yesPrice: number;
+  noPrice: number;
+}
+
 export interface Market {
   id: string;
   title: string;
@@ -25,7 +33,10 @@ export interface Market {
   liquidity: number;
   createdAt: string;
   imageUrl?: string;
+  icon?: string;
   resolution?: 'yes' | 'no' | null;
+  outcomes?: MarketOutcome[];
+  isFeatured?: boolean;
 }
 
 export interface Order {

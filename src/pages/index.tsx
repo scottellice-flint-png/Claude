@@ -1,19 +1,25 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import Link from 'next/link';
 import { useStore } from '@/store';
-import MarketCard from '@/components/MarketCard';
-import CategoryFilter from '@/components/CategoryFilter';
+import { Market } from '@/types';
 import { useAllMarketsRealTimePrice } from '@/hooks/useRealTimePrice';
 
 export default function Home() {
   useAllMarketsRealTimePrice(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedTrending, setSelectedTrending] = useState('for-you');
   const [searchQuery, setSearchQuery] = useState('');
 
   const markets = useStore((state) => state.markets);
-  const user = useStore((state) => state.user);
-  const positions = useStore((state) => state.getUserPositions());
+  const updateMarketPrice = useStore((state) => state.updateMarketPrice);
 
-  const filteredAndSortedMarkets = useMemo(() => {
+  // Featured market (first one with isFeatured or highest volume)
+  const featuredMarket = useMemo(() => {
+    return markets.find(m => m.isFeatured) || markets.sort((a, b) => b.volume - a.volume)[0];
+  }, [markets]);
+
+  // Filter markets
+  const filteredMarkets = useMemo(() => {
     let filtered = markets;
 
     if (selectedCategory !== 'all') {
@@ -32,24 +38,6 @@ export default function Home() {
     return [...filtered].sort((a, b) => b.volume - a.volume);
   }, [markets, selectedCategory, searchQuery]);
 
-  const totalVolume = markets.reduce((sum, m) => sum + m.volume, 0);
-  const openBets = markets.filter((m) => m.status === 'open').length;
-
-  const portfolioValue = positions.reduce((sum, p) => sum + p.currentValue, 0);
-  const portfolioProfit = positions.reduce((sum, p) => sum + p.profit, 0);
-  const portfolioReturn = portfolioValue > 0
-    ? ((portfolioProfit / (portfolioValue - portfolioProfit)) * 100).toFixed(1)
-    : '0';
-
-  const formatCurrency = (cents: number) => {
-    return new Intl.NumberFormat('en-AU', {
-      style: 'currency',
-      currency: 'AUD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(cents / 100);
-  };
-
   const formatVolume = (volume: number) => {
     if (volume >= 1000000) {
       return `$${(volume / 1000000).toFixed(1)}M`;
@@ -57,54 +45,174 @@ export default function Home() {
     return `$${(volume / 1000).toFixed(0)}K`;
   };
 
-  // Get trending markets (top by volume)
-  const trendingMarkets = [...markets].sort((a, b) => b.volume - a.volume).slice(0, 6);
+  const categories = [
+    { id: 'all', label: 'All' },
+    { id: 'politics', label: 'Politics' },
+    { id: 'sports', label: 'Sports' },
+    { id: 'culture', label: 'Culture' },
+    { id: 'economics', label: 'Economics' },
+    { id: 'climate', label: 'Climate' },
+  ];
+
+  const trendingTopics = [
+    { id: 'for-you', label: 'For you' },
+    { id: 'federal-election', label: 'Federal Election' },
+    { id: 'aus-open', label: 'Australian Open' },
+    { id: 'rba', label: 'RBA Rates' },
+    { id: 'afl', label: 'AFL' },
+    { id: 'oscars', label: 'Oscars' },
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Hero Stats Section */}
-      <div className="bg-foremark-green rounded-2xl p-6 text-white -mx-4 sm:mx-0">
-        <p className="text-sm text-white/70 uppercase tracking-wide mb-1">Portfolio Value</p>
-        <p className="text-4xl font-bold text-foremark-lime mb-4">
-          +{portfolioReturn}%
-        </p>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white/10 rounded-xl p-3">
-            <p className="text-xl font-bold">{formatVolume(totalVolume)}</p>
-            <p className="text-xs text-white/70 uppercase">24H Vol</p>
-          </div>
-          <div className="bg-white/10 rounded-xl p-3">
-            <p className="text-xl font-bold">{openBets}</p>
-            <p className="text-xs text-white/70 uppercase">Open Bets</p>
-          </div>
-          <div className="bg-white/10 rounded-xl p-3">
-            <p className="text-xl font-bold">#12</p>
-            <p className="text-xs text-white/70 uppercase">Rank</p>
-          </div>
-        </div>
+      {/* Category Tabs */}
+      <div className="flex items-center gap-1 border-b border-gray-200 -mx-4 px-4 overflow-x-auto">
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => setSelectedCategory(cat.id)}
+            className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors relative ${
+              selectedCategory === cat.id
+                ? 'text-foremark-green'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {cat.label}
+            {selectedCategory === cat.id && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-foremark-green" />
+            )}
+          </button>
+        ))}
       </div>
 
-      {/* Category Filter */}
-      <div className="overflow-x-auto -mx-4 px-4">
-        <CategoryFilter
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
-        />
+      {/* Trending Topic Pills */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4">
+        {trendingTopics.map((topic) => (
+          <button
+            key={topic.id}
+            onClick={() => setSelectedTrending(topic.id)}
+            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+              selectedTrending === topic.id
+                ? 'bg-foremark-lime text-gray-900'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {topic.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Featured Market Hero */}
+      {featuredMarket && (
+        <Link href={`/market/${featuredMarket.id}`}>
+          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left: Market Info */}
+              <div>
+                <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                  <span className="uppercase">{featuredMarket.category}</span>
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
+                  {featuredMarket.title}
+                </h2>
+
+                {/* Outcomes */}
+                {featuredMarket.outcomes ? (
+                  <div className="space-y-3">
+                    {featuredMarket.outcomes.slice(0, 2).map((outcome) => (
+                      <div key={outcome.id} className="flex items-center justify-between">
+                        <span className="text-gray-700">{outcome.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-gray-900">{outcome.probability}%</span>
+                          <button className="px-3 py-1 text-xs font-semibold rounded bg-foremark-lime text-gray-900 hover:bg-foremark-lime-dark">
+                            Yes
+                          </button>
+                          <button className="px-3 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-700 hover:bg-gray-200">
+                            No
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-700">Chance</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-gray-900">{featuredMarket.yesPrice}%</span>
+                      <button className="px-3 py-1 text-xs font-semibold rounded bg-foremark-lime text-gray-900">
+                        Yes {featuredMarket.yesPrice}¢
+                      </button>
+                      <button className="px-3 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-700">
+                        No {featuredMarket.noPrice}¢
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-sm text-gray-500 mt-4">
+                  {formatVolume(featuredMarket.volume)} volume
+                </div>
+              </div>
+
+              {/* Right: Mini Chart */}
+              <div className="bg-gray-50 rounded-lg p-4 flex items-center justify-center">
+                <MiniChart market={featuredMarket} />
+              </div>
+            </div>
+          </div>
+        </Link>
+      )}
+
+      {/* Info Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-200">
+          <div className="w-10 h-10 bg-foremark-green/10 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-foremark-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900 text-sm">Secure & Transparent</p>
+            <p className="text-xs text-gray-500">Trade with confidence</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-200">
+          <div className="w-10 h-10 bg-foremark-lime/30 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-foremark-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900 text-sm">Grow your portfolio</p>
+            <p className="text-xs text-gray-500">Earn on your predictions</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-200">
+          <div className="w-10 h-10 bg-foremark-green/10 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-foremark-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900 text-sm">Fund your account</p>
+            <p className="text-xs text-gray-500">Bank transfer, card, crypto</p>
+          </div>
+        </div>
       </div>
 
       {/* Search */}
       <div className="relative">
         <input
           type="text"
-          placeholder="Search markets..."
+          placeholder="Search markets or portfolios"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-white border border-gray-200 rounded-full px-5 py-3 pl-12 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-foremark-green focus:border-transparent"
+          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 pl-10 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-foremark-green focus:border-transparent"
         />
         <svg
-          className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -118,35 +226,144 @@ export default function Home() {
         </svg>
       </div>
 
-      {/* Trending Section */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-black text-gray-900 uppercase">Trending</h2>
-          <button className="text-sm font-semibold text-foremark-green hover:underline">
-            VIEW ALL
-          </button>
+      {/* Markets Grid */}
+      {filteredMarkets.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredMarkets.map((market) => (
+            <MarketGridCard key={market.id} market={market} />
+          ))}
         </div>
+      ) : (
+        <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
+          <div className="text-5xl mb-4">🔍</div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">No markets found</h3>
+          <p className="text-gray-500">
+            Try adjusting your search or filter criteria
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
-        {filteredAndSortedMarkets.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredAndSortedMarkets.map((market, index) => (
-              <MarketCard
-                key={market.id}
-                market={market}
-                showHotBadge={index < 3}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
-            <div className="text-5xl mb-4">🔍</div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">No markets found</h3>
-            <p className="text-gray-500">
-              Try adjusting your search or filter criteria
-            </p>
-          </div>
-        )}
+// Mini Chart Component
+function MiniChart({ market }: { market: Market }) {
+  const [points, setPoints] = useState<number[]>([]);
+
+  useEffect(() => {
+    // Generate random chart data
+    const basePrice = market.yesPrice;
+    const newPoints = [];
+    let price = basePrice - 10 + Math.random() * 5;
+    for (let i = 0; i < 20; i++) {
+      price = price + (Math.random() - 0.48) * 3;
+      price = Math.max(10, Math.min(90, price));
+      newPoints.push(price);
+    }
+    newPoints.push(basePrice);
+    setPoints(newPoints);
+  }, [market.yesPrice]);
+
+  if (points.length === 0) return null;
+
+  const maxPrice = Math.max(...points);
+  const minPrice = Math.min(...points);
+  const range = maxPrice - minPrice || 1;
+
+  const pathData = points
+    .map((p, i) => {
+      const x = (i / (points.length - 1)) * 200;
+      const y = 60 - ((p - minPrice) / range) * 50;
+      return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+    })
+    .join(' ');
+
+  return (
+    <div className="w-full">
+      <div className="flex justify-between items-center mb-2">
+        <span className="text-2xl font-bold text-gray-900">{market.yesPrice}%</span>
+        <span className="text-sm text-foremark-green font-medium">
+          +{Math.floor(Math.random() * 5 + 1)}%
+        </span>
+      </div>
+      <svg viewBox="0 0 200 70" className="w-full h-16">
+        <path
+          d={pathData}
+          fill="none"
+          stroke="#0F4C4C"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      <div className="flex justify-between text-xs text-gray-400 mt-1">
+        <span>Jan</span>
+        <span>Feb</span>
+        <span>Mar</span>
+        <span>Apr</span>
       </div>
     </div>
+  );
+}
+
+// Market Grid Card Component
+function MarketGridCard({ market }: { market: Market }) {
+  const formatVolume = (volume: number) => {
+    if (volume >= 1000000) {
+      return `$${(volume / 1000000).toFixed(1)}M`;
+    }
+    return `$${(volume / 1000).toFixed(0)}K`;
+  };
+
+  return (
+    <Link href={`/market/${market.id}`}>
+      <div className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md hover:border-gray-300 transition-all h-full flex flex-col">
+        {/* Icon and Title */}
+        <div className="flex items-start gap-3 mb-3">
+          <div className="text-2xl">{market.icon || '📊'}</div>
+          <h3 className="text-sm font-semibold text-gray-900 leading-tight flex-1">
+            {market.title}
+          </h3>
+        </div>
+
+        {/* Outcomes */}
+        <div className="flex-1 space-y-2 mb-3">
+          {market.outcomes ? (
+            market.outcomes.slice(0, 2).map((outcome) => (
+              <div key={outcome.id} className="flex items-center justify-between text-sm">
+                <span className="text-gray-600 truncate mr-2">{outcome.name}</span>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <span className="font-semibold text-gray-900">{outcome.probability}%</span>
+                  <button className="px-2 py-0.5 text-xs font-medium rounded bg-foremark-lime text-gray-900 hover:bg-foremark-lime-dark">
+                    Yes
+                  </button>
+                  <button className="px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600 hover:bg-gray-200">
+                    No
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Chance</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-gray-900">{market.yesPrice}%</span>
+                <button className="px-2 py-0.5 text-xs font-medium rounded bg-foremark-lime text-gray-900 hover:bg-foremark-lime-dark">
+                  Yes
+                </button>
+                <button className="px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600 hover:bg-gray-200">
+                  No
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Volume */}
+        <div className="pt-2 border-t border-gray-100">
+          <span className="text-xs text-gray-400">{formatVolume(market.volume)}</span>
+        </div>
+      </div>
+    </Link>
   );
 }

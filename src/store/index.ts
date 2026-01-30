@@ -18,6 +18,13 @@ const mockMarkets: Market[] = [
     volume: 8750000,
     liquidity: 2890000,
     createdAt: '2025-01-15T10:00:00+10:00',
+    icon: '🗳️',
+    isFeatured: true,
+    outcomes: [
+      { id: '1-labor', name: 'Labor', probability: 52, yesPrice: 52, noPrice: 48 },
+      { id: '1-coalition', name: 'Coalition', probability: 41, yesPrice: 41, noPrice: 59 },
+      { id: '1-other', name: 'Other', probability: 7, yesPrice: 7, noPrice: 93 },
+    ],
   },
   {
     id: '2',
@@ -32,6 +39,7 @@ const mockMarkets: Market[] = [
     volume: 3420000,
     liquidity: 1250000,
     createdAt: '2025-02-01T14:30:00+10:00',
+    icon: '📅',
   },
   {
     id: '3',
@@ -46,11 +54,12 @@ const mockMarkets: Market[] = [
     volume: 1890000,
     liquidity: 650000,
     createdAt: '2025-01-20T09:00:00+10:00',
+    icon: '💰',
   },
   // Sports
   {
     id: '4',
-    title: 'Winner of Djokovic vs Sinner - Australian Open 2026 Final?',
+    title: "Men's Australian Open Winner",
     description: "Resolves Yes if Novak Djokovic wins the Australian Open 2026 Men's Singles Final against Jannik Sinner. Resolves No if Sinner wins.",
     category: 'sports',
     status: 'open',
@@ -61,10 +70,15 @@ const mockMarkets: Market[] = [
     volume: 4560000,
     liquidity: 1780000,
     createdAt: '2025-01-10T08:00:00+11:00',
+    icon: '🎾',
+    outcomes: [
+      { id: '4-sinner', name: 'Jannik Sinner', probability: 53, yesPrice: 53, noPrice: 47 },
+      { id: '4-djokovic', name: 'Novak Djokovic', probability: 42, yesPrice: 42, noPrice: 58 },
+    ],
   },
   {
     id: '5',
-    title: "Will Tasmania be awarded the AFL's 19th licence by 2027?",
+    title: "Will Tasmania get AFL's 19th licence by 2027?",
     description: 'Resolves Yes if the AFL officially announces Tasmania as the 19th AFL team before January 1, 2027.',
     category: 'sports',
     status: 'open',
@@ -75,10 +89,11 @@ const mockMarkets: Market[] = [
     volume: 2340000,
     liquidity: 890000,
     createdAt: '2025-02-15T10:00:00+11:00',
+    icon: '🏉',
   },
   {
     id: '6',
-    title: 'Will the NRL Grand Final be played outside Sydney in 2026?',
+    title: 'NRL Grand Final outside Sydney 2026?',
     description: 'Resolves Yes if the 2026 NRL Grand Final is held at a venue outside of Sydney. Accredited Stadium (Sydney) resolves No.',
     category: 'sports',
     status: 'open',
@@ -89,6 +104,7 @@ const mockMarkets: Market[] = [
     volume: 980000,
     liquidity: 420000,
     createdAt: '2025-03-10T15:00:00+11:00',
+    icon: '🏈',
   },
   // Culture
   {
@@ -104,10 +120,16 @@ const mockMarkets: Market[] = [
     volume: 5670000,
     liquidity: 2100000,
     createdAt: '2025-01-05T12:00:00Z',
+    icon: '🎬',
+    outcomes: [
+      { id: '7-atj', name: 'Aaron Taylor-Johnson', probability: 62, yesPrice: 62, noPrice: 38 },
+      { id: '7-regepage', name: 'Regé-Jean Page', probability: 21, yesPrice: 21, noPrice: 79 },
+      { id: '7-other', name: 'Other', probability: 17, yesPrice: 17, noPrice: 83 },
+    ],
   },
   {
     id: '8',
-    title: 'Will an Australian film win an Oscar at the next Academy Awards?',
+    title: 'Australian film to win Oscar 2026?',
     description: 'Resolves Yes if any film primarily produced in Australia wins at least one Academy Award at the 2026 Oscars ceremony.',
     category: 'culture',
     status: 'open',
@@ -118,10 +140,11 @@ const mockMarkets: Market[] = [
     volume: 1230000,
     liquidity: 450000,
     createdAt: '2025-02-20T12:00:00+11:00',
+    icon: '🏆',
   },
   {
     id: '9',
-    title: 'Will Australia finish top 5 in Eurovision 2026?',
+    title: 'Australia top 5 Eurovision 2026?',
     description: "Resolves Yes if Australia's entry finishes in the top 5 of the Eurovision Song Contest 2026 Grand Final.",
     category: 'culture',
     status: 'open',
@@ -132,11 +155,12 @@ const mockMarkets: Market[] = [
     volume: 780000,
     liquidity: 290000,
     createdAt: '2025-03-01T10:00:00+11:00',
+    icon: '🎤',
   },
   // Economics
   {
     id: '10',
-    title: 'Will the RBA raise the cash rate at the Feb 2026 meeting?',
+    title: 'RBA rate decision Feb 2026?',
     description: 'Resolves Yes if the Reserve Bank of Australia announces a cash rate increase at the February 2026 monetary policy meeting.',
     category: 'economics',
     status: 'open',
@@ -147,10 +171,16 @@ const mockMarkets: Market[] = [
     volume: 6780000,
     liquidity: 2450000,
     createdAt: '2025-01-08T09:00:00+11:00',
+    icon: '🏦',
+    outcomes: [
+      { id: '10-hold', name: 'Hold', probability: 72, yesPrice: 72, noPrice: 28 },
+      { id: '10-cut', name: 'Cut 25bps', probability: 20, yesPrice: 20, noPrice: 80 },
+      { id: '10-raise', name: 'Raise', probability: 8, yesPrice: 8, noPrice: 92 },
+    ],
   },
   {
     id: '11',
-    title: "Will Australia's CPI fall below 3.0% in the next release?",
+    title: "Australia's CPI below 3.0%?",
     description: 'Resolves Yes if the Australian Bureau of Statistics reports annual CPI below 3.0% in the next quarterly release.',
     category: 'economics',
     status: 'open',
@@ -161,10 +191,11 @@ const mockMarkets: Market[] = [
     volume: 3450000,
     liquidity: 1180000,
     createdAt: '2025-02-10T10:00:00+11:00',
+    icon: '📊',
   },
   {
     id: '12',
-    title: "Will Perth's median dwelling value exceed $850,000 before 31 Dec 2026?",
+    title: "Perth median dwelling >$850k by Dec 2026?",
     description: "Resolves Yes if CoreLogic reports Perth's median dwelling value exceeds $850,000 AUD at any point before December 31, 2026.",
     category: 'economics',
     status: 'open',
@@ -175,11 +206,12 @@ const mockMarkets: Market[] = [
     volume: 1890000,
     liquidity: 720000,
     createdAt: '2025-01-25T14:00:00+08:00',
+    icon: '🏠',
   },
   // Climate
   {
     id: '13',
-    title: 'Will the Bureau of Meteorology declare a La Nina by October 2026?',
+    title: 'La Nina declared by Oct 2026?',
     description: 'Resolves Yes if the Australian Bureau of Meteorology officially declares La Nina conditions before November 1, 2026.',
     category: 'climate',
     status: 'open',
@@ -190,10 +222,11 @@ const mockMarkets: Market[] = [
     volume: 890000,
     liquidity: 320000,
     createdAt: '2025-03-01T11:00:00+11:00',
+    icon: '🌧️',
   },
   {
     id: '14',
-    title: 'Will Warragamba Dam fall below 60% capacity in 2026?',
+    title: 'Warragamba Dam <60% in 2026?',
     description: 'Resolves Yes if Warragamba Dam storage falls below 60% capacity at any point during 2026, as reported by WaterNSW.',
     category: 'climate',
     status: 'open',
@@ -204,10 +237,11 @@ const mockMarkets: Market[] = [
     volume: 560000,
     liquidity: 210000,
     createdAt: '2025-02-15T09:00:00+11:00',
+    icon: '💧',
   },
   {
     id: '15',
-    title: 'Will Australia record its hottest year on record in 2026?',
+    title: 'Hottest year on record 2026?',
     description: "Resolves Yes if the Bureau of Meteorology declares 2026 as Australia's hottest year on record in their annual climate statement.",
     category: 'climate',
     status: 'open',
@@ -218,6 +252,7 @@ const mockMarkets: Market[] = [
     volume: 1120000,
     liquidity: 430000,
     createdAt: '2025-01-12T10:00:00+11:00',
+    icon: '🌡️',
   },
 ];
 
