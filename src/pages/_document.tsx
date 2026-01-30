@@ -4,11 +4,10 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head />
-      <body className="bg-slate-900 text-white">
+      <body className="bg-gray-50 text-gray-900">
         <Main />
         <NextScript />
       </body>
     </Html>
   );
 }
-<!-- Foremark v2 -->
