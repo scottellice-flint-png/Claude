@@ -102,3 +102,30 @@ export interface PriceHistory {
   noPrice: number;
   volume: number;
 }
+
+export interface Comment {
+  id: string;
+  userId: string;
+  username: string;
+  avatar?: string;
+  marketId: string;
+  content: string;
+  position?: {
+    side: 'yes' | 'no';
+    marketTitle?: string;
+  };
+  likes: number;
+  replies: Comment[];
+  createdAt: string;
+}
+
+export interface MarketRules {
+  summary: string;
+  resolutionSource: string;
+  resolutionDetails: string;
+  timeline: {
+    tradingCloses: string;
+    resolutionExpected: string;
+  };
+  prohibitions: string[];
+}

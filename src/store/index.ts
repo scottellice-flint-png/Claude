@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Market, Order, Position, User, Trade, OrderBook } from '@/types';
+import { Market, Order, Position, User, Trade, OrderBook, Comment, MarketRules } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
 // Mock data - Australian-focused markets
@@ -262,6 +262,95 @@ const mockPositions: Position[] = [
   },
 ];
 
+const mockComments: Comment[] = [
+  {
+    id: 'comment-1',
+    userId: 'user-2',
+    username: 'PunterPete',
+    marketId: '1',
+    content: 'Labor looking strong in the polls. This feels like easy money.',
+    position: { side: 'yes', marketTitle: 'Federal Election' },
+    likes: 12,
+    replies: [
+      {
+        id: 'comment-1-1',
+        userId: 'user-3',
+        username: 'SkepticalSam',
+        marketId: '1',
+        content: 'Polls were wrong last time. Coalition could surprise us again.',
+        likes: 5,
+        replies: [],
+        createdAt: '2026-01-28T14:30:00+10:00',
+      },
+    ],
+    createdAt: '2026-01-28T10:15:00+10:00',
+  },
+  {
+    id: 'comment-2',
+    userId: 'user-4',
+    username: 'PoliticoAU',
+    marketId: '1',
+    content: 'The economy is the key issue. Watch the cost of living debate closely.',
+    position: { side: 'no', marketTitle: 'Federal Election' },
+    likes: 8,
+    replies: [],
+    createdAt: '2026-01-27T16:45:00+10:00',
+  },
+  {
+    id: 'comment-3',
+    userId: 'user-5',
+    username: 'SportsGuru',
+    marketId: '4',
+    content: 'Djokovic has never lost to Sinner in a Grand Slam final. History favours the GOAT.',
+    position: { side: 'yes', marketTitle: 'Australian Open Final' },
+    likes: 24,
+    replies: [],
+    createdAt: '2026-01-26T08:00:00+11:00',
+  },
+  {
+    id: 'comment-4',
+    userId: 'user-6',
+    username: 'TennisFan99',
+    marketId: '4',
+    content: 'Sinner has been in incredible form. His backhand is unstoppable right now.',
+    position: { side: 'no', marketTitle: 'Australian Open Final' },
+    likes: 18,
+    replies: [],
+    createdAt: '2026-01-25T19:30:00+11:00',
+  },
+];
+
+const mockMarketRules: Record<string, MarketRules> = {
+  '1': {
+    summary: 'This market resolves to Yes if the Australian Labor Party wins the majority of seats in the House of Representatives at the next Federal Election. The market resolves to No if the Liberal-National Coalition wins.',
+    resolutionSource: 'Australian Electoral Commission (AEC)',
+    resolutionDetails: 'Resolution will be based on the official results published by the AEC. If neither major party wins a majority, resolution will be based on which party forms government.',
+    timeline: {
+      tradingCloses: 'When polls close on election day',
+      resolutionExpected: 'Within 7 days of election day',
+    },
+    prohibitions: [
+      'Members of Parliament and their immediate staff',
+      'AEC officials and contractors',
+      'Persons with non-public information about election outcomes',
+    ],
+  },
+  '4': {
+    summary: 'This market resolves to Yes if Novak Djokovic wins the Australian Open 2026 Men\'s Singles Final. Resolves to No if Jannik Sinner wins.',
+    resolutionSource: 'Tennis Australia / ATP Official Results',
+    resolutionDetails: 'Resolution based on the official match result. If the match is not completed, the player who advances will be considered the winner.',
+    timeline: {
+      tradingCloses: 'At the start of the final match',
+      resolutionExpected: 'Within 24 hours of match completion',
+    },
+    prohibitions: [
+      'Players, coaches, and team members involved in the tournament',
+      'Tournament officials and referees',
+      'Persons with material non-public information',
+    ],
+  },
+};
+
 interface AppState {
   // Data
   markets: Market[];
@@ -269,13 +358,18 @@ interface AppState {
   orders: Order[];
   positions: Position[];
   trades: Trade[];
+  comments: Comment[];
 
   // Actions
   getMarket: (id: string) => Market | undefined;
   getMarketsByCategory: (category: string) => Market[];
+  getRelatedMarkets: (marketId: string, limit?: number) => Market[];
   getOrderBook: (marketId: string) => OrderBook;
   getUserPositions: () => Position[];
   getUserOrders: () => Order[];
+  getMarketComments: (marketId: string) => Comment[];
+  getMarketRules: (marketId: string) => MarketRules | undefined;
+  addComment: (marketId: string, content: string) => Comment;
 
   // Trading actions
   placeOrder: (
@@ -300,6 +394,7 @@ export const useStore = create<AppState>((set, get) => ({
   orders: [],
   positions: mockPositions,
   trades: [],
+  comments: mockComments,
 
   getMarket: (id: string) => {
     return get().markets.find(m => m.id === id);
@@ -308,6 +403,58 @@ export const useStore = create<AppState>((set, get) => ({
   getMarketsByCategory: (category: string) => {
     if (category === 'all') return get().markets;
     return get().markets.filter(m => m.category === category);
+  },
+
+  getRelatedMarkets: (marketId: string, limit = 3) => {
+    const market = get().getMarket(marketId);
+    if (!market) return [];
+    return get().markets
+      .filter(m => m.id !== marketId && m.category === market.category)
+      .slice(0, limit);
+  },
+
+  getMarketComments: (marketId: string) => {
+    return get().comments.filter(c => c.marketId === marketId);
+  },
+
+  getMarketRules: (marketId: string) => {
+    return mockMarketRules[marketId] || {
+      summary: 'Resolution rules for this market will be determined based on official sources.',
+      resolutionSource: 'Official Government/Organization Sources',
+      resolutionDetails: 'The market will resolve based on publicly verifiable information from authoritative sources.',
+      timeline: {
+        tradingCloses: 'At the event deadline',
+        resolutionExpected: 'Within 7 days of the event',
+      },
+      prohibitions: [
+        'Persons with material non-public information',
+        'Government officials directly involved in the outcome',
+      ],
+    };
+  },
+
+  addComment: (marketId: string, content: string) => {
+    const user = get().user;
+    const position = get().positions.find(p => p.marketId === marketId && p.userId === user?.id);
+    const market = get().getMarket(marketId);
+
+    const newComment: Comment = {
+      id: uuidv4(),
+      userId: user?.id || 'anonymous',
+      username: user?.username || 'Anonymous',
+      marketId,
+      content,
+      position: position ? { side: position.side, marketTitle: market?.title } : undefined,
+      likes: 0,
+      replies: [],
+      createdAt: new Date().toISOString(),
+    };
+
+    set(state => ({
+      comments: [newComment, ...state.comments],
+    }));
+
+    return newComment;
   },
 
   getOrderBook: (marketId: string) => {
