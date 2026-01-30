@@ -8,13 +8,10 @@ interface CategoryFilterProps {
 const categories: { id: string; label: string; icon: string }[] = [
   { id: 'all', label: 'All Markets', icon: '🌐' },
   { id: 'politics', label: 'Politics', icon: '🏛️' },
+  { id: 'sports', label: 'Sports', icon: '🏉' },
+  { id: 'culture', label: 'Culture', icon: '🎬' },
   { id: 'economics', label: 'Economics', icon: '📈' },
-  { id: 'crypto', label: 'Crypto', icon: '₿' },
-  { id: 'tech', label: 'Technology', icon: '💻' },
-  { id: 'climate', label: 'Climate', icon: '🌍' },
-  { id: 'sports', label: 'Sports', icon: '⚽' },
-  { id: 'entertainment', label: 'Entertainment', icon: '🎬' },
-  { id: 'science', label: 'Science', icon: '🔬' },
+  { id: 'climate', label: 'Climate', icon: '🌏' },
 ];
 
 export default function CategoryFilter({

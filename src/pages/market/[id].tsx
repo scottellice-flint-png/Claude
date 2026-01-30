@@ -70,11 +70,8 @@ export default function MarketPage() {
     politics: 'bg-purple-500/20 text-purple-400',
     economics: 'bg-blue-500/20 text-blue-400',
     climate: 'bg-green-500/20 text-green-400',
-    tech: 'bg-cyan-500/20 text-cyan-400',
     sports: 'bg-orange-500/20 text-orange-400',
-    entertainment: 'bg-pink-500/20 text-pink-400',
-    science: 'bg-indigo-500/20 text-indigo-400',
-    crypto: 'bg-yellow-500/20 text-yellow-400',
+    culture: 'bg-pink-500/20 text-pink-400',
   };
 
   return (

@@ -2,11 +2,8 @@ export type MarketCategory =
   | 'politics'
   | 'economics'
   | 'climate'
-  | 'tech'
   | 'sports'
-  | 'entertainment'
-  | 'science'
-  | 'crypto';
+  | 'culture';
 
 export type MarketStatus = 'open' | 'closed' | 'settled';
 
