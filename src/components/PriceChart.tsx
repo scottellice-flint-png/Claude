@@ -1,86 +1,251 @@
 import { useMemo } from 'react';
+import { MarketOutcome } from '@/types';
 
 interface PriceChartProps {
   marketId: string;
   currentPrice: number;
+  outcomes?: MarketOutcome[];
 }
 
-export default function PriceChart({ marketId, currentPrice }: PriceChartProps) {
-  const priceHistory = useMemo(() => {
-    const data = [];
-    let price = currentPrice - 10 + Math.random() * 5;
-    const now = Date.now();
+// Foremark brand colors for chart lines
+const CHART_COLORS = [
+  { line: '#0F4C4C', name: 'Teal' },      // foremark-green
+  { line: '#C8E64C', name: 'Lime' },      // foremark-lime
+  { line: '#6B7280', name: 'Gray' },      // gray-500
+];
 
-    for (let i = 30; i >= 0; i--) {
-      const drift = (currentPrice - price) * 0.1;
-      const noise = (Math.random() - 0.5) * 5;
-      price = Math.max(1, Math.min(99, price + drift + noise));
+interface SeriesData {
+  name: string;
+  currentPrice: number;
+  color: string;
+  data: number[];
+}
 
-      data.push({
-        timestamp: new Date(now - i * 24 * 60 * 60 * 1000).toISOString(),
-        price: Math.round(price),
+export default function PriceChart({ marketId, currentPrice, outcomes }: PriceChartProps) {
+  // Generate price history data for each series
+  const seriesData = useMemo(() => {
+    const series: SeriesData[] = [];
+
+    if (outcomes && outcomes.length > 0) {
+      // Multi-outcome market
+      outcomes.slice(0, 3).forEach((outcome, index) => {
+        const data = generateStepData(outcome.probability, 30);
+        series.push({
+          name: outcome.name,
+          currentPrice: outcome.probability,
+          color: CHART_COLORS[index % CHART_COLORS.length].line,
+          data,
+        });
+      });
+    } else {
+      // Single outcome market (Yes price)
+      const data = generateStepData(currentPrice, 30);
+      series.push({
+        name: 'Yes',
+        currentPrice,
+        color: CHART_COLORS[0].line,
+        data,
       });
     }
 
-    data[data.length - 1].price = currentPrice;
-    return data;
-  }, [marketId, currentPrice]);
+    return series;
+  }, [marketId, currentPrice, outcomes]);
 
-  const minPrice = Math.min(...priceHistory.map((p) => p.price));
-  const maxPrice = Math.max(...priceHistory.map((p) => p.price));
-  const priceRange = maxPrice - minPrice || 10;
+  // Generate date labels for x-axis
+  const dateLabels = useMemo(() => {
+    const labels = [];
+    const now = new Date();
+    for (let i = 4; i >= 0; i--) {
+      const date = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+      labels.push(date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }));
+    }
+    return labels;
+  }, []);
 
-  const chartHeight = 150;
-  const chartWidth = 100;
+  const chartWidth = 400;
+  const chartHeight = 160;
+  const paddingLeft = 0;
+  const paddingRight = 50;
+  const paddingTop = 10;
+  const paddingBottom = 25;
+  const graphWidth = chartWidth - paddingLeft - paddingRight;
+  const graphHeight = chartHeight - paddingTop - paddingBottom;
 
-  const points = priceHistory
-    .map((point, i) => {
-      const x = (i / (priceHistory.length - 1)) * chartWidth;
-      const y = chartHeight - ((point.price - minPrice) / priceRange) * chartHeight;
-      return `${x},${y}`;
-    })
-    .join(' ');
+  // Generate step line path for a series
+  const generateStepPath = (data: number[]) => {
+    if (data.length === 0) return '';
 
-  const areaPoints = `0,${chartHeight} ${points} ${chartWidth},${chartHeight}`;
+    const points: string[] = [];
+    data.forEach((price, i) => {
+      const x = paddingLeft + (i / (data.length - 1)) * graphWidth;
+      const y = paddingTop + graphHeight - (price / 100) * graphHeight;
+
+      if (i === 0) {
+        points.push(`M ${x} ${y}`);
+      } else {
+        // Step line: horizontal then vertical
+        const prevX = paddingLeft + ((i - 1) / (data.length - 1)) * graphWidth;
+        points.push(`H ${x}`);
+        points.push(`V ${y}`);
+      }
+    });
+
+    return points.join(' ');
+  };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-      <div className="p-4">
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      {/* Legend */}
+      <div className="px-4 pt-4 pb-2 flex flex-wrap gap-4">
+        {seriesData.map((series) => (
+          <div key={series.name} className="flex items-center gap-2">
+            <span
+              className="w-2.5 h-2.5 rounded-full"
+              style={{ backgroundColor: series.color }}
+            />
+            <span className="text-sm text-gray-600">{series.name}</span>
+            <span className="text-sm font-semibold text-gray-900">{series.currentPrice}%</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Chart */}
+      <div className="px-4 pb-2">
         <svg
           viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-          className="w-full h-40"
-          preserveAspectRatio="none"
+          className="w-full"
+          style={{ height: '180px' }}
+          preserveAspectRatio="xMidYMid meet"
         >
-          {/* Gradient fill */}
-          <defs>
-            <linearGradient id={`gradient-${marketId}`} x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#0F4C4C" stopOpacity="0.1" />
-              <stop offset="100%" stopColor="#0F4C4C" stopOpacity="0" />
-            </linearGradient>
-          </defs>
+          {/* Horizontal grid lines (dotted) */}
+          {[0, 25, 50, 75, 100].map((pct) => {
+            const y = paddingTop + graphHeight - (pct / 100) * graphHeight;
+            return (
+              <g key={pct}>
+                <line
+                  x1={paddingLeft}
+                  y1={y}
+                  x2={chartWidth - paddingRight}
+                  y2={y}
+                  stroke="#E5E7EB"
+                  strokeWidth="1"
+                  strokeDasharray="4 4"
+                />
+                {/* Y-axis label on right */}
+                <text
+                  x={chartWidth - paddingRight + 8}
+                  y={y + 4}
+                  className="text-xs"
+                  fill="#9CA3AF"
+                >
+                  {pct}%
+                </text>
+              </g>
+            );
+          })}
 
-          {/* Area under the line */}
-          <polygon points={areaPoints} fill={`url(#gradient-${marketId})`} />
+          {/* Step lines for each series */}
+          {seriesData.map((series) => (
+            <path
+              key={series.name}
+              d={generateStepPath(series.data)}
+              fill="none"
+              stroke={series.color}
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          ))}
 
-          {/* Price line */}
-          <polyline
-            points={points}
-            fill="none"
-            stroke="#0F4C4C"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          {/* End points with circles */}
+          {seriesData.map((series) => {
+            const lastPrice = series.data[series.data.length - 1];
+            const x = chartWidth - paddingRight;
+            const y = paddingTop + graphHeight - (lastPrice / 100) * graphHeight;
+            return (
+              <g key={`${series.name}-dot`}>
+                {/* Outer circle (white border) */}
+                <circle
+                  cx={x}
+                  cy={y}
+                  r="6"
+                  fill="white"
+                  stroke={series.color}
+                  strokeWidth="2"
+                />
+                {/* Inner filled circle */}
+                <circle
+                  cx={x}
+                  cy={y}
+                  r="4"
+                  fill={series.color}
+                />
+              </g>
+            );
+          })}
 
-          {/* Current price dot */}
-          <circle
-            cx={chartWidth}
-            cy={chartHeight - ((currentPrice - minPrice) / priceRange) * chartHeight}
-            r="4"
-            fill="#0F4C4C"
-          />
+          {/* X-axis date labels */}
+          {dateLabels.map((label, i) => {
+            const x = paddingLeft + (i / (dateLabels.length - 1)) * graphWidth;
+            return (
+              <text
+                key={label}
+                x={x}
+                y={chartHeight - 5}
+                className="text-xs"
+                fill="#9CA3AF"
+                textAnchor="middle"
+              >
+                {label}
+              </text>
+            );
+          })}
         </svg>
+      </div>
+
+      {/* Price labels on right side of chart */}
+      <div className="px-4 pb-4 flex flex-wrap gap-3 justify-end">
+        {seriesData.map((series) => (
+          <div
+            key={`${series.name}-label`}
+            className="flex items-center gap-1.5"
+          >
+            <span
+              className="text-sm font-semibold"
+              style={{ color: series.color }}
+            >
+              {series.name}
+            </span>
+            <span
+              className="text-lg font-bold"
+              style={{ color: series.color }}
+            >
+              {series.currentPrice}%
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
+}
+
+// Generate step-style price data that ends at target price
+function generateStepData(targetPrice: number, numPoints: number): number[] {
+  const data: number[] = [];
+  let price = targetPrice - 15 + Math.random() * 10;
+
+  for (let i = 0; i < numPoints - 1; i++) {
+    // Random step changes (sometimes no change for flat sections)
+    if (Math.random() > 0.3) {
+      const drift = (targetPrice - price) * 0.05;
+      const step = (Math.random() - 0.45) * 8;
+      price = Math.max(5, Math.min(95, price + drift + step));
+    }
+    data.push(Math.round(price));
+  }
+
+  // Ensure last point is the current price
+  data.push(targetPrice);
+
+  return data;
 }

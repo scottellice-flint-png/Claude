@@ -146,7 +146,7 @@ export default function MarketPage() {
 
             {/* Chart */}
             <div className="p-4">
-              <PriceChart marketId={market.id} currentPrice={market.yesPrice} />
+              <PriceChart marketId={market.id} currentPrice={market.yesPrice} outcomes={market.outcomes} />
             </div>
 
             {/* Price Info Bar */}
