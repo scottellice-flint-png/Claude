@@ -85,6 +85,11 @@ export default function Home() {
         ))}
       </div>
 
+      {/* Explainer */}
+      <p className="text-sm text-gray-500 -mt-2">
+        Trade on outcomes that shape Australia. From elections and interest rates to sport and culture.
+      </p>
+
       {/* Trending Topic Pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4">
         {trendingTopics.map((topic) => (
