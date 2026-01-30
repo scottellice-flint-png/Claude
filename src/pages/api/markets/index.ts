@@ -1,35 +1,35 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Market } from '@/types';
 
-// In-memory store (in production, use a real database)
+// Sample markets for API (main data is in Zustand store)
 const markets: Market[] = [
   {
     id: '1',
-    title: 'Will Bitcoin exceed $100,000 by end of 2026?',
-    description: 'This market will resolve to Yes if the price of Bitcoin (BTC) exceeds $100,000 USD on any major exchange before December 31, 2026 11:59 PM ET.',
-    category: 'crypto',
+    title: 'Who will win the next Australian Federal Election?',
+    description: 'This market resolves to Yes if the Australian Labor Party wins the next Federal Election.',
+    category: 'politics',
     status: 'open',
-    closeDate: '2026-12-31T23:59:00Z',
-    settlementDate: '2027-01-02T12:00:00Z',
-    yesPrice: 67,
-    noPrice: 33,
-    volume: 2450000,
-    liquidity: 890000,
-    createdAt: '2024-01-15T10:00:00Z',
+    closeDate: '2026-05-21T18:00:00+10:00',
+    settlementDate: '2026-05-25T12:00:00+10:00',
+    yesPrice: 52,
+    noPrice: 48,
+    volume: 8750000,
+    liquidity: 2890000,
+    createdAt: '2025-01-15T10:00:00+10:00',
   },
   {
-    id: '2',
-    title: 'Will the Federal Reserve cut rates in Q1 2026?',
-    description: 'This market resolves to Yes if the Federal Reserve announces a rate cut during Q1 2026 (January 1 - March 31).',
+    id: '10',
+    title: 'Will the RBA raise the cash rate at the Feb 2026 meeting?',
+    description: 'Resolves Yes if the Reserve Bank of Australia announces a cash rate increase at the February 2026 monetary policy meeting.',
     category: 'economics',
     status: 'open',
-    closeDate: '2026-03-31T23:59:00Z',
-    settlementDate: '2026-04-01T12:00:00Z',
-    yesPrice: 42,
-    noPrice: 58,
-    volume: 1890000,
-    liquidity: 650000,
-    createdAt: '2024-02-01T14:30:00Z',
+    closeDate: '2026-02-17T14:30:00+11:00',
+    settlementDate: '2026-02-18T12:00:00+11:00',
+    yesPrice: 8,
+    noPrice: 92,
+    volume: 6780000,
+    liquidity: 2450000,
+    createdAt: '2025-01-08T09:00:00+11:00',
   },
 ];
 
