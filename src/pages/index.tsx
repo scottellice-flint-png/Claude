@@ -52,6 +52,7 @@ export default function Home() {
     { id: 'culture', label: 'Culture' },
     { id: 'economics', label: 'Economics' },
     { id: 'climate', label: 'Climate' },
+    { id: 'world', label: 'World' },
   ];
 
   const trendingTopics = [
@@ -87,7 +88,7 @@ export default function Home() {
 
       {/* Explainer */}
       <p className="text-sm text-gray-500 -mt-2">
-        Trade on outcomes that shape Australia. From elections and interest rates to sport and culture.
+        Trade on outcomes that shape Australia and the world. From elections and interest rates to sport and culture.
       </p>
 
       {/* Trending Topic Pills */}

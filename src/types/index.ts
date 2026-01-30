@@ -3,7 +3,8 @@ export type MarketCategory =
   | 'economics'
   | 'climate'
   | 'sports'
-  | 'culture';
+  | 'culture'
+  | 'world';
 
 export type MarketStatus = 'open' | 'closed' | 'settled';
 

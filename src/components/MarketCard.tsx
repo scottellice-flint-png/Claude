@@ -23,6 +23,7 @@ export default function MarketCard({ market, showHotBadge = false }: MarketCardP
     climate: 'CLIMATE',
     sports: 'SPORTS',
     culture: 'CULTURE',
+    world: 'WORLD',
   };
 
   return (

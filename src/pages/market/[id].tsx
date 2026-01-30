@@ -72,6 +72,7 @@ export default function MarketPage() {
     climate: 'Climate',
     sports: 'Sports',
     culture: 'Culture',
+    world: 'World',
   };
 
   return (
