@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/store';
 
 export default function PortfolioPage() {
+  const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
   const user = useStore((state) => state.user);
   const positions = useStore((state) => state.getUserPositions());
   const markets = useStore((state) => state.markets);
@@ -27,202 +28,189 @@ export default function PortfolioPage() {
   };
 
   const formatCurrency = (cents: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-AU', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'AUD',
     }).format(cents / 100);
   };
+
+  // Group positions by category
+  const positionsByCategory = useMemo(() => {
+    const grouped: Record<string, typeof positions> = {};
+    positions.forEach((pos) => {
+      const market = getMarket(pos.marketId);
+      if (market) {
+        const category = market.category;
+        if (!grouped[category]) grouped[category] = [];
+        grouped[category].push(pos);
+      }
+    });
+    return grouped;
+  }, [positions, markets]);
 
   if (!user) {
     return (
       <div className="text-center py-16">
         <div className="text-6xl mb-4">🔒</div>
-        <h2 className="text-2xl font-bold text-white mb-4">Please log in</h2>
-        <p className="text-slate-400">You need to be logged in to view your portfolio.</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Please log in</h2>
+        <p className="text-gray-500">You need to be logged in to view your portfolio.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Portfolio</h1>
-        <p className="text-slate-400">Track your positions and performance</p>
-      </div>
+    <div className="space-y-6">
+      {/* Hero Stats Section */}
+      <div className="bg-foremark-green rounded-2xl p-6 text-white -mx-4 sm:mx-0">
+        <p className="text-sm text-white/70 uppercase tracking-wide mb-1">Active Positions</p>
+        <p className="text-4xl font-bold mb-1">{formatCurrency(portfolioStats.totalValue)}</p>
+        <p className={`text-sm ${portfolioStats.totalProfit >= 0 ? 'text-foremark-lime' : 'text-red-300'}`}>
+          {portfolioStats.totalProfit >= 0 ? '+' : ''}
+          {formatCurrency(portfolioStats.totalProfit)} All-time P/L
+        </p>
 
-      {/* Portfolio Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
-          <p className="text-sm text-slate-400 mb-1">Total Balance</p>
-          <p className="text-2xl font-bold text-white">{formatCurrency(user.balance)}</p>
-        </div>
-        <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
-          <p className="text-sm text-slate-400 mb-1">Portfolio Value</p>
-          <p className="text-2xl font-bold text-white">
-            {formatCurrency(portfolioStats.totalValue)}
-          </p>
-        </div>
-        <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
-          <p className="text-sm text-slate-400 mb-1">Total P&L</p>
-          <p
-            className={`text-2xl font-bold ${
-              portfolioStats.totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'
-            }`}
-          >
-            {portfolioStats.totalProfit >= 0 ? '+' : ''}
-            {formatCurrency(portfolioStats.totalProfit)}
-          </p>
-        </div>
-        <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
-          <p className="text-sm text-slate-400 mb-1">Return</p>
-          <p
-            className={`text-2xl font-bold ${
-              portfolioStats.profitPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'
-            }`}
-          >
-            {portfolioStats.profitPercent >= 0 ? '+' : ''}
-            {portfolioStats.profitPercent.toFixed(1)}%
-          </p>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-3 gap-3 mt-4">
+          <div className="bg-white/10 rounded-xl p-3">
+            <p className="text-xl font-bold">{portfolioStats.positionCount}</p>
+            <p className="text-xs text-white/70 uppercase">Open Trades</p>
+          </div>
+          <div className="bg-white/10 rounded-xl p-3">
+            <p className="text-xl font-bold">
+              {portfolioStats.totalProfit >= 0 ? '+' : ''}
+              {formatCurrency(portfolioStats.totalProfit)}
+            </p>
+            <p className="text-xs text-white/70 uppercase">24H Change</p>
+          </div>
+          <div className="bg-white/10 rounded-xl p-3">
+            <p className="text-xl font-bold">
+              {portfolioStats.profitPercent >= 0 ? '' : ''}
+              {Math.abs(portfolioStats.profitPercent).toFixed(0)}%
+            </p>
+            <p className="text-xs text-white/70 uppercase">Win Rate</p>
+          </div>
         </div>
       </div>
 
-      {/* Positions */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-        <div className="p-5 border-b border-slate-700">
-          <h2 className="text-xl font-semibold text-white">Your Positions</h2>
-          <p className="text-sm text-slate-400">{portfolioStats.positionCount} active positions</p>
+      {/* Tab Navigation */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-black text-gray-900 uppercase">My Portfolio</h2>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveTab('active')}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+              activeTab === 'active'
+                ? 'bg-gray-900 text-white'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Active
+          </button>
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+              activeTab === 'history'
+                ? 'bg-gray-900 text-white'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            History
+          </button>
         </div>
+      </div>
 
-        {positions.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-900/50">
-                <tr className="text-left text-sm text-slate-500">
-                  <th className="px-5 py-3 font-medium">Market</th>
-                  <th className="px-5 py-3 font-medium">Side</th>
-                  <th className="px-5 py-3 font-medium text-right">Quantity</th>
-                  <th className="px-5 py-3 font-medium text-right">Avg Price</th>
-                  <th className="px-5 py-3 font-medium text-right">Current Price</th>
-                  <th className="px-5 py-3 font-medium text-right">Value</th>
-                  <th className="px-5 py-3 font-medium text-right">P&L</th>
-                  <th className="px-5 py-3 font-medium text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-700">
-                {positions.map((position) => {
+      {/* Positions by Category */}
+      {positions.length > 0 ? (
+        <div className="space-y-6">
+          {Object.entries(positionsByCategory).map(([category, categoryPositions]) => (
+            <div key={category}>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+                {category}
+              </p>
+              <div className="space-y-3">
+                {categoryPositions.map((position) => {
                   const market = getMarket(position.marketId);
                   if (!market) return null;
 
                   const currentPrice =
                     position.side === 'yes' ? market.yesPrice : market.noPrice;
-                  const profitPercent =
-                    position.avgPrice > 0
-                      ? ((currentPrice - position.avgPrice) / position.avgPrice) * 100
-                      : 0;
 
                   return (
-                    <tr key={position.id} className="hover:bg-slate-700/30">
-                      <td className="px-5 py-4">
-                        <Link
-                          href={`/market/${market.id}`}
-                          className="text-white hover:text-primary-400 font-medium line-clamp-2"
-                        >
+                    <div
+                      key={position.id}
+                      className="bg-white rounded-2xl border border-gray-200 p-4"
+                    >
+                      {/* Position Badge */}
+                      <span
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-bold mb-2 ${
+                          position.side === 'yes'
+                            ? 'bg-foremark-lime text-gray-900'
+                            : 'bg-gray-900 text-white'
+                        }`}
+                      >
+                        {position.side.toUpperCase()} ({currentPrice}¢)
+                      </span>
+
+                      {/* Market Title */}
+                      <Link href={`/market/${market.id}`}>
+                        <h3 className="font-bold text-gray-900 mb-3 hover:text-foremark-green">
                           {market.title}
-                        </Link>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                            position.side === 'yes'
-                              ? 'bg-emerald-500/20 text-emerald-400'
-                              : 'bg-rose-500/20 text-rose-400'
-                          }`}
-                        >
-                          {position.side.toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 text-right text-white">{position.quantity}</td>
-                      <td className="px-5 py-4 text-right text-white">{position.avgPrice}¢</td>
-                      <td className="px-5 py-4 text-right text-white">{currentPrice}¢</td>
-                      <td className="px-5 py-4 text-right text-white">
-                        {formatCurrency(position.currentValue)}
-                      </td>
-                      <td className="px-5 py-4 text-right">
+                        </h3>
+                      </Link>
+
+                      {/* Value and P/L */}
+                      <div className="grid grid-cols-2 gap-4 mb-4">
                         <div>
-                          <span
-                            className={`font-medium ${
-                              position.profit >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                          <p className="text-xs text-gray-400 uppercase">Initial Value</p>
+                          <p className="text-lg font-bold text-gray-900">
+                            {formatCurrency(position.avgPrice * position.quantity)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-400 uppercase">Current P/L</p>
+                          <p
+                            className={`text-lg font-bold ${
+                              position.profit >= 0 ? 'text-foremark-green' : 'text-red-500'
                             }`}
                           >
                             {position.profit >= 0 ? '+' : ''}
                             {formatCurrency(position.profit)}
-                          </span>
-                          <span
-                            className={`block text-xs ${
-                              profitPercent >= 0 ? 'text-emerald-400/70' : 'text-rose-400/70'
-                            }`}
-                          >
-                            {profitPercent >= 0 ? '+' : ''}
-                            {profitPercent.toFixed(1)}%
-                          </span>
+                          </p>
                         </div>
-                      </td>
-                      <td className="px-5 py-4 text-right">
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-2">
+                        <button className="flex-1 py-2.5 px-4 rounded-full bg-gray-900 text-white font-bold text-sm hover:bg-gray-800 transition-colors">
+                          SELL {formatCurrency(position.currentValue)}
+                        </button>
                         <Link
                           href={`/market/${market.id}`}
-                          className="text-primary-400 hover:text-primary-300 text-sm font-medium"
+                          className="flex-1 py-2.5 px-4 rounded-full bg-white border-2 border-gray-900 text-gray-900 font-bold text-sm text-center hover:bg-gray-50 transition-colors"
                         >
-                          Trade
+                          ADD POSITION
                         </Link>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="p-10 text-center">
-            <div className="text-4xl mb-4">📊</div>
-            <h3 className="text-lg font-semibold text-white mb-2">No positions yet</h3>
-            <p className="text-slate-400 mb-4">
-              Start trading to build your portfolio
-            </p>
-            <Link
-              href="/"
-              className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-            >
-              Browse Markets
-            </Link>
-          </div>
-        )}
-      </div>
-
-      {/* Recent Activity */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
-        <h2 className="text-xl font-semibold text-white mb-4">Account Summary</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <p className="text-sm text-slate-400 mb-1">Username</p>
-            <p className="text-white font-medium">{user.username}</p>
-          </div>
-          <div>
-            <p className="text-sm text-slate-400 mb-1">Email</p>
-            <p className="text-white font-medium">{user.email}</p>
-          </div>
-          <div>
-            <p className="text-sm text-slate-400 mb-1">Member Since</p>
-            <p className="text-white font-medium">
-              {new Date(user.createdAt).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </p>
-          </div>
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
+      ) : (
+        <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
+          <div className="text-5xl mb-4">📊</div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">No positions yet</h3>
+          <p className="text-gray-500 mb-4">Start trading to build your portfolio</p>
+          <Link
+            href="/"
+            className="inline-flex items-center px-6 py-3 bg-foremark-lime text-gray-900 rounded-full font-bold hover:bg-foremark-lime-dark transition-colors"
+          >
+            Browse Markets
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

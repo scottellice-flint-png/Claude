@@ -5,23 +5,21 @@ import CategoryFilter from '@/components/CategoryFilter';
 import { useAllMarketsRealTimePrice } from '@/hooks/useRealTimePrice';
 
 export default function Home() {
-  // Enable real-time price updates
   useAllMarketsRealTimePrice(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'volume' | 'newest' | 'closing'>('volume');
 
   const markets = useStore((state) => state.markets);
+  const user = useStore((state) => state.user);
+  const positions = useStore((state) => state.getUserPositions());
 
   const filteredAndSortedMarkets = useMemo(() => {
     let filtered = markets;
 
-    // Filter by category
     if (selectedCategory !== 'all') {
       filtered = filtered.filter((m) => m.category === selectedCategory);
     }
 
-    // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -31,123 +29,124 @@ export default function Home() {
       );
     }
 
-    // Sort
-    return [...filtered].sort((a, b) => {
-      switch (sortBy) {
-        case 'volume':
-          return b.volume - a.volume;
-        case 'newest':
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case 'closing':
-          return new Date(a.closeDate).getTime() - new Date(b.closeDate).getTime();
-        default:
-          return 0;
-      }
-    });
-  }, [markets, selectedCategory, searchQuery, sortBy]);
+    return [...filtered].sort((a, b) => b.volume - a.volume);
+  }, [markets, selectedCategory, searchQuery]);
 
   const totalVolume = markets.reduce((sum, m) => sum + m.volume, 0);
-  const activeMarkets = markets.filter((m) => m.status === 'open').length;
+  const openBets = markets.filter((m) => m.status === 'open').length;
+
+  const portfolioValue = positions.reduce((sum, p) => sum + p.currentValue, 0);
+  const portfolioProfit = positions.reduce((sum, p) => sum + p.profit, 0);
+  const portfolioReturn = portfolioValue > 0
+    ? ((portfolioProfit / (portfolioValue - portfolioProfit)) * 100).toFixed(1)
+    : '0';
+
+  const formatCurrency = (cents: number) => {
+    return new Intl.NumberFormat('en-AU', {
+      style: 'currency',
+      currency: 'AUD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(cents / 100);
+  };
+
+  const formatVolume = (volume: number) => {
+    if (volume >= 1000000) {
+      return `$${(volume / 1000000).toFixed(1)}M`;
+    }
+    return `$${(volume / 1000).toFixed(0)}K`;
+  };
+
+  // Get trending markets (top by volume)
+  const trendingMarkets = [...markets].sort((a, b) => b.volume - a.volume).slice(0, 6);
 
   return (
-    <div className="space-y-8">
-      {/* Hero Section */}
-      <div className="text-center py-8">
-        <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-          Trade on Real-World Events
-        </h1>
-        <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-          Make predictions and profit from your knowledge. Buy and sell contracts on the outcomes of events.
+    <div className="space-y-6">
+      {/* Hero Stats Section */}
+      <div className="bg-foremark-green rounded-2xl p-6 text-white -mx-4 sm:mx-0">
+        <p className="text-sm text-white/70 uppercase tracking-wide mb-1">Portfolio Value</p>
+        <p className="text-4xl font-bold text-foremark-lime mb-4">
+          +{portfolioReturn}%
         </p>
 
-        {/* Stats */}
-        <div className="flex justify-center space-x-8 mt-8">
-          <div className="text-center">
-            <p className="text-3xl font-bold text-primary-400">
-              ${(totalVolume / 1000000).toFixed(1)}M+
-            </p>
-            <p className="text-sm text-slate-500">Total Volume</p>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white/10 rounded-xl p-3">
+            <p className="text-xl font-bold">{formatVolume(totalVolume)}</p>
+            <p className="text-xs text-white/70 uppercase">24H Vol</p>
           </div>
-          <div className="text-center">
-            <p className="text-3xl font-bold text-primary-400">{activeMarkets}</p>
-            <p className="text-sm text-slate-500">Active Markets</p>
+          <div className="bg-white/10 rounded-xl p-3">
+            <p className="text-xl font-bold">{openBets}</p>
+            <p className="text-xs text-white/70 uppercase">Open Bets</p>
           </div>
-          <div className="text-center">
-            <p className="text-3xl font-bold text-primary-400">24/7</p>
-            <p className="text-sm text-slate-500">Trading</p>
+          <div className="bg-white/10 rounded-xl p-3">
+            <p className="text-xl font-bold">#12</p>
+            <p className="text-xs text-white/70 uppercase">Rank</p>
           </div>
         </div>
       </div>
 
-      {/* Search and Filter Bar */}
-      <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-        <div className="flex flex-col md:flex-row gap-4 mb-4">
-          {/* Search Input */}
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              placeholder="Search markets..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2.5 pl-10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
-            <svg
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          </div>
-
-          {/* Sort Dropdown */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'volume' | 'newest' | 'closing')}
-            className="bg-slate-900 border border-slate-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="volume">Sort by Volume</option>
-            <option value="newest">Newest First</option>
-            <option value="closing">Closing Soon</option>
-          </select>
-        </div>
-
-        {/* Category Filter */}
+      {/* Category Filter */}
+      <div className="overflow-x-auto -mx-4 px-4">
         <CategoryFilter
           selectedCategory={selectedCategory}
           onSelectCategory={setSelectedCategory}
         />
       </div>
 
-      {/* Results Count */}
-      <div className="flex items-center justify-between">
-        <p className="text-slate-400">
-          Showing <span className="text-white font-medium">{filteredAndSortedMarkets.length}</span> markets
-        </p>
+      {/* Search */}
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="Search markets..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full bg-white border border-gray-200 rounded-full px-5 py-3 pl-12 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-foremark-green focus:border-transparent"
+        />
+        <svg
+          className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          />
+        </svg>
       </div>
 
-      {/* Markets Grid */}
-      {filteredAndSortedMarkets.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAndSortedMarkets.map((market) => (
-            <MarketCard key={market.id} market={market} />
-          ))}
+      {/* Trending Section */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-black text-gray-900 uppercase">Trending</h2>
+          <button className="text-sm font-semibold text-foremark-green hover:underline">
+            VIEW ALL
+          </button>
         </div>
-      ) : (
-        <div className="text-center py-16">
-          <div className="text-6xl mb-4">🔍</div>
-          <h3 className="text-xl font-semibold text-white mb-2">No markets found</h3>
-          <p className="text-slate-400">
-            Try adjusting your search or filter criteria
-          </p>
-        </div>
-      )}
+
+        {filteredAndSortedMarkets.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredAndSortedMarkets.map((market, index) => (
+              <MarketCard
+                key={market.id}
+                market={market}
+                showHotBadge={index < 3}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
+            <div className="text-5xl mb-4">🔍</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">No markets found</h3>
+            <p className="text-gray-500">
+              Try adjusting your search or filter criteria
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
