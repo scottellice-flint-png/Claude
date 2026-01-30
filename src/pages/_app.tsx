@@ -7,8 +7,8 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
-        <title>Kalshi Clone - Prediction Markets</title>
-        <meta name="description" content="Trade on the outcome of events" />
+        <title>Foremark - Prediction Markets</title>
+        <meta name="description" content="Foremark - Trade on the outcome of Australian events" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>

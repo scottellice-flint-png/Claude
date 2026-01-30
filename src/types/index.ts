@@ -11,6 +11,14 @@ export type OrderSide = 'yes' | 'no';
 export type OrderType = 'limit' | 'market';
 export type OrderStatus = 'open' | 'filled' | 'partial' | 'cancelled';
 
+export interface MarketOutcome {
+  id: string;
+  name: string;
+  probability: number; // 0-100
+  yesPrice: number;
+  noPrice: number;
+}
+
 export interface Market {
   id: string;
   title: string;
@@ -25,7 +33,10 @@ export interface Market {
   liquidity: number;
   createdAt: string;
   imageUrl?: string;
+  icon?: string;
   resolution?: 'yes' | 'no' | null;
+  outcomes?: MarketOutcome[];
+  isFeatured?: boolean;
 }
 
 export interface Order {
@@ -101,4 +112,31 @@ export interface PriceHistory {
   yesPrice: number;
   noPrice: number;
   volume: number;
+}
+
+export interface Comment {
+  id: string;
+  userId: string;
+  username: string;
+  avatar?: string;
+  marketId: string;
+  content: string;
+  position?: {
+    side: 'yes' | 'no';
+    marketTitle?: string;
+  };
+  likes: number;
+  replies: Comment[];
+  createdAt: string;
+}
+
+export interface MarketRules {
+  summary: string;
+  resolutionSource: string;
+  resolutionDetails: string;
+  timeline: {
+    tradingCloses: string;
+    resolutionExpected: string;
+  };
+  prohibitions: string[];
 }

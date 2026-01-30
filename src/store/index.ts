@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Market, Order, Position, User, Trade, OrderBook } from '@/types';
+import { Market, Order, Position, User, Trade, OrderBook, Comment, MarketRules } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
 // Mock data - Australian-focused markets
@@ -18,6 +18,13 @@ const mockMarkets: Market[] = [
     volume: 8750000,
     liquidity: 2890000,
     createdAt: '2025-01-15T10:00:00+10:00',
+    icon: '🗳️',
+    isFeatured: true,
+    outcomes: [
+      { id: '1-labor', name: 'Labor', probability: 52, yesPrice: 52, noPrice: 48 },
+      { id: '1-coalition', name: 'Coalition', probability: 41, yesPrice: 41, noPrice: 59 },
+      { id: '1-other', name: 'Other', probability: 7, yesPrice: 7, noPrice: 93 },
+    ],
   },
   {
     id: '2',
@@ -32,6 +39,7 @@ const mockMarkets: Market[] = [
     volume: 3420000,
     liquidity: 1250000,
     createdAt: '2025-02-01T14:30:00+10:00',
+    icon: '📅',
   },
   {
     id: '3',
@@ -46,11 +54,12 @@ const mockMarkets: Market[] = [
     volume: 1890000,
     liquidity: 650000,
     createdAt: '2025-01-20T09:00:00+10:00',
+    icon: '💰',
   },
   // Sports
   {
     id: '4',
-    title: 'Winner of Djokovic vs Sinner - Australian Open 2026 Final?',
+    title: "Men's Australian Open Winner",
     description: "Resolves Yes if Novak Djokovic wins the Australian Open 2026 Men's Singles Final against Jannik Sinner. Resolves No if Sinner wins.",
     category: 'sports',
     status: 'open',
@@ -61,10 +70,15 @@ const mockMarkets: Market[] = [
     volume: 4560000,
     liquidity: 1780000,
     createdAt: '2025-01-10T08:00:00+11:00',
+    icon: '🎾',
+    outcomes: [
+      { id: '4-sinner', name: 'Jannik Sinner', probability: 53, yesPrice: 53, noPrice: 47 },
+      { id: '4-djokovic', name: 'Novak Djokovic', probability: 42, yesPrice: 42, noPrice: 58 },
+    ],
   },
   {
     id: '5',
-    title: "Will Tasmania be awarded the AFL's 19th licence by 2027?",
+    title: "Will Tasmania get AFL's 19th licence by 2027?",
     description: 'Resolves Yes if the AFL officially announces Tasmania as the 19th AFL team before January 1, 2027.',
     category: 'sports',
     status: 'open',
@@ -75,10 +89,11 @@ const mockMarkets: Market[] = [
     volume: 2340000,
     liquidity: 890000,
     createdAt: '2025-02-15T10:00:00+11:00',
+    icon: '🏉',
   },
   {
     id: '6',
-    title: 'Will the NRL Grand Final be played outside Sydney in 2026?',
+    title: 'NRL Grand Final outside Sydney 2026?',
     description: 'Resolves Yes if the 2026 NRL Grand Final is held at a venue outside of Sydney. Accredited Stadium (Sydney) resolves No.',
     category: 'sports',
     status: 'open',
@@ -89,6 +104,7 @@ const mockMarkets: Market[] = [
     volume: 980000,
     liquidity: 420000,
     createdAt: '2025-03-10T15:00:00+11:00',
+    icon: '🏈',
   },
   // Culture
   {
@@ -104,10 +120,16 @@ const mockMarkets: Market[] = [
     volume: 5670000,
     liquidity: 2100000,
     createdAt: '2025-01-05T12:00:00Z',
+    icon: '🎬',
+    outcomes: [
+      { id: '7-atj', name: 'Aaron Taylor-Johnson', probability: 62, yesPrice: 62, noPrice: 38 },
+      { id: '7-regepage', name: 'Regé-Jean Page', probability: 21, yesPrice: 21, noPrice: 79 },
+      { id: '7-other', name: 'Other', probability: 17, yesPrice: 17, noPrice: 83 },
+    ],
   },
   {
     id: '8',
-    title: 'Will an Australian film win an Oscar at the next Academy Awards?',
+    title: 'Australian film to win Oscar 2026?',
     description: 'Resolves Yes if any film primarily produced in Australia wins at least one Academy Award at the 2026 Oscars ceremony.',
     category: 'culture',
     status: 'open',
@@ -118,10 +140,11 @@ const mockMarkets: Market[] = [
     volume: 1230000,
     liquidity: 450000,
     createdAt: '2025-02-20T12:00:00+11:00',
+    icon: '🏆',
   },
   {
     id: '9',
-    title: 'Will Australia finish top 5 in Eurovision 2026?',
+    title: 'Australia top 5 Eurovision 2026?',
     description: "Resolves Yes if Australia's entry finishes in the top 5 of the Eurovision Song Contest 2026 Grand Final.",
     category: 'culture',
     status: 'open',
@@ -132,11 +155,12 @@ const mockMarkets: Market[] = [
     volume: 780000,
     liquidity: 290000,
     createdAt: '2025-03-01T10:00:00+11:00',
+    icon: '🎤',
   },
   // Economics
   {
     id: '10',
-    title: 'Will the RBA raise the cash rate at the Feb 2026 meeting?',
+    title: 'RBA rate decision Feb 2026?',
     description: 'Resolves Yes if the Reserve Bank of Australia announces a cash rate increase at the February 2026 monetary policy meeting.',
     category: 'economics',
     status: 'open',
@@ -147,10 +171,16 @@ const mockMarkets: Market[] = [
     volume: 6780000,
     liquidity: 2450000,
     createdAt: '2025-01-08T09:00:00+11:00',
+    icon: '🏦',
+    outcomes: [
+      { id: '10-hold', name: 'Hold', probability: 72, yesPrice: 72, noPrice: 28 },
+      { id: '10-cut', name: 'Cut 25bps', probability: 20, yesPrice: 20, noPrice: 80 },
+      { id: '10-raise', name: 'Raise', probability: 8, yesPrice: 8, noPrice: 92 },
+    ],
   },
   {
     id: '11',
-    title: "Will Australia's CPI fall below 3.0% in the next release?",
+    title: "Australia's CPI below 3.0%?",
     description: 'Resolves Yes if the Australian Bureau of Statistics reports annual CPI below 3.0% in the next quarterly release.',
     category: 'economics',
     status: 'open',
@@ -161,10 +191,11 @@ const mockMarkets: Market[] = [
     volume: 3450000,
     liquidity: 1180000,
     createdAt: '2025-02-10T10:00:00+11:00',
+    icon: '📊',
   },
   {
     id: '12',
-    title: "Will Perth's median dwelling value exceed $850,000 before 31 Dec 2026?",
+    title: "Perth median dwelling >$850k by Dec 2026?",
     description: "Resolves Yes if CoreLogic reports Perth's median dwelling value exceeds $850,000 AUD at any point before December 31, 2026.",
     category: 'economics',
     status: 'open',
@@ -175,11 +206,12 @@ const mockMarkets: Market[] = [
     volume: 1890000,
     liquidity: 720000,
     createdAt: '2025-01-25T14:00:00+08:00',
+    icon: '🏠',
   },
   // Climate
   {
     id: '13',
-    title: 'Will the Bureau of Meteorology declare a La Nina by October 2026?',
+    title: 'La Nina declared by Oct 2026?',
     description: 'Resolves Yes if the Australian Bureau of Meteorology officially declares La Nina conditions before November 1, 2026.',
     category: 'climate',
     status: 'open',
@@ -190,10 +222,11 @@ const mockMarkets: Market[] = [
     volume: 890000,
     liquidity: 320000,
     createdAt: '2025-03-01T11:00:00+11:00',
+    icon: '🌧️',
   },
   {
     id: '14',
-    title: 'Will Warragamba Dam fall below 60% capacity in 2026?',
+    title: 'Warragamba Dam <60% in 2026?',
     description: 'Resolves Yes if Warragamba Dam storage falls below 60% capacity at any point during 2026, as reported by WaterNSW.',
     category: 'climate',
     status: 'open',
@@ -204,10 +237,11 @@ const mockMarkets: Market[] = [
     volume: 560000,
     liquidity: 210000,
     createdAt: '2025-02-15T09:00:00+11:00',
+    icon: '💧',
   },
   {
     id: '15',
-    title: 'Will Australia record its hottest year on record in 2026?',
+    title: 'Hottest year on record 2026?',
     description: "Resolves Yes if the Bureau of Meteorology declares 2026 as Australia's hottest year on record in their annual climate statement.",
     category: 'climate',
     status: 'open',
@@ -218,6 +252,7 @@ const mockMarkets: Market[] = [
     volume: 1120000,
     liquidity: 430000,
     createdAt: '2025-01-12T10:00:00+11:00',
+    icon: '🌡️',
   },
 ];
 
@@ -262,6 +297,95 @@ const mockPositions: Position[] = [
   },
 ];
 
+const mockComments: Comment[] = [
+  {
+    id: 'comment-1',
+    userId: 'user-2',
+    username: 'PunterPete',
+    marketId: '1',
+    content: 'Labor looking strong in the polls. This feels like easy money.',
+    position: { side: 'yes', marketTitle: 'Federal Election' },
+    likes: 12,
+    replies: [
+      {
+        id: 'comment-1-1',
+        userId: 'user-3',
+        username: 'SkepticalSam',
+        marketId: '1',
+        content: 'Polls were wrong last time. Coalition could surprise us again.',
+        likes: 5,
+        replies: [],
+        createdAt: '2026-01-28T14:30:00+10:00',
+      },
+    ],
+    createdAt: '2026-01-28T10:15:00+10:00',
+  },
+  {
+    id: 'comment-2',
+    userId: 'user-4',
+    username: 'PoliticoAU',
+    marketId: '1',
+    content: 'The economy is the key issue. Watch the cost of living debate closely.',
+    position: { side: 'no', marketTitle: 'Federal Election' },
+    likes: 8,
+    replies: [],
+    createdAt: '2026-01-27T16:45:00+10:00',
+  },
+  {
+    id: 'comment-3',
+    userId: 'user-5',
+    username: 'SportsGuru',
+    marketId: '4',
+    content: 'Djokovic has never lost to Sinner in a Grand Slam final. History favours the GOAT.',
+    position: { side: 'yes', marketTitle: 'Australian Open Final' },
+    likes: 24,
+    replies: [],
+    createdAt: '2026-01-26T08:00:00+11:00',
+  },
+  {
+    id: 'comment-4',
+    userId: 'user-6',
+    username: 'TennisFan99',
+    marketId: '4',
+    content: 'Sinner has been in incredible form. His backhand is unstoppable right now.',
+    position: { side: 'no', marketTitle: 'Australian Open Final' },
+    likes: 18,
+    replies: [],
+    createdAt: '2026-01-25T19:30:00+11:00',
+  },
+];
+
+const mockMarketRules: Record<string, MarketRules> = {
+  '1': {
+    summary: 'This market resolves to Yes if the Australian Labor Party wins the majority of seats in the House of Representatives at the next Federal Election. The market resolves to No if the Liberal-National Coalition wins.',
+    resolutionSource: 'Australian Electoral Commission (AEC)',
+    resolutionDetails: 'Resolution will be based on the official results published by the AEC. If neither major party wins a majority, resolution will be based on which party forms government.',
+    timeline: {
+      tradingCloses: 'When polls close on election day',
+      resolutionExpected: 'Within 7 days of election day',
+    },
+    prohibitions: [
+      'Members of Parliament and their immediate staff',
+      'AEC officials and contractors',
+      'Persons with non-public information about election outcomes',
+    ],
+  },
+  '4': {
+    summary: 'This market resolves to Yes if Novak Djokovic wins the Australian Open 2026 Men\'s Singles Final. Resolves to No if Jannik Sinner wins.',
+    resolutionSource: 'Tennis Australia / ATP Official Results',
+    resolutionDetails: 'Resolution based on the official match result. If the match is not completed, the player who advances will be considered the winner.',
+    timeline: {
+      tradingCloses: 'At the start of the final match',
+      resolutionExpected: 'Within 24 hours of match completion',
+    },
+    prohibitions: [
+      'Players, coaches, and team members involved in the tournament',
+      'Tournament officials and referees',
+      'Persons with material non-public information',
+    ],
+  },
+};
+
 interface AppState {
   // Data
   markets: Market[];
@@ -269,13 +393,18 @@ interface AppState {
   orders: Order[];
   positions: Position[];
   trades: Trade[];
+  comments: Comment[];
 
   // Actions
   getMarket: (id: string) => Market | undefined;
   getMarketsByCategory: (category: string) => Market[];
+  getRelatedMarkets: (marketId: string, limit?: number) => Market[];
   getOrderBook: (marketId: string) => OrderBook;
   getUserPositions: () => Position[];
   getUserOrders: () => Order[];
+  getMarketComments: (marketId: string) => Comment[];
+  getMarketRules: (marketId: string) => MarketRules | undefined;
+  addComment: (marketId: string, content: string) => Comment;
 
   // Trading actions
   placeOrder: (
@@ -300,6 +429,7 @@ export const useStore = create<AppState>((set, get) => ({
   orders: [],
   positions: mockPositions,
   trades: [],
+  comments: mockComments,
 
   getMarket: (id: string) => {
     return get().markets.find(m => m.id === id);
@@ -308,6 +438,58 @@ export const useStore = create<AppState>((set, get) => ({
   getMarketsByCategory: (category: string) => {
     if (category === 'all') return get().markets;
     return get().markets.filter(m => m.category === category);
+  },
+
+  getRelatedMarkets: (marketId: string, limit = 3) => {
+    const market = get().getMarket(marketId);
+    if (!market) return [];
+    return get().markets
+      .filter(m => m.id !== marketId && m.category === market.category)
+      .slice(0, limit);
+  },
+
+  getMarketComments: (marketId: string) => {
+    return get().comments.filter(c => c.marketId === marketId);
+  },
+
+  getMarketRules: (marketId: string) => {
+    return mockMarketRules[marketId] || {
+      summary: 'Resolution rules for this market will be determined based on official sources.',
+      resolutionSource: 'Official Government/Organization Sources',
+      resolutionDetails: 'The market will resolve based on publicly verifiable information from authoritative sources.',
+      timeline: {
+        tradingCloses: 'At the event deadline',
+        resolutionExpected: 'Within 7 days of the event',
+      },
+      prohibitions: [
+        'Persons with material non-public information',
+        'Government officials directly involved in the outcome',
+      ],
+    };
+  },
+
+  addComment: (marketId: string, content: string) => {
+    const user = get().user;
+    const position = get().positions.find(p => p.marketId === marketId && p.userId === user?.id);
+    const market = get().getMarket(marketId);
+
+    const newComment: Comment = {
+      id: uuidv4(),
+      userId: user?.id || 'anonymous',
+      username: user?.username || 'Anonymous',
+      marketId,
+      content,
+      position: position ? { side: position.side, marketTitle: market?.title } : undefined,
+      likes: 0,
+      replies: [],
+      createdAt: new Date().toISOString(),
+    };
+
+    set(state => ({
+      comments: [newComment, ...state.comments],
+    }));
+
+    return newComment;
   },
 
   getOrderBook: (marketId: string) => {
