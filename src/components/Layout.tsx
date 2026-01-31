@@ -44,7 +44,21 @@ export default function Layout({ children }: LayoutProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2.5">
+              {/* Logo Icon - Checkmark in rounded square */}
+              <div className="w-7 h-7 bg-foremark-lime rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg
+                  className="w-4 h-4 text-foremark-green"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
               <div className="flex flex-col">
                 <span className="text-2xl text-white foremark-logo">FOREMARK</span>
                 <span className="text-[10px] text-white/60 tracking-wider uppercase -mt-1 hidden sm:block">Australia's prediction market</span>
@@ -255,7 +269,21 @@ export default function Layout({ children }: LayoutProps) {
       <footer className="hidden md:block border-t border-gray-200 bg-white mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
+              {/* Footer Logo Icon */}
+              <div className="w-5 h-5 bg-foremark-lime rounded flex items-center justify-center flex-shrink-0">
+                <svg
+                  className="w-3 h-3 text-foremark-green"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
               <span className="text-lg font-bold text-foremark-green foremark-logo">FOREMARK</span>
               <span className="text-gray-400 text-sm">| Prediction Markets</span>
             </div>
