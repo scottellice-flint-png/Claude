@@ -17,12 +17,6 @@ export default function Layout({ children }: LayoutProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const navItems = [
-    { href: '/', label: 'Markets' },
-    { href: '/portfolio', label: 'Positions' },
-    { href: '/profile', label: 'Profile' },
-  ];
-
   const formatBalance = (cents: number) => {
     return new Intl.NumberFormat('en-AU', {
       style: 'currency',
@@ -231,39 +225,6 @@ export default function Layout({ children }: LayoutProps) {
                 {/* Dropdown Menu */}
                 {isMenuOpen && (
                   <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
-                    {/* Navigation Items */}
-                    <div className="py-2 border-b border-gray-100">
-                      {navItems.map((item) => (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => setIsMenuOpen(false)}
-                          className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${
-                            router.pathname === item.href
-                              ? 'bg-foremark-lime/20 text-foremark-green font-semibold'
-                              : 'text-gray-700 hover:bg-gray-50'
-                          }`}
-                        >
-                          {item.label === 'Markets' && (
-                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                            </svg>
-                          )}
-                          {item.label === 'Positions' && (
-                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
-                          )}
-                          {item.label === 'Profile' && (
-                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                          )}
-                          {item.label}
-                        </Link>
-                      ))}
-                    </div>
-
                     {/* Quick Actions */}
                     <div className="p-4 border-b border-gray-100">
                       <div className="flex justify-around">
@@ -317,7 +278,7 @@ export default function Layout({ children }: LayoutProps) {
                         Account & security
                       </Link>
                       <Link
-                        href="/orders"
+                        href="/portfolio"
                         onClick={() => setIsMenuOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors"
                       >
