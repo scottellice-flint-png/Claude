@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/store';
 import { Market, SportType, SportSubcategory } from '@/types';
+import CategoryTabs from '@/components/CategoryTabs';
 
 // Sports configuration with labels and icons
 const SPORTS_CONFIG: { id: SportType | 'all'; label: string; icon: string }[] = [
@@ -30,6 +31,7 @@ const SUBCATEGORIES: { id: SportSubcategory | 'all'; label: string }[] = [
 export default function SportsPage() {
   const [selectedSport, setSelectedSport] = useState<SportType | 'all'>('all');
   const [selectedSubcategory, setSelectedSubcategory] = useState<SportSubcategory | 'all'>('all');
+  const [isSportModalOpen, setIsSportModalOpen] = useState(false);
 
   const markets = useStore((state) => state.markets);
 
@@ -62,110 +64,187 @@ export default function SportsPage() {
     return counts;
   }, [markets]);
 
-  const formatVolume = (volume: number) => {
-    if (volume >= 1000000) {
-      return `$${(volume / 1000000).toFixed(1)}M`;
-    }
-    return `$${(volume / 1000).toFixed(0)}K`;
+  const getSelectedSportLabel = () => {
+    const sport = SPORTS_CONFIG.find((s) => s.id === selectedSport);
+    return sport?.label || 'Sports';
+  };
+
+  const handleSportSelect = (sportId: SportType | 'all') => {
+    setSelectedSport(sportId);
+    setIsSportModalOpen(false);
   };
 
   return (
-    <div className="flex gap-6 -mx-4 sm:-mx-6 lg:-mx-8">
-      {/* Left Sidebar - Sports List */}
-      <aside className="hidden lg:block w-56 flex-shrink-0 pl-4 sm:pl-6 lg:pl-8">
-        <div className="sticky top-20">
-          <nav className="space-y-1">
-            {SPORTS_CONFIG.map((sport) => {
-              const isActive = selectedSport === sport.id;
-              const count = sportCounts[sport.id] || 0;
+    <div className="space-y-4">
+      {/* Global Category Tabs */}
+      <CategoryTabs activeCategory="sports" />
 
-              // Only show sports with markets
-              if (sport.id !== 'all' && count === 0) return null;
+      {/* Sports Content */}
+      <div className="flex gap-6">
+        {/* Left Sidebar - Sports List (Desktop) */}
+        <aside className="hidden lg:block w-56 flex-shrink-0">
+          <div className="sticky top-20">
+            <nav className="space-y-1">
+              {SPORTS_CONFIG.map((sport) => {
+                const isActive = selectedSport === sport.id;
+                const count = sportCounts[sport.id] || 0;
 
-              return (
-                <button
-                  key={sport.id}
-                  onClick={() => setSelectedSport(sport.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-foremark-lime text-gray-900'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <span>{sport.icon}</span>
-                    <span>{sport.label}</span>
-                  </span>
-                  <span className={`text-xs ${isActive ? 'text-gray-700' : 'text-gray-400'}`}>
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-      </aside>
+                // Only show sports with markets
+                if (sport.id !== 'all' && count === 0) return null;
 
-      {/* Main Content */}
-      <main className="flex-1 min-w-0 pr-4 sm:pr-6 lg:pr-8">
-        {/* Mobile Sport Selector */}
-        <div className="lg:hidden mb-4">
-          <select
-            value={selectedSport}
-            onChange={(e) => setSelectedSport(e.target.value as SportType | 'all')}
-            className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-foremark-green"
-          >
-            {SPORTS_CONFIG.map((sport) => {
-              const count = sportCounts[sport.id] || 0;
-              if (sport.id !== 'all' && count === 0) return null;
-              return (
-                <option key={sport.id} value={sport.id}>
-                  {sport.icon} {sport.label} ({count})
-                </option>
-              );
-            })}
-          </select>
-        </div>
+                return (
+                  <button
+                    key={sport.id}
+                    onClick={() => setSelectedSport(sport.id)}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'bg-foremark-lime text-gray-900'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span>{sport.icon}</span>
+                      <span>{sport.label}</span>
+                    </span>
+                    <span className={`text-xs ${isActive ? 'text-gray-700' : 'text-gray-400'}`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </aside>
 
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">Sports</h1>
-        </div>
-
-        {/* Subcategory Chips */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-4 border-b border-gray-200">
-          {SUBCATEGORIES.map((subcat) => (
+        {/* Main Content */}
+        <main className="flex-1 min-w-0">
+          {/* Mobile Sports Header with Dropdown Trigger */}
+          <div className="lg:hidden mb-4">
             <button
-              key={subcat.id}
-              onClick={() => setSelectedSubcategory(subcat.id)}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                selectedSubcategory === subcat.id
-                  ? 'bg-foremark-lime text-gray-900'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              onClick={() => setIsSportModalOpen(true)}
+              className="flex items-center gap-2 text-2xl font-bold text-gray-900"
             >
-              {subcat.label}
+              <span>{getSelectedSportLabel()}</span>
+              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
-          ))}
-        </div>
+          </div>
 
-        {/* Markets List */}
-        {filteredMarkets.length > 0 ? (
-          <div className="space-y-4">
-            {filteredMarkets.map((market) => (
-              <SportsMarketCard key={market.id} market={market} />
+          {/* Desktop Header */}
+          <div className="hidden lg:flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {selectedSport === 'all' ? 'Sports' : getSelectedSportLabel()}
+            </h1>
+          </div>
+
+          {/* Subcategory Chips */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-4 border-b border-gray-200">
+            {SUBCATEGORIES.map((subcat) => (
+              <button
+                key={subcat.id}
+                onClick={() => setSelectedSubcategory(subcat.id)}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  selectedSubcategory === subcat.id
+                    ? 'bg-foremark-lime text-gray-900'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {subcat.label}
+              </button>
             ))}
           </div>
-        ) : (
-          <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
-            <div className="text-5xl mb-4">🏆</div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">No markets found</h3>
-            <p className="text-gray-500">
-              Try selecting a different sport or category
-            </p>
+
+          {/* Markets List */}
+          {filteredMarkets.length > 0 ? (
+            <div className="space-y-4">
+              {filteredMarkets.map((market) => (
+                <SportsMarketCard key={market.id} market={market} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
+              <div className="text-5xl mb-4">🏆</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">No markets found</h3>
+              <p className="text-gray-500">
+                Try selecting a different sport or category
+              </p>
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* Mobile Sports Modal */}
+      {isSportModalOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setIsSportModalOpen(false)}
+          />
+
+          {/* Modal */}
+          <div className="absolute inset-x-0 bottom-0 bg-white rounded-t-2xl max-h-[80vh] overflow-hidden animate-slide-up">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
+              <button
+                onClick={() => setIsSportModalOpen(false)}
+                className="p-1"
+              >
+                <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <h2 className="text-lg font-semibold text-gray-900">Sports</h2>
+              <div className="w-6" /> {/* Spacer for centering */}
+            </div>
+
+            {/* Sports List */}
+            <div className="overflow-y-auto max-h-[calc(80vh-60px)]">
+              {SPORTS_CONFIG.map((sport) => {
+                const count = sportCounts[sport.id] || 0;
+                const isActive = selectedSport === sport.id;
+
+                // Only show sports with markets
+                if (sport.id !== 'all' && count === 0) return null;
+
+                return (
+                  <button
+                    key={sport.id}
+                    onClick={() => handleSportSelect(sport.id)}
+                    className={`w-full flex items-center justify-between px-4 py-4 border-b border-gray-100 transition-colors ${
+                      isActive ? 'bg-foremark-lime/20' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className={`text-base ${isActive ? 'font-semibold text-foremark-green' : 'text-gray-900'}`}>
+                      {sport.label}
+                    </span>
+                    {count > 0 && (
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        )}
-      </main>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes slide-up {
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0);
+          }
+        }
+        .animate-slide-up {
+          animation: slide-up 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 }
