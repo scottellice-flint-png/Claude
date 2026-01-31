@@ -9,14 +9,30 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedTrending, setSelectedTrending] = useState('for-you');
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   const markets = useStore((state) => state.markets);
   const updateMarketPrice = useStore((state) => state.updateMarketPrice);
 
-  // Featured market (first one with isFeatured or highest volume)
-  const featuredMarket = useMemo(() => {
-    return markets.find(m => m.isFeatured) || markets.sort((a, b) => b.volume - a.volume)[0];
+  // Featured markets for carousel (top 5 by volume)
+  const featuredMarkets = useMemo(() => {
+    const sorted = [...markets].sort((a, b) => b.volume - a.volume);
+    return sorted.slice(0, 5);
   }, [markets]);
+
+  const currentFeaturedMarket = featuredMarkets[currentSlide];
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % featuredMarkets.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + featuredMarkets.length) % featuredMarkets.length);
+  };
+
+  const goToSlide = (index: number) => {
+    setCurrentSlide(index);
+  };
 
   // Filter markets
   const filteredMarkets = useMemo(() => {
@@ -108,65 +124,103 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Featured Market Hero */}
-      {featuredMarket && (
-        <Link href={`/market/${featuredMarket.id}`}>
-          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left: Market Info */}
-              <div>
-                <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                  <span className="uppercase">{featuredMarket.category}</span>
-                </div>
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
-                  {featuredMarket.title}
-                </h2>
+      {/* Featured Market Hero Carousel - Only show on "All" tab */}
+      {selectedCategory === 'all' && currentFeaturedMarket && (
+        <div className="relative">
+          <Link href={`/market/${currentFeaturedMarket.id}`}>
+            <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left: Market Info */}
+                <div>
+                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                    <span className="uppercase">{currentFeaturedMarket.category}</span>
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">
+                    {currentFeaturedMarket.title}
+                  </h2>
 
-                {/* Outcomes */}
-                {featuredMarket.outcomes ? (
-                  <div className="space-y-3">
-                    {featuredMarket.outcomes.slice(0, 2).map((outcome) => (
-                      <div key={outcome.id} className="flex items-center justify-between">
-                        <span className="text-gray-700">{outcome.name}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-gray-900">{outcome.probability}%</span>
-                          <button className="px-3 py-1 text-xs font-semibold rounded bg-foremark-lime text-gray-900 hover:bg-foremark-lime-dark">
-                            Yes
-                          </button>
-                          <button className="px-3 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-700 hover:bg-gray-200">
-                            No
-                          </button>
+                  {/* Outcomes */}
+                  {currentFeaturedMarket.outcomes ? (
+                    <div className="space-y-3">
+                      {currentFeaturedMarket.outcomes.slice(0, 2).map((outcome) => (
+                        <div key={outcome.id} className="flex items-center justify-between">
+                          <span className="text-gray-700">{outcome.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-gray-900">{outcome.probability}%</span>
+                            <button className="px-3 py-1 text-xs font-semibold rounded bg-foremark-lime text-gray-900 hover:bg-foremark-lime-dark">
+                              Yes
+                            </button>
+                            <button className="px-3 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-700 hover:bg-gray-200">
+                              No
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-700">Chance</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-gray-900">{featuredMarket.yesPrice}%</span>
-                      <button className="px-3 py-1 text-xs font-semibold rounded bg-foremark-lime text-gray-900">
-                        Yes {featuredMarket.yesPrice}¢
-                      </button>
-                      <button className="px-3 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-700">
-                        No {featuredMarket.noPrice}¢
-                      </button>
+                      ))}
                     </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-700">Chance</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-gray-900">{currentFeaturedMarket.yesPrice}%</span>
+                        <button className="px-3 py-1 text-xs font-semibold rounded bg-foremark-lime text-gray-900">
+                          Yes {currentFeaturedMarket.yesPrice}¢
+                        </button>
+                        <button className="px-3 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-700">
+                          No {currentFeaturedMarket.noPrice}¢
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="text-sm text-gray-500 mt-4">
+                    {formatVolume(currentFeaturedMarket.volume)} volume
                   </div>
-                )}
-
-                <div className="text-sm text-gray-500 mt-4">
-                  {formatVolume(featuredMarket.volume)} volume
                 </div>
-              </div>
 
-              {/* Right: Mini Chart */}
-              <div className="bg-gray-50 rounded-lg p-4 flex items-center justify-center">
-                <MiniChart market={featuredMarket} />
+                {/* Right: Mini Chart */}
+                <div className="bg-gray-50 rounded-lg p-4 flex items-center justify-center">
+                  <MiniChart market={currentFeaturedMarket} />
+                </div>
               </div>
             </div>
+          </Link>
+
+          {/* Navigation Arrows */}
+          <button
+            onClick={(e) => { e.preventDefault(); prevSlide(); }}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors z-10"
+            aria-label="Previous market"
+          >
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button
+            onClick={(e) => { e.preventDefault(); nextSlide(); }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors z-10"
+            aria-label="Next market"
+          >
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+
+          {/* Indicator Dots */}
+          <div className="flex justify-center gap-2 mt-4">
+            {featuredMarkets.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  index === currentSlide
+                    ? 'bg-foremark-green'
+                    : 'bg-gray-300 hover:bg-gray-400'
+                }`}
+                aria-label={`Go to market ${index + 1}`}
+              />
+            ))}
           </div>
-        </Link>
+        </div>
       )}
 
       {/* Info Cards */}
