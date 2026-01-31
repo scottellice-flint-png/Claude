@@ -396,25 +396,6 @@ export default function Layout({ children }: LayoutProps) {
         {children}
       </main>
 
-      {/* Bottom Navigation - Mobile */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 safe-area-bottom z-50">
-        <div className="flex justify-around items-center h-16 px-4">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex-1 mx-1 py-2 text-center rounded-full text-sm font-semibold transition-all ${
-                router.pathname === item.href
-                  ? 'bg-gray-900 text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              {item.label.toUpperCase()}
-            </Link>
-          ))}
-        </div>
-      </nav>
-
       {/* Desktop Footer */}
       <footer className="hidden md:block border-t border-gray-200 bg-white mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -451,9 +432,6 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </div>
       </footer>
-
-      {/* Spacer for mobile bottom nav */}
-      <div className="md:hidden h-20"></div>
     </div>
   );
 }
