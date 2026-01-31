@@ -53,7 +53,7 @@ export default function PortfolioPage() {
       <div className="text-center py-16">
         <div className="text-6xl mb-4">🔒</div>
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Please log in</h2>
-        <p className="text-gray-500">You need to be logged in to view your portfolio.</p>
+        <p className="text-gray-500">You need to be logged in to view your positions.</p>
       </div>
     );
   }
@@ -94,7 +94,7 @@ export default function PortfolioPage() {
 
       {/* Tab Navigation */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-black text-gray-900 uppercase">My Portfolio</h2>
+        <h2 className="text-2xl font-black text-gray-900 uppercase">My Positions</h2>
         <div className="flex gap-2">
           <button
             onClick={() => setActiveTab('active')}
@@ -202,7 +202,7 @@ export default function PortfolioPage() {
         <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
           <div className="text-5xl mb-4">📊</div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">No positions yet</h3>
-          <p className="text-gray-500 mb-4">Start trading to build your portfolio</p>
+          <p className="text-gray-500 mb-4">Start trading to open your first position</p>
           <Link
             href="/"
             className="inline-flex items-center px-6 py-3 bg-foremark-lime text-gray-900 rounded-full font-bold hover:bg-foremark-lime-dark transition-colors"

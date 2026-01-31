@@ -15,7 +15,7 @@ export default function Layout({ children }: LayoutProps) {
 
   const navItems = [
     { href: '/', label: 'Markets' },
-    { href: '/portfolio', label: 'Portfolio' },
+    { href: '/portfolio', label: 'Positions' },
     { href: '/profile', label: 'Profile' },
   ];
 

@@ -92,10 +92,10 @@ export default function TradePanel({
       </div>
 
       <div className="p-5 space-y-5">
-        {/* Investment Amount */}
+        {/* Trade Amount */}
         <div>
           <label className="block text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
-            Investment Amount
+            Trade Amount
           </label>
           <div className="relative">
             <input

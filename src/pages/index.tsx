@@ -244,8 +244,8 @@ export default function Home() {
             </svg>
           </div>
           <div>
-            <p className="font-semibold text-gray-900 text-sm">Grow your portfolio</p>
-            <p className="text-xs text-gray-500">Earn on your predictions</p>
+            <p className="font-semibold text-gray-900 text-sm">Manage your positions</p>
+            <p className="text-xs text-gray-500">Trade on your predictions</p>
           </div>
         </div>
 
@@ -266,7 +266,7 @@ export default function Home() {
       <div className="relative">
         <input
           type="text"
-          placeholder="Search markets or portfolios"
+          placeholder="Search markets"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 pl-10 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-foremark-green focus:border-transparent"
