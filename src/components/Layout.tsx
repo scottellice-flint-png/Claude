@@ -10,8 +10,12 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const router = useRouter();
   const user = useStore((state) => state.user);
+  const markets = useStore((state) => state.markets);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const navItems = [
     { href: '/', label: 'Markets' },
@@ -37,14 +41,41 @@ export default function Layout({ children }: LayoutProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Focus search input when expanded on mobile
+  useEffect(() => {
+    if (isSearchExpanded && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchExpanded]);
+
+  // Handle search submission
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchExpanded(false);
+    }
+  };
+
+  // Filter markets for search suggestions
+  const searchResults = searchQuery.length >= 2
+    ? markets.filter(m =>
+        m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        m.description.toLowerCase().includes(searchQuery.toLowerCase())
+      ).slice(0, 5)
+    : [];
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <header className="bg-foremark-green sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2.5">
+          <div className="flex items-center justify-between h-16 gap-4">
+            {/* Logo - Hidden when search is expanded on mobile */}
+            <Link
+              href="/"
+              className={`flex items-center gap-2.5 flex-shrink-0 ${isSearchExpanded ? 'hidden sm:flex' : 'flex'}`}
+            >
               {/* Logo Icon - Checkmark in rounded square */}
               <div className="w-7 h-7 bg-foremark-lime rounded-lg flex items-center justify-center flex-shrink-0">
                 <svg
@@ -65,25 +96,111 @@ export default function Layout({ children }: LayoutProps) {
               </div>
             </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-1">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                    router.pathname === item.href
-                      ? 'bg-white/20 text-white'
-                      : 'text-white/80 hover:text-white hover:bg-white/10'
-                  }`}
+            {/* Search Bar - Desktop */}
+            <div className="hidden md:flex flex-1 max-w-md mx-4">
+              <form onSubmit={handleSearch} className="relative w-full">
+                <input
+                  type="text"
+                  placeholder="Search markets"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-white/10 border border-white/20 rounded-full px-4 py-2 pl-10 text-white placeholder-white/60 focus:outline-none focus:bg-white/20 focus:border-white/40 text-sm"
+                />
+                <svg
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/60"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+
+                {/* Search Results Dropdown */}
+                {searchResults.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
+                    {searchResults.map((market) => (
+                      <Link
+                        key={market.id}
+                        href={`/market/${market.id}`}
+                        onClick={() => setSearchQuery('')}
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+                      >
+                        <span className="text-xl">{market.icon || '📊'}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{market.title}</p>
+                          <p className="text-xs text-gray-500 capitalize">{market.category}</p>
+                        </div>
+                        <span className="text-sm font-semibold text-foremark-green">{market.yesPrice}%</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </form>
+            </div>
+
+            {/* Mobile Search - Expanded */}
+            {isSearchExpanded && (
+              <form onSubmit={handleSearch} className="flex-1 md:hidden">
+                <div className="relative">
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Search markets"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onBlur={() => {
+                      if (!searchQuery) {
+                        setTimeout(() => setIsSearchExpanded(false), 200);
+                      }
+                    }}
+                    className="w-full bg-white/10 border border-white/20 rounded-full px-4 py-2 pl-10 text-white placeholder-white/60 focus:outline-none focus:bg-white/20 focus:border-white/40 text-sm"
+                  />
+                  <svg
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/60"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setIsSearchExpanded(false);
+                    }}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </form>
+            )}
 
             {/* Right Side Actions */}
-            <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-1 sm:gap-2 flex-shrink-0 ${isSearchExpanded ? 'hidden sm:flex' : 'flex'}`}>
+              {/* Mobile Search Icon */}
+              <button
+                onClick={() => setIsSearchExpanded(true)}
+                className="md:hidden p-2 text-white/80 hover:text-white transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+
               {/* Deposit Button */}
               <button className="hidden sm:flex items-center gap-2 bg-foremark-lime text-gray-900 font-semibold px-4 py-2 rounded-full text-sm hover:bg-foremark-lime-dark transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,7 +211,7 @@ export default function Layout({ children }: LayoutProps) {
 
               {/* Notification Bell */}
               <button className="relative p-2 text-white/80 hover:text-white transition-colors">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
                 <span className="absolute top-1 right-1 w-2 h-2 bg-foremark-lime rounded-full"></span>
@@ -106,7 +223,7 @@ export default function Layout({ children }: LayoutProps) {
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                   className="p-2 text-white/80 hover:text-white transition-colors"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 </button>
@@ -114,6 +231,39 @@ export default function Layout({ children }: LayoutProps) {
                 {/* Dropdown Menu */}
                 {isMenuOpen && (
                   <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
+                    {/* Navigation Items */}
+                    <div className="py-2 border-b border-gray-100">
+                      {navItems.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setIsMenuOpen(false)}
+                          className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${
+                            router.pathname === item.href
+                              ? 'bg-foremark-lime/20 text-foremark-green font-semibold'
+                              : 'text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          {item.label === 'Markets' && (
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                            </svg>
+                          )}
+                          {item.label === 'Positions' && (
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                          )}
+                          {item.label === 'Profile' && (
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                          )}
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+
                     {/* Quick Actions */}
                     <div className="p-4 border-b border-gray-100">
                       <div className="flex justify-around">
