@@ -6,6 +6,21 @@ export type MarketCategory =
   | 'culture'
   | 'world';
 
+export type SportType =
+  | 'american-football'
+  | 'australian-rules'
+  | 'baseball'
+  | 'basketball'
+  | 'boxing'
+  | 'cricket'
+  | 'golf'
+  | 'rugby-league'
+  | 'rugby-union'
+  | 'soccer'
+  | 'tennis';
+
+export type SportSubcategory = 'games' | 'props' | 'futures' | 'awards';
+
 export type MarketStatus = 'open' | 'closed' | 'settled';
 
 export type OrderSide = 'yes' | 'no';
@@ -38,6 +53,9 @@ export interface Market {
   resolution?: 'yes' | 'no' | null;
   outcomes?: MarketOutcome[];
   isFeatured?: boolean;
+  // Sports-specific fields
+  sport?: SportType;
+  sportSubcategory?: SportSubcategory;
 }
 
 export interface Order {

@@ -62,13 +62,13 @@ export default function Home() {
   };
 
   const categories = [
-    { id: 'all', label: 'All' },
-    { id: 'politics', label: 'Politics' },
-    { id: 'sports', label: 'Sports' },
-    { id: 'culture', label: 'Culture' },
-    { id: 'economics', label: 'Economics' },
-    { id: 'climate', label: 'Climate' },
-    { id: 'world', label: 'World' },
+    { id: 'all', label: 'All', href: null },
+    { id: 'politics', label: 'Politics', href: null },
+    { id: 'sports', label: 'Sports', href: '/sports' },
+    { id: 'culture', label: 'Culture', href: null },
+    { id: 'economics', label: 'Economics', href: null },
+    { id: 'climate', label: 'Climate', href: null },
+    { id: 'world', label: 'World', href: null },
   ];
 
   const trendingTopics = [
@@ -84,22 +84,32 @@ export default function Home() {
     <div className="space-y-6">
       {/* Category Tabs */}
       <div className="flex items-center gap-1 border-b border-gray-200 -mx-4 px-4 overflow-x-auto">
-        {categories.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setSelectedCategory(cat.id)}
-            className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors relative ${
-              selectedCategory === cat.id
-                ? 'text-foremark-green'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {cat.label}
-            {selectedCategory === cat.id && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-foremark-green" />
-            )}
-          </button>
-        ))}
+        {categories.map((cat) =>
+          cat.href ? (
+            <Link
+              key={cat.id}
+              href={cat.href}
+              className="px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors relative text-gray-500 hover:text-gray-700"
+            >
+              {cat.label}
+            </Link>
+          ) : (
+            <button
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.id)}
+              className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors relative ${
+                selectedCategory === cat.id
+                  ? 'text-foremark-green'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {cat.label}
+              {selectedCategory === cat.id && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-foremark-green" />
+              )}
+            </button>
+          )
+        )}
       </div>
 
       {/* Explainer */}
