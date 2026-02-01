@@ -171,6 +171,15 @@ export default function MarketPage() {
             </div>
           </div>
 
+          {/* Mobile Trade Panel - appears right after chart */}
+          <div className="lg:hidden">
+            <TradePanel
+              market={market}
+              selectedSide={selectedSide}
+              onSideChange={setSelectedSide}
+            />
+          </div>
+
           {/* Rules Summary */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <button
@@ -405,8 +414,8 @@ export default function MarketPage() {
           </div>
         </div>
 
-        {/* Right Column - Trade Panel */}
-        <div className="lg:col-span-1">
+        {/* Right Column - Trade Panel (desktop only) */}
+        <div className="hidden lg:block lg:col-span-1">
           <div className="sticky top-20">
             <TradePanel
               market={market}
