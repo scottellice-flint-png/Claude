@@ -287,18 +287,26 @@ export default function Layout({ children }: LayoutProps) {
                         </svg>
                         Your activity
                       </Link>
-                      <button className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors">
+                      <Link
+                        href="/deposits"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
                         <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                         </svg>
                         Deposits
-                      </button>
-                      <button className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors">
+                      </Link>
+                      <Link
+                        href="/withdrawals"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
                         <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                         </svg>
                         Withdrawals
-                      </button>
+                      </Link>
                     </div>
 
                     {/* Divider */}

@@ -6,8 +6,8 @@ import { useStore } from '@/store';
 const NAV_ITEMS = [
   { id: 'account', label: 'Account & security', icon: 'shield', href: '/profile' },
   { id: 'activity', label: 'Your activity', icon: 'activity', href: '/portfolio' },
-  { id: 'deposits', label: 'Deposits', icon: 'deposit', href: '#' },
-  { id: 'withdrawals', label: 'Withdrawals', icon: 'withdrawal', href: '#' },
+  { id: 'deposits', label: 'Deposits', icon: 'deposit', href: '/deposits' },
+  { id: 'withdrawals', label: 'Withdrawals', icon: 'withdrawal', href: '/withdrawals' },
 ];
 
 type TwoFactorMethod = 'sms-email' | 'sms-only' | 'email-only' | 'authenticator';
