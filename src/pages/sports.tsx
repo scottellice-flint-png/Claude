@@ -14,6 +14,7 @@ const SPORTS_CONFIG: { id: SportType | 'all'; label: string; icon: string }[] = 
   { id: 'boxing', label: 'Boxing', icon: '🥊' },
   { id: 'cricket', label: 'Cricket', icon: '🏏' },
   { id: 'golf', label: 'Golf', icon: '⛳' },
+  { id: 'racing', label: 'Racing', icon: '🏇' },
   { id: 'rugby-league', label: 'Rugby League', icon: '🏈' },
   { id: 'rugby-union', label: 'Rugby Union', icon: '🏉' },
   { id: 'soccer', label: 'Soccer', icon: '⚽' },

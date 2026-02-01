@@ -14,6 +14,7 @@ export type SportType =
   | 'boxing'
   | 'cricket'
   | 'golf'
+  | 'racing'
   | 'rugby-league'
   | 'rugby-union'
   | 'soccer'
