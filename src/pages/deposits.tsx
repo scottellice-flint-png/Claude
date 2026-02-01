@@ -337,8 +337,8 @@ export default function DepositsPage() {
           </div>
         </div>
 
-        {/* Sidebar */}
-        <div className="lg:col-span-1 space-y-4">
+        {/* Sidebar (Desktop only) */}
+        <div className="hidden lg:block lg:col-span-1 space-y-4">
           {/* Benefits */}
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <p className="text-sm font-medium text-foremark-green mb-3">{benefits.timing}</p>

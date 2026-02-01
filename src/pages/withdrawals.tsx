@@ -203,8 +203,8 @@ export default function WithdrawalsPage() {
               </div>
             </div>
 
-            {/* Sidebar - Withdrawal Info */}
-            <div className="lg:col-span-1">
+            {/* Sidebar - Withdrawal Info (Desktop only) */}
+            <div className="hidden lg:block lg:col-span-1">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">Withdrawal Information</h3>
 
