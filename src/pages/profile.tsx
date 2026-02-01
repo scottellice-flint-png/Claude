@@ -16,8 +16,26 @@ type TwoFactorMethod = 'sms-email' | 'sms-only' | 'email-only' | 'authenticator'
 export default function ProfilePage() {
   const user = useStore((state) => state.user);
   const [twoFactorMethod, setTwoFactorMethod] = useState<TwoFactorMethod>('sms-email');
-  const [isVerified, setIsVerified] = useState(true);
+  const [isVerified] = useState(true);
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [showBreakModal, setShowBreakModal] = useState(false);
+  const [showLimitsModal, setShowLimitsModal] = useState(false);
+  const [showPasswordVisible, setShowPasswordVisible] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
+  const [marketingPrefs, setMarketingPrefs] = useState({
+    promotions: true,
+    updates: true,
+    research: false,
+  });
+  const [breakDuration, setBreakDuration] = useState('');
+  const [depositLimit, setDepositLimit] = useState({
+    daily: '',
+    weekly: '',
+    monthly: '',
+  });
 
   if (!user) {
     return (
@@ -101,30 +119,57 @@ export default function ProfilePage() {
           <h1 className="text-2xl font-bold text-gray-900">Account & security</h1>
         </div>
 
-        {/* Account Information Section */}
+        {/* Account Details Section */}
         <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="p-5 space-y-5">
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-foremark-green mb-1">Email</label>
-              <p className="text-gray-900">{user.email}</p>
+          <div className="p-5 space-y-4">
+            <h2 className="text-lg font-semibold text-gray-900">Account Details</h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Status */}
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">Status</label>
+                <p className="text-foremark-green font-medium">Verified</p>
+              </div>
+
+              {/* Name */}
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">Name</label>
+                <p className="text-gray-900">{user.username}</p>
+              </div>
+
+              {/* Account Number */}
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">Account Number</label>
+                <p className="text-gray-900">FM-{user.id.slice(0, 6).toUpperCase()}</p>
+              </div>
+
+              {/* Date of Birth */}
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">Date of Birth</label>
+                <p className="text-gray-900">••/••/1990</p>
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">Email</label>
+                <p className="text-gray-900">{user.email}</p>
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">Phone</label>
+                <p className="text-gray-900">+61 4•• ••• •89</p>
+              </div>
+
+              {/* Address */}
+              <div className="md:col-span-2">
+                <label className="block text-sm text-gray-500 mb-1">Address</label>
+                <p className="text-gray-900">••• ••••••• Street, Sydney NSW 2000</p>
+              </div>
             </div>
 
-            {/* Phone */}
-            <div>
-              <label className="block text-sm font-medium text-foremark-green mb-1">Phone</label>
-              <p className="text-gray-900">+61 4•• ••• •89</p>
-            </div>
-
-            {/* Deactivate Account */}
-            <button
-              onClick={() => setShowDeactivateModal(true)}
-              className="flex items-center gap-2 text-red-600 hover:text-red-700 font-medium text-sm"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-              </svg>
-              Deactivate your account
+            <button className="text-sm font-medium text-foremark-green hover:text-foremark-green-light">
+              View Details
             </button>
           </div>
         </section>
@@ -158,6 +203,94 @@ export default function ProfilePage() {
                 </button>
               </div>
             )}
+          </div>
+        </section>
+
+        {/* Change Password Section */}
+        <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="p-5">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h2>
+
+            <div className="space-y-4 max-w-md">
+              {/* Current Password */}
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">Current Password</label>
+                <div className="relative">
+                  <input
+                    type={showPasswordVisible.current ? 'text' : 'password'}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-foremark-green/20 focus:border-foremark-green"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordVisible(prev => ({ ...prev, current: !prev.current }))}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {showPasswordVisible.current ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      ) : (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      )}
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* New Password */}
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showPasswordVisible.new ? 'text' : 'password'}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-foremark-green/20 focus:border-foremark-green"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordVisible(prev => ({ ...prev, new: !prev.new }))}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {showPasswordVisible.new ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      ) : (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      )}
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">Confirm Password</label>
+                <div className="relative">
+                  <input
+                    type={showPasswordVisible.confirm ? 'text' : 'password'}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-foremark-green/20 focus:border-foremark-green"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordVisible(prev => ({ ...prev, confirm: !prev.confirm }))}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {showPasswordVisible.confirm ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      ) : (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      )}
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <button className="text-sm font-medium text-foremark-green hover:text-foremark-green-light">
+                Update Details
+              </button>
+            </div>
           </div>
         </section>
 
@@ -224,6 +357,61 @@ export default function ProfilePage() {
                 </label>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Marketing Preferences Section */}
+        <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="p-5">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Marketing Preferences</h2>
+            <p className="text-gray-600 text-sm mb-4">
+              Choose what communications you'd like to receive from Foremark.
+            </p>
+
+            <div className="space-y-3">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={marketingPrefs.promotions}
+                  onChange={(e) => setMarketingPrefs(prev => ({ ...prev, promotions: e.target.checked }))}
+                  className="mt-0.5 w-4 h-4 text-foremark-green rounded focus:ring-foremark-green"
+                />
+                <div>
+                  <p className="text-gray-900 font-medium">Promotions & Bonus offers</p>
+                  <p className="text-sm text-gray-500">Receive notifications about special promotions and bonus offers.</p>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={marketingPrefs.updates}
+                  onChange={(e) => setMarketingPrefs(prev => ({ ...prev, updates: e.target.checked }))}
+                  className="mt-0.5 w-4 h-4 text-foremark-green rounded focus:ring-foremark-green"
+                />
+                <div>
+                  <p className="text-gray-900 font-medium">Product updates</p>
+                  <p className="text-sm text-gray-500">Stay informed about new features and market additions.</p>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={marketingPrefs.research}
+                  onChange={(e) => setMarketingPrefs(prev => ({ ...prev, research: e.target.checked }))}
+                  className="mt-0.5 w-4 h-4 text-foremark-green rounded focus:ring-foremark-green"
+                />
+                <div>
+                  <p className="text-gray-900 font-medium">Research & Insights</p>
+                  <p className="text-sm text-gray-500">Receive market analysis and trading insights from our research team.</p>
+                </div>
+              </label>
+            </div>
+
+            <button className="mt-4 text-sm font-medium text-foremark-green hover:text-foremark-green-light">
+              Set Preferences
+            </button>
           </div>
         </section>
 
@@ -330,6 +518,91 @@ export default function ProfilePage() {
           </div>
         </section>
 
+        {/* Responsible Gambling Section */}
+        <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="p-5">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Responsible Gambling</h2>
+
+            {/* Set Limits */}
+            <div className="pb-4 border-b border-gray-100">
+              <h3 className="font-medium text-gray-900 mb-2">Set Limits</h3>
+              <p className="text-sm text-gray-600 mb-3">
+                You can control the amount you deposit by setting deposit limits. Limits will take effect immediately and can be reduced any time.
+              </p>
+              <button
+                onClick={() => setShowLimitsModal(true)}
+                className="px-4 py-2 bg-foremark-green text-white text-sm font-semibold rounded-lg hover:bg-foremark-green-light transition-colors"
+              >
+                Set Limit
+              </button>
+            </div>
+
+            {/* Take a Break */}
+            <div className="py-4 border-b border-gray-100">
+              <h3 className="font-medium text-gray-900 mb-2">Take a Break</h3>
+              <p className="text-sm text-gray-600 mb-2">
+                If you feel you need to take a break from betting online, take a break.
+              </p>
+              <p className="text-sm text-gray-500 mb-3">
+                <strong>Please Note:</strong> If you choose to take a break from your account, you will not be able to log into or affect any changes to your account until your break period has ended.
+              </p>
+              <button
+                onClick={() => setShowBreakModal(true)}
+                className="text-sm font-medium text-foremark-green hover:text-foremark-green-light"
+              >
+                Take a break
+              </button>
+            </div>
+
+            {/* Close Account */}
+            <div className="py-4 border-b border-gray-100">
+              <h3 className="font-medium text-gray-900 mb-2">Close Account</h3>
+              <p className="text-sm text-gray-600 mb-2">
+                Want to close your Foremark account?
+              </p>
+              <p className="text-sm text-gray-500 mb-3">
+                <strong>Please Note:</strong> When you close your account, you may re-open it at any time by contacting the Foremark Customer Service Team.
+              </p>
+              <button
+                onClick={() => setShowDeactivateModal(true)}
+                className="text-sm font-medium text-red-600 hover:text-red-700"
+              >
+                Close Account
+              </button>
+            </div>
+
+            {/* National Self Exclusion Register */}
+            <div className="py-4 border-b border-gray-100">
+              <h3 className="font-medium text-gray-900 mb-2">National Self Exclusion Register</h3>
+              <p className="text-sm text-gray-600 mb-3">
+                The National Self-Exclusion Register (BetStop) is a free service provided by the Australian Government that allows people to self-exclude from all licensed Australian online and phone wagering providers in a single process. Registering is quick and easy.
+              </p>
+              <a
+                href="https://www.betstop.gov.au"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-foremark-green hover:text-foremark-green-light"
+              >
+                Learn More
+              </a>
+            </div>
+
+            {/* Responsible Gambling Policy */}
+            <div className="pt-4">
+              <h3 className="font-medium text-gray-900 mb-2">Responsible Gambling Policy</h3>
+              <p className="text-sm text-gray-600 mb-3">
+                Please see our Responsible Gambling Policy for more information, including self-exclusion options.
+              </p>
+              <a
+                href="#"
+                className="text-sm font-medium text-foremark-green hover:text-foremark-green-light"
+              >
+                Responsible Gambling Policy
+              </a>
+            </div>
+          </div>
+        </section>
+
         {/* Mobile Navigation */}
         <nav className="lg:hidden bg-white rounded-xl border border-gray-200 overflow-hidden">
           {NAV_ITEMS.filter(item => item.id !== 'account').map((item) => (
@@ -355,14 +628,14 @@ export default function ProfilePage() {
         </button>
       </main>
 
-      {/* Deactivate Modal */}
+      {/* Deactivate/Close Account Modal */}
       {showDeactivateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowDeactivateModal(false)} />
           <div className="relative bg-white rounded-2xl p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Deactivate account?</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Close account?</h3>
             <p className="text-gray-600 mb-6">
-              This will permanently close your account and you'll lose access to your trading history and any open positions. This action cannot be undone.
+              This will close your Foremark account. You can re-open it at any time by contacting our Customer Service Team. Any open positions will need to be closed first.
             </p>
             <div className="flex gap-3">
               <button
@@ -372,7 +645,116 @@ export default function ProfilePage() {
                 Cancel
               </button>
               <button className="flex-1 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors">
-                Deactivate
+                Close Account
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Take a Break Modal */}
+      {showBreakModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowBreakModal(false)} />
+          <div className="relative bg-white rounded-2xl p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Take a Break</h3>
+            <p className="text-gray-600 mb-4">
+              Choose how long you'd like to take a break from Foremark. During this time, you won't be able to access your account.
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Duration</label>
+              <select
+                value={breakDuration}
+                onChange={(e) => setBreakDuration(e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-foremark-green/20 focus:border-foremark-green"
+              >
+                <option value="">Select duration</option>
+                <option value="24h">24 hours</option>
+                <option value="48h">48 hours</option>
+                <option value="7d">7 days</option>
+                <option value="30d">30 days</option>
+                <option value="90d">90 days</option>
+                <option value="6m">6 months</option>
+                <option value="1y">1 year</option>
+              </select>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowBreakModal(false)}
+                className="flex-1 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={!breakDuration}
+                className="flex-1 py-3 bg-foremark-green text-white rounded-lg font-semibold hover:bg-foremark-green-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Confirm Break
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Set Limits Modal */}
+      {showLimitsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowLimitsModal(false)} />
+          <div className="relative bg-white rounded-2xl p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Set Deposit Limits</h3>
+            <p className="text-gray-600 mb-4">
+              Set limits on how much you can deposit. Decreases take effect immediately; increases require a 7-day cooling-off period.
+            </p>
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Daily Limit</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                  <input
+                    type="number"
+                    value={depositLimit.daily}
+                    onChange={(e) => setDepositLimit(prev => ({ ...prev, daily: e.target.value }))}
+                    placeholder="No limit set"
+                    className="w-full pl-8 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-foremark-green/20 focus:border-foremark-green"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Weekly Limit</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                  <input
+                    type="number"
+                    value={depositLimit.weekly}
+                    onChange={(e) => setDepositLimit(prev => ({ ...prev, weekly: e.target.value }))}
+                    placeholder="No limit set"
+                    className="w-full pl-8 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-foremark-green/20 focus:border-foremark-green"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Limit</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                  <input
+                    type="number"
+                    value={depositLimit.monthly}
+                    onChange={(e) => setDepositLimit(prev => ({ ...prev, monthly: e.target.value }))}
+                    placeholder="No limit set"
+                    className="w-full pl-8 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-foremark-green/20 focus:border-foremark-green"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLimitsModal(false)}
+                className="flex-1 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button className="flex-1 py-3 bg-foremark-green text-white rounded-lg font-semibold hover:bg-foremark-green-light transition-colors">
+                Save Limits
               </button>
             </div>
           </div>
