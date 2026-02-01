@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import Layout from '@/components/Layout';
 import Link from 'next/link';
 
 type WithdrawalMethod = 'bank' | 'paypal';
@@ -23,8 +22,7 @@ export default function WithdrawalsPage() {
   };
 
   return (
-    <Layout>
-      <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 py-8">
           {/* Header */}
           <div className="mb-6">
@@ -312,6 +310,5 @@ export default function WithdrawalsPage() {
           </div>
         </div>
       </div>
-    </Layout>
   );
 }
