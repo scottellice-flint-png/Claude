@@ -234,7 +234,7 @@ export default function Home() {
           </div>
           <div>
             <p className="font-semibold text-gray-900 text-sm">Fund your account</p>
-            <p className="text-xs text-gray-500">Bank transfer, card, crypto</p>
+            <p className="text-xs text-gray-500">Bank transfer, card, PayPal</p>
           </div>
         </div>
       </div>
