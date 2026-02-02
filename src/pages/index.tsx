@@ -33,7 +33,6 @@ export default function Home() {
     }
   };
   const [selectedTrending, setSelectedTrending] = useState('for-you');
-  const [searchQuery, setSearchQuery] = useState('');
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const markets = useStore((state) => state.markets);
@@ -67,17 +66,8 @@ export default function Home() {
       filtered = filtered.filter((m) => m.category === selectedCategory);
     }
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (m) =>
-          m.title.toLowerCase().includes(query) ||
-          m.description.toLowerCase().includes(query)
-      );
-    }
-
     return [...filtered].sort((a, b) => b.volume - a.volume);
-  }, [markets, selectedCategory, searchQuery]);
+  }, [markets, selectedCategory]);
 
   const formatVolume = (volume: number) => {
     if (volume >= 1000000) {
@@ -224,68 +214,46 @@ export default function Home() {
         </div>
       )}
 
-      {/* Info Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-200">
-          <div className="w-10 h-10 bg-foremark-green/10 rounded-full flex items-center justify-center">
-            <svg className="w-5 h-5 text-foremark-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
+      {/* Info Cards - Only show on "All" tab */}
+      {selectedCategory === 'all' && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-200">
+            <div className="w-10 h-10 bg-foremark-green/10 rounded-full flex items-center justify-center">
+              <svg className="w-5 h-5 text-foremark-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900 text-sm">Secure & Transparent</p>
+              <p className="text-xs text-gray-500">Trade with confidence</p>
+            </div>
           </div>
-          <div>
-            <p className="font-semibold text-gray-900 text-sm">Secure & Transparent</p>
-            <p className="text-xs text-gray-500">Trade with confidence</p>
+
+          <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-200">
+            <div className="w-10 h-10 bg-foremark-lime/30 rounded-full flex items-center justify-center">
+              <svg className="w-5 h-5 text-foremark-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900 text-sm">Manage your positions</p>
+              <p className="text-xs text-gray-500">Trade on your predictions</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-200">
+            <div className="w-10 h-10 bg-foremark-green/10 rounded-full flex items-center justify-center">
+              <svg className="w-5 h-5 text-foremark-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900 text-sm">Fund your account</p>
+              <p className="text-xs text-gray-500">Bank transfer, card, PayPal</p>
+            </div>
           </div>
         </div>
-
-        <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-200">
-          <div className="w-10 h-10 bg-foremark-lime/30 rounded-full flex items-center justify-center">
-            <svg className="w-5 h-5 text-foremark-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-900 text-sm">Manage your positions</p>
-            <p className="text-xs text-gray-500">Trade on your predictions</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-200">
-          <div className="w-10 h-10 bg-foremark-green/10 rounded-full flex items-center justify-center">
-            <svg className="w-5 h-5 text-foremark-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-            </svg>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-900 text-sm">Fund your account</p>
-            <p className="text-xs text-gray-500">Bank transfer, card, PayPal</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Search */}
-      <div className="relative">
-        <input
-          type="text"
-          placeholder="Search markets"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 pl-10 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-foremark-green focus:border-transparent"
-        />
-        <svg
-          className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          />
-        </svg>
-      </div>
+      )}
 
       {/* Markets Grid */}
       {filteredMarkets.length > 0 ? (
