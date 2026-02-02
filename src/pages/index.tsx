@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useStore } from '@/store';
 import { Market } from '@/types';
@@ -6,8 +7,31 @@ import { useAllMarketsRealTimePrice } from '@/hooks/useRealTimePrice';
 import CategoryTabs from '@/components/CategoryTabs';
 
 export default function Home() {
+  const router = useRouter();
   useAllMarketsRealTimePrice(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
+
+  // Read category from URL query parameter
+  useEffect(() => {
+    if (router.isReady) {
+      const category = router.query.category as string;
+      if (category) {
+        setSelectedCategory(category);
+      } else {
+        setSelectedCategory('all');
+      }
+    }
+  }, [router.isReady, router.query.category]);
+
+  // Update URL when category changes (without full page reload)
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    if (category === 'all') {
+      router.push('/', undefined, { shallow: true });
+    } else {
+      router.push(`/?category=${category}`, undefined, { shallow: true });
+    }
+  };
   const [selectedTrending, setSelectedTrending] = useState('for-you');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -76,7 +100,7 @@ export default function Home() {
       {/* Category Tabs */}
       <CategoryTabs
         activeCategory={selectedCategory}
-        onCategoryChange={setSelectedCategory}
+        onCategoryChange={handleCategoryChange}
       />
 
       {/* Explainer */}
