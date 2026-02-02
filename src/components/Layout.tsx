@@ -196,12 +196,12 @@ export default function Layout({ children }: LayoutProps) {
               </button>
 
               {/* Deposit Button */}
-              <button className="hidden sm:flex items-center gap-2 bg-foremark-lime text-gray-900 font-semibold px-4 py-2 rounded-full text-sm hover:bg-foremark-lime-dark transition-colors">
+              <Link href="/deposits" className="hidden sm:flex items-center gap-2 bg-foremark-lime text-gray-900 font-semibold px-4 py-2 rounded-full text-sm hover:bg-foremark-lime-dark transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
                 Deposit
-              </button>
+              </Link>
 
               {/* Notification Bell */}
               <button className="relative p-2 text-white/80 hover:text-white transition-colors">
