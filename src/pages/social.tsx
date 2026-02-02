@@ -91,8 +91,32 @@ export default function SocialPage() {
     <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Social</h1>
-        <p className="text-gray-600">Follow other predictors and see their activity in your feed.</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Social</h1>
+            <p className="text-gray-600">Follow other predictors and see their activity in your feed.</p>
+          </div>
+          <div className="flex space-x-2">
+            <Link
+              href="/ideas"
+              className="flex items-center space-x-2 px-4 py-2 bg-[#C8E64C] text-[#0F4C4C] rounded-lg font-medium hover:bg-[#b8d63c] transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+              <span>Ideas</span>
+            </Link>
+            <Link
+              href="/chats"
+              className="flex items-center space-x-2 px-4 py-2 bg-[#0F4C4C] text-white rounded-lg font-medium hover:bg-[#0a3a3a] transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              <span>Chats</span>
+            </Link>
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}

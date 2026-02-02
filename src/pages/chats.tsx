@@ -274,8 +274,32 @@ export default function ChatsPage() {
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-[#0F4C4C]">Chats</h1>
-          <p className="text-gray-600">Message and share predictions with friends</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-[#0F4C4C]">Chats</h1>
+              <p className="text-gray-600">Message and share predictions with friends</p>
+            </div>
+            <div className="flex space-x-2">
+              <Link
+                href="/ideas"
+                className="flex items-center space-x-2 px-4 py-2 bg-[#C8E64C] text-[#0F4C4C] rounded-lg font-medium hover:bg-[#b8d63c] transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <span>Ideas</span>
+              </Link>
+              <Link
+                href="/social"
+                className="flex items-center space-x-2 px-4 py-2 bg-[#0F4C4C] text-white rounded-lg font-medium hover:bg-[#0a3a3a] transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span>Social</span>
+              </Link>
+            </div>
+          </div>
         </div>
 
         {/* Main Tabs */}
