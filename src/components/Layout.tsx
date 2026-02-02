@@ -17,6 +17,18 @@ export default function Layout({ children }: LayoutProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Mock profiles for search
+  const profiles = [
+    { id: '1', username: 'MelbourneTrader', avatar: '🦘', winRate: 68, followers: 1240 },
+    { id: '2', username: 'SydneyPredictor', avatar: '🌉', winRate: 72, followers: 890 },
+    { id: '3', username: 'BrisbaneBets', avatar: '☀️', winRate: 65, followers: 567 },
+    { id: '4', username: 'PerthPunter', avatar: '🌅', winRate: 71, followers: 432 },
+    { id: '5', username: 'AdelaidePro', avatar: '🍷', winRate: 69, followers: 321 },
+    { id: '6', username: 'HobartHero', avatar: '🏔️', winRate: 64, followers: 234 },
+    { id: '7', username: 'DarwinDave', avatar: '🐊', winRate: 67, followers: 189 },
+    { id: '8', username: 'CanberraCapper', avatar: '🏛️', winRate: 73, followers: 456 },
+  ];
+
   const formatBalance = (cents: number) => {
     return new Intl.NumberFormat('en-AU', {
       style: 'currency',
@@ -52,12 +64,21 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   // Filter markets for search suggestions
-  const searchResults = searchQuery.length >= 2
+  const marketResults = searchQuery.length >= 2
     ? markets.filter(m =>
         m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         m.description.toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 5)
+      ).slice(0, 4)
     : [];
+
+  // Filter profiles for search suggestions
+  const profileResults = searchQuery.length >= 2
+    ? profiles.filter(p =>
+        p.username.toLowerCase().includes(searchQuery.toLowerCase())
+      ).slice(0, 3)
+    : [];
+
+  const hasSearchResults = marketResults.length > 0 || profileResults.length > 0;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -95,7 +116,7 @@ export default function Layout({ children }: LayoutProps) {
               <form onSubmit={handleSearch} className="relative w-full">
                 <input
                   type="text"
-                  placeholder="Search markets"
+                  placeholder="Search markets or profiles"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-white/10 border border-white/20 rounded-full px-4 py-2 pl-10 text-white placeholder-white/60 focus:outline-none focus:bg-white/20 focus:border-white/40 text-sm"
@@ -115,23 +136,55 @@ export default function Layout({ children }: LayoutProps) {
                 </svg>
 
                 {/* Search Results Dropdown */}
-                {searchResults.length > 0 && (
+                {hasSearchResults && (
                   <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
-                    {searchResults.map((market) => (
-                      <Link
-                        key={market.id}
-                        href={`/market/${market.id}`}
-                        onClick={() => setSearchQuery('')}
-                        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
-                      >
-                        <span className="text-xl">{market.icon || '📊'}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{market.title}</p>
-                          <p className="text-xs text-gray-500 capitalize">{market.category}</p>
+                    {/* Markets Section */}
+                    {marketResults.length > 0 && (
+                      <>
+                        <div className="px-4 py-2 bg-gray-50 border-b border-gray-100">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Markets</p>
                         </div>
-                        <span className="text-sm font-semibold text-foremark-green">{market.yesPrice}%</span>
-                      </Link>
-                    ))}
+                        {marketResults.map((market) => (
+                          <Link
+                            key={market.id}
+                            href={`/market/${market.id}`}
+                            onClick={() => setSearchQuery('')}
+                            className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+                          >
+                            <span className="text-xl">{market.icon || '📊'}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{market.title}</p>
+                              <p className="text-xs text-gray-500 capitalize">{market.category}</p>
+                            </div>
+                            <span className="text-sm font-semibold text-foremark-green">{market.yesPrice}%</span>
+                          </Link>
+                        ))}
+                      </>
+                    )}
+
+                    {/* Profiles Section */}
+                    {profileResults.length > 0 && (
+                      <>
+                        <div className="px-4 py-2 bg-gray-50 border-b border-gray-100">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Profiles</p>
+                        </div>
+                        {profileResults.map((profile) => (
+                          <Link
+                            key={profile.id}
+                            href={`/profile/${profile.username}`}
+                            onClick={() => setSearchQuery('')}
+                            className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+                          >
+                            <span className="text-xl">{profile.avatar}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900">{profile.username}</p>
+                              <p className="text-xs text-gray-500">{profile.followers.toLocaleString()} followers</p>
+                            </div>
+                            <span className="text-sm font-semibold text-foremark-green">{profile.winRate}% win</span>
+                          </Link>
+                        ))}
+                      </>
+                    )}
                   </div>
                 )}
               </form>
@@ -144,7 +197,7 @@ export default function Layout({ children }: LayoutProps) {
                   <input
                     ref={searchInputRef}
                     type="text"
-                    placeholder="Search markets"
+                    placeholder="Search markets or profiles"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onBlur={() => {
@@ -179,6 +232,65 @@ export default function Layout({ children }: LayoutProps) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
+
+                  {/* Mobile Search Results Dropdown */}
+                  {hasSearchResults && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 max-h-80 overflow-y-auto">
+                      {/* Markets Section */}
+                      {marketResults.length > 0 && (
+                        <>
+                          <div className="px-4 py-2 bg-gray-50 border-b border-gray-100">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Markets</p>
+                          </div>
+                          {marketResults.map((market) => (
+                            <Link
+                              key={market.id}
+                              href={`/market/${market.id}`}
+                              onClick={() => {
+                                setSearchQuery('');
+                                setIsSearchExpanded(false);
+                              }}
+                              className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+                            >
+                              <span className="text-xl">{market.icon || '📊'}</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">{market.title}</p>
+                                <p className="text-xs text-gray-500 capitalize">{market.category}</p>
+                              </div>
+                              <span className="text-sm font-semibold text-foremark-green">{market.yesPrice}%</span>
+                            </Link>
+                          ))}
+                        </>
+                      )}
+
+                      {/* Profiles Section */}
+                      {profileResults.length > 0 && (
+                        <>
+                          <div className="px-4 py-2 bg-gray-50 border-b border-gray-100">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Profiles</p>
+                          </div>
+                          {profileResults.map((profile) => (
+                            <Link
+                              key={profile.id}
+                              href={`/profile/${profile.username}`}
+                              onClick={() => {
+                                setSearchQuery('');
+                                setIsSearchExpanded(false);
+                              }}
+                              className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+                            >
+                              <span className="text-xl">{profile.avatar}</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900">{profile.username}</p>
+                                <p className="text-xs text-gray-500">{profile.followers.toLocaleString()} followers</p>
+                              </div>
+                              <span className="text-sm font-semibold text-foremark-green">{profile.winRate}% win</span>
+                            </Link>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </form>
             )}
