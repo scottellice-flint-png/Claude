@@ -26,13 +26,15 @@ export default function Home() {
   // Update URL when category changes (without full page reload)
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
+    // Reset subcategory when category changes
+    setSelectedSubcategory(category === 'all' ? 'for-you' : 'all');
     if (category === 'all') {
       router.push('/', undefined, { shallow: true });
     } else {
       router.push(`/?category=${category}`, undefined, { shallow: true });
     }
   };
-  const [selectedTrending, setSelectedTrending] = useState('for-you');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('for-you');
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const markets = useStore((state) => state.markets);
@@ -58,17 +60,6 @@ export default function Home() {
     setCurrentSlide(index);
   };
 
-  // Filter markets
-  const filteredMarkets = useMemo(() => {
-    let filtered = markets;
-
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter((m) => m.category === selectedCategory);
-    }
-
-    return [...filtered].sort((a, b) => b.volume - a.volume);
-  }, [markets, selectedCategory]);
-
   const formatVolume = (volume: number) => {
     if (volume >= 1000000) {
       return `$${(volume / 1000000).toFixed(1)}M`;
@@ -76,14 +67,90 @@ export default function Home() {
     return `$${(volume / 1000).toFixed(0)}K`;
   };
 
-  const trendingTopics = [
-    { id: 'for-you', label: 'For you' },
-    { id: 'federal-election', label: 'Federal Election' },
-    { id: 'aus-open', label: 'Australian Open' },
-    { id: 'rba', label: 'RBA Rates' },
-    { id: 'afl', label: 'AFL' },
-    { id: 'oscars', label: 'Oscars' },
-  ];
+  // Category-specific subcategories with keywords for filtering
+  const categorySubcategories: Record<string, { id: string; label: string; keywords: string[] }[]> = {
+    all: [
+      { id: 'for-you', label: 'For you', keywords: [] },
+      { id: 'federal-election', label: 'Federal Election', keywords: ['election', 'vote', 'labor', 'coalition', 'liberal', 'greens'] },
+      { id: 'rba', label: 'RBA Rates', keywords: ['rba', 'interest rate', 'cash rate', 'reserve bank'] },
+      { id: 'oscars', label: 'Oscars', keywords: ['oscar', 'academy award', 'best picture', 'best actor'] },
+      { id: 'afl', label: 'AFL', keywords: ['afl', 'premiership', 'brownlow', 'football'] },
+      { id: 'climate', label: 'Climate', keywords: ['temperature', 'weather', 'emissions', 'climate'] },
+    ],
+    politics: [
+      { id: 'all', label: 'All', keywords: [] },
+      { id: 'federal-election', label: 'Federal Election', keywords: ['election', 'vote', 'voter', 'seat', 'ballot', 'writ'] },
+      { id: 'leadership', label: 'Leadership', keywords: ['prime minister', 'albanese', 'dutton', 'leader', 'cabinet', 'minister'] },
+      { id: 'legislation', label: 'Legislation', keywords: ['tax', 'stage 3', 'bill', 'legislation', 'parliament', 'amend'] },
+      { id: 'policy', label: 'Policy', keywords: ['housing', 'safeguard', 'target', 'policy', 'reform'] },
+      { id: 'state', label: 'State Politics', keywords: ['nsw', 'victoria', 'queensland', 'state', 'premier'] },
+    ],
+    economics: [
+      { id: 'all', label: 'All', keywords: [] },
+      { id: 'rba', label: 'RBA', keywords: ['rba', 'reserve bank', 'cash rate', 'interest rate', 'monetary'] },
+      { id: 'inflation', label: 'Inflation', keywords: ['inflation', 'cpi', 'price', 'cost of living'] },
+      { id: 'employment', label: 'Employment', keywords: ['unemployment', 'job', 'employment', 'wage', 'labour'] },
+      { id: 'growth', label: 'Growth', keywords: ['gdp', 'growth', 'recession', 'economy'] },
+      { id: 'housing', label: 'Housing', keywords: ['housing', 'property', 'house price', 'mortgage', 'rent'] },
+      { id: 'markets', label: 'Markets', keywords: ['asx', 'stock', 'share', 'market', 'dollar', 'currency'] },
+    ],
+    culture: [
+      { id: 'all', label: 'All', keywords: [] },
+      { id: 'oscars', label: 'Oscars', keywords: ['oscar', 'academy award', 'best picture', 'best actor', 'best actress'] },
+      { id: 'film', label: 'Film', keywords: ['film', 'movie', 'cinema', 'box office', 'james bond'] },
+      { id: 'music', label: 'Music', keywords: ['music', 'artist', 'coachella', 'splendour', 'album', 'song'] },
+      { id: 'tv', label: 'TV', keywords: ['tv', 'streaming', 'netflix', 'series', 'show'] },
+      { id: 'eurovision', label: 'Eurovision', keywords: ['eurovision', 'song contest'] },
+      { id: 'festivals', label: 'Festivals', keywords: ['festival', 'vivid', 'event', 'attendance'] },
+    ],
+    climate: [
+      { id: 'all', label: 'All', keywords: [] },
+      { id: 'temperature', label: 'Temperature', keywords: ['temperature', 'hottest', 'warmest', 'record', 'degree'] },
+      { id: 'weather', label: 'Weather', keywords: ['rainfall', 'drought', 'weather', 'la nina', 'el nino'] },
+      { id: 'emissions', label: 'Emissions', keywords: ['emissions', 'carbon', 'co2', 'greenhouse', 'net zero'] },
+      { id: 'energy', label: 'Energy', keywords: ['renewable', 'solar', 'wind', 'energy', 'coal', 'gas'] },
+      { id: 'policy', label: 'Policy', keywords: ['target', 'agreement', 'cop', 'paris', 'legislation'] },
+    ],
+    world: [
+      { id: 'all', label: 'All', keywords: [] },
+      { id: 'us', label: 'US Politics', keywords: ['trump', 'biden', 'us ', 'america', 'congress', 'white house'] },
+      { id: 'asia', label: 'Asia', keywords: ['china', 'japan', 'korea', 'india', 'asia', 'pacific'] },
+      { id: 'europe', label: 'Europe', keywords: ['uk', 'brexit', 'eu', 'europe', 'germany', 'france'] },
+      { id: 'middle-east', label: 'Middle East', keywords: ['israel', 'gaza', 'iran', 'saudi', 'middle east'] },
+      { id: 'global', label: 'Global', keywords: ['un', 'global', 'world', 'international', 'summit'] },
+    ],
+  };
+
+  // Get subcategories for current category
+  const currentSubcategories = categorySubcategories[selectedCategory] || categorySubcategories.all;
+
+  // Get current subcategory config
+  const currentSubcategoryConfig = useMemo(() => {
+    const subcats = categorySubcategories[selectedCategory] || categorySubcategories.all;
+    return subcats.find(s => s.id === selectedSubcategory) || subcats[0];
+  }, [selectedCategory, selectedSubcategory]);
+
+  // Filter markets
+  const filteredMarkets = useMemo(() => {
+    let filtered = markets;
+
+    // Filter by category
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter((m) => m.category === selectedCategory);
+    }
+
+    // Filter by subcategory keywords (if not "all" or "for-you")
+    if (selectedSubcategory !== 'all' && selectedSubcategory !== 'for-you' && currentSubcategoryConfig?.keywords?.length > 0) {
+      filtered = filtered.filter((m) => {
+        const searchText = `${m.title} ${m.description}`.toLowerCase();
+        return currentSubcategoryConfig.keywords.some(keyword =>
+          searchText.includes(keyword.toLowerCase())
+        );
+      });
+    }
+
+    return [...filtered].sort((a, b) => b.volume - a.volume);
+  }, [markets, selectedCategory, selectedSubcategory, currentSubcategoryConfig]);
 
   return (
     <div className="space-y-6">
@@ -98,19 +165,19 @@ export default function Home() {
         Trade on outcomes that shape Australia and the world. From elections and interest rates to sport and culture.
       </p>
 
-      {/* Trending Topic Pills */}
+      {/* Subcategory Pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4">
-        {trendingTopics.map((topic) => (
+        {currentSubcategories.map((subcat) => (
           <button
-            key={topic.id}
-            onClick={() => setSelectedTrending(topic.id)}
+            key={subcat.id}
+            onClick={() => setSelectedSubcategory(subcat.id)}
             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-              selectedTrending === topic.id
+              selectedSubcategory === subcat.id
                 ? 'bg-foremark-lime text-gray-900'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            {topic.label}
+            {subcat.label}
           </button>
         ))}
       </div>

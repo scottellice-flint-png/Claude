@@ -22,6 +22,15 @@ export type SportType =
 
 export type SportSubcategory = 'games' | 'props' | 'futures' | 'awards';
 
+// Category-specific subcategories
+export type PoliticsSubcategory = 'federal-election' | 'state-politics' | 'policy' | 'leadership' | 'legislation';
+export type EconomicsSubcategory = 'rba' | 'inflation' | 'employment' | 'growth' | 'housing' | 'markets';
+export type CultureSubcategory = 'oscars' | 'music' | 'film' | 'tv' | 'eurovision' | 'festivals';
+export type ClimateSubcategory = 'temperature' | 'weather' | 'emissions' | 'energy' | 'policy';
+export type WorldSubcategory = 'us-politics' | 'asia' | 'europe' | 'middle-east' | 'global';
+
+export type MarketSubcategory = PoliticsSubcategory | EconomicsSubcategory | CultureSubcategory | ClimateSubcategory | WorldSubcategory;
+
 export type MarketStatus = 'open' | 'closed' | 'settled';
 
 export type OrderSide = 'yes' | 'no';
@@ -57,6 +66,8 @@ export interface Market {
   // Sports-specific fields
   sport?: SportType;
   sportSubcategory?: SportSubcategory;
+  // Category-specific subcategory
+  subcategory?: MarketSubcategory;
 }
 
 export interface Order {
