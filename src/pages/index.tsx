@@ -40,9 +40,12 @@ export default function Home() {
   const markets = useStore((state) => state.markets);
   const updateMarketPrice = useStore((state) => state.updateMarketPrice);
 
-  // Featured markets for carousel (top 5 by volume)
+  // Featured markets for carousel - prioritize AU markets
   const featuredMarkets = useMemo(() => {
-    const sorted = [...markets].sort((a, b) => b.volume - a.volume);
+    // Prioritize Australian-focused markets (politics, economics, climate, sports)
+    const auCategories = ['politics', 'economics', 'climate', 'sports'];
+    const auMarkets = markets.filter(m => auCategories.includes(m.category));
+    const sorted = [...auMarkets].sort((a, b) => b.volume - a.volume);
     return sorted.slice(0, 5);
   }, [markets]);
 
@@ -184,69 +187,11 @@ export default function Home() {
 
       {/* Featured Market Hero Carousel - Only show on "All" tab */}
       {selectedCategory === 'all' && currentFeaturedMarket && (
-        <div className="relative">
-          <Link href={`/market/${currentFeaturedMarket.id}`}>
-            <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left: Market Info */}
-                <div>
-                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                    <span className="uppercase">{currentFeaturedMarket.category}</span>
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">
-                    {currentFeaturedMarket.title}
-                  </h2>
-
-                  {/* Outcomes */}
-                  {currentFeaturedMarket.outcomes ? (
-                    <div className="space-y-3">
-                      {currentFeaturedMarket.outcomes.slice(0, 2).map((outcome) => (
-                        <div key={outcome.id} className="flex items-center justify-between">
-                          <span className="text-gray-700">{outcome.name}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-gray-900">{outcome.probability}%</span>
-                            <button className="px-3 py-1 text-xs font-semibold rounded bg-foremark-lime text-gray-900 hover:bg-foremark-lime-dark">
-                              Yes
-                            </button>
-                            <button className="px-3 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-700 hover:bg-gray-200">
-                              No
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-700">Chance</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-gray-900">{currentFeaturedMarket.yesPrice}%</span>
-                        <button className="px-3 py-1 text-xs font-semibold rounded bg-foremark-lime text-gray-900">
-                          Yes {currentFeaturedMarket.yesPrice}¢
-                        </button>
-                        <button className="px-3 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-700">
-                          No {currentFeaturedMarket.noPrice}¢
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="text-sm text-gray-500 mt-4">
-                    {formatVolume(currentFeaturedMarket.volume)} volume
-                  </div>
-                </div>
-
-                {/* Right: Mini Chart */}
-                <div className="bg-gray-50 rounded-lg p-4 flex items-center justify-center">
-                  <MiniChart market={currentFeaturedMarket} />
-                </div>
-              </div>
-            </div>
-          </Link>
-
+        <div className="relative bg-white rounded-xl border border-gray-200 overflow-hidden">
           {/* Navigation Arrows */}
           <button
-            onClick={(e) => { e.preventDefault(); prevSlide(); }}
-            className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors z-10"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); prevSlide(); }}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 bg-white/90 backdrop-blur-sm rounded-r-lg shadow-md flex items-center justify-center hover:bg-white transition-colors"
             aria-label="Previous market"
           >
             <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -254,8 +199,8 @@ export default function Home() {
             </svg>
           </button>
           <button
-            onClick={(e) => { e.preventDefault(); nextSlide(); }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors z-10"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); nextSlide(); }}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 bg-white/90 backdrop-blur-sm rounded-l-lg shadow-md flex items-center justify-center hover:bg-white transition-colors"
             aria-label="Next market"
           >
             <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,12 +208,91 @@ export default function Home() {
             </svg>
           </button>
 
+          <Link href={`/market/${currentFeaturedMarket.id}`}>
+            <div className="p-4 md:p-6 hover:bg-gray-50/50 transition-colors">
+              <div className="flex flex-col lg:flex-row lg:items-stretch gap-4 lg:gap-8">
+                {/* Left: Market Info */}
+                <div className="flex-1 min-w-0 px-6 md:px-8">
+                  {/* Category Badge */}
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                      {currentFeaturedMarket.category}
+                    </span>
+                  </div>
+
+                  {/* Title */}
+                  <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-4 leading-tight">
+                    {currentFeaturedMarket.title}
+                  </h2>
+
+                  {/* Outcomes */}
+                  <div className="space-y-2 mb-4">
+                    {currentFeaturedMarket.outcomes ? (
+                      currentFeaturedMarket.outcomes.slice(0, 2).map((outcome) => (
+                        <div key={outcome.id} className="flex items-center justify-between gap-4">
+                          <span className="text-gray-700 text-sm md:text-base truncate">{outcome.name}</span>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className="font-bold text-gray-900 w-12 text-right">{outcome.probability}%</span>
+                            <button className="px-3 py-1.5 text-xs font-semibold rounded-md bg-foremark-lime text-gray-900 hover:bg-foremark-lime-dark transition-colors">
+                              Yes
+                            </button>
+                            <button className="px-3 py-1.5 text-xs font-semibold rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
+                              No
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-gray-700 text-sm md:text-base">Chance</span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="font-bold text-gray-900 w-12 text-right">{currentFeaturedMarket.yesPrice}%</span>
+                          <button className="px-3 py-1.5 text-xs font-semibold rounded-md bg-foremark-lime text-gray-900 hover:bg-foremark-lime-dark transition-colors">
+                            Yes {currentFeaturedMarket.yesPrice}¢
+                          </button>
+                          <button className="px-3 py-1.5 text-xs font-semibold rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
+                            No {currentFeaturedMarket.noPrice}¢
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Volume */}
+                  <div className="text-sm text-gray-500">
+                    {formatVolume(currentFeaturedMarket.volume)} volume
+                  </div>
+                </div>
+
+                {/* Right: Chart and Price */}
+                <div className="lg:w-[320px] flex-shrink-0">
+                  <div className="bg-gray-50 rounded-xl p-4 h-full flex flex-col">
+                    {/* Current Price Display */}
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-3xl md:text-4xl font-bold text-gray-900">
+                        {currentFeaturedMarket.yesPrice}%
+                      </span>
+                      <span className="text-sm font-medium text-foremark-green bg-foremark-green/10 px-2 py-1 rounded">
+                        +{Math.floor(Math.random() * 5 + 1)}%
+                      </span>
+                    </div>
+
+                    {/* Mini Chart */}
+                    <div className="flex-1 min-h-[80px]">
+                      <MiniChart market={currentFeaturedMarket} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Link>
+
           {/* Indicator Dots */}
-          <div className="flex justify-center gap-2 mt-4">
+          <div className="flex justify-center gap-2 pb-4">
             {featuredMarkets.map((_, index) => (
               <button
                 key={index}
-                onClick={() => goToSlide(index)}
+                onClick={(e) => { e.preventDefault(); goToSlide(index); }}
                 className={`w-2 h-2 rounded-full transition-colors ${
                   index === currentSlide
                     ? 'bg-foremark-green'
@@ -351,7 +375,7 @@ function MiniChart({ market }: { market: Market }) {
     const basePrice = market.yesPrice;
     const newPoints = [];
     let price = basePrice - 10 + Math.random() * 5;
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 24; i++) {
       price = price + (Math.random() - 0.48) * 3;
       price = Math.max(10, Math.min(90, price));
       newPoints.push(price);
@@ -368,21 +392,24 @@ function MiniChart({ market }: { market: Market }) {
 
   const pathData = points
     .map((p, i) => {
-      const x = (i / (points.length - 1)) * 200;
-      const y = 60 - ((p - minPrice) / range) * 50;
+      const x = (i / (points.length - 1)) * 280;
+      const y = 55 - ((p - minPrice) / range) * 45;
       return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
     })
     .join(' ');
 
+  // Create area fill path
+  const areaPath = pathData + ` L 280 60 L 0 60 Z`;
+
   return (
-    <div className="w-full">
-      <div className="flex justify-between items-center mb-2">
-        <span className="text-2xl font-bold text-gray-900">{market.yesPrice}%</span>
-        <span className="text-sm text-foremark-green font-medium">
-          +{Math.floor(Math.random() * 5 + 1)}%
-        </span>
-      </div>
-      <svg viewBox="0 0 200 70" className="w-full h-16">
+    <div className="w-full h-full flex flex-col">
+      <svg viewBox="0 0 280 65" className="w-full flex-1" preserveAspectRatio="none">
+        {/* Area fill */}
+        <path
+          d={areaPath}
+          fill="url(#chartGradient)"
+        />
+        {/* Line */}
         <path
           d={pathData}
           fill="none"
@@ -391,6 +418,13 @@ function MiniChart({ market }: { market: Market }) {
           strokeLinecap="round"
           strokeLinejoin="round"
         />
+        {/* Gradient definition */}
+        <defs>
+          <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#0F4C4C" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="#0F4C4C" stopOpacity="0" />
+          </linearGradient>
+        </defs>
       </svg>
       <div className="flex justify-between text-xs text-gray-400 mt-1">
         <span>Jan</span>
