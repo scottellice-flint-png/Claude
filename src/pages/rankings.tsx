@@ -115,104 +115,82 @@ export default function RankingsPage() {
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
         <div className="flex items-center gap-2">
           {icon}
-          <h3 className="font-semibold text-gray-900">{title}</h3>
+          <h3 className="font-semibold text-gray-900 text-sm md:text-base">{title}</h3>
         </div>
-        <button className={`px-3 py-1 ${color} text-white text-xs font-medium rounded-full hover:opacity-90 transition-opacity`}>
+        <button className={`px-3 py-1.5 ${color} text-white text-xs font-medium rounded-full hover:opacity-90 transition-opacity`}>
           Join
         </button>
       </div>
       <div className="divide-y divide-gray-50">
         {entries.slice(0, 10).map((entry) => (
-          <div key={entry.rank} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors">
-            <span className={`w-6 text-sm font-medium ${entry.rank <= 3 ? 'text-foremark-green' : 'text-gray-400'}`}>
+          <div key={entry.rank} className="flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 hover:bg-gray-50 transition-colors active:bg-gray-100">
+            <span className={`w-5 md:w-6 text-xs md:text-sm font-medium text-center ${entry.rank <= 3 ? 'text-foremark-green' : 'text-gray-400'}`}>
               {entry.rank}
             </span>
-            <div className={`w-8 h-8 ${entry.avatar} rounded-full flex items-center justify-center text-white text-xs font-bold`}>
+            <div className={`w-7 h-7 md:w-8 md:h-8 ${entry.avatar} rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
               {entry.username.charAt(0)}
             </div>
             <div className="flex items-center gap-1 flex-1 min-w-0">
-              <span className="text-sm font-medium text-gray-900 truncate">{entry.username}</span>
+              <span className="text-xs md:text-sm font-medium text-gray-900 truncate">{entry.username}</span>
               {getBadgeIcon(entry.badge)}
             </div>
-            <span className="text-sm font-semibold text-gray-900">{formatValue(entry.value)}</span>
+            <span className="text-xs md:text-sm font-semibold text-gray-900 whitespace-nowrap">{formatValue(entry.value)}</span>
           </div>
         ))}
-      </div>
-      <div className="px-4 py-2 border-t border-gray-100 flex items-center gap-2">
-        <select
-          value={timeFilter}
-          onChange={(e) => setTimeFilter(e.target.value as TimeFilter)}
-          className="text-xs text-gray-500 bg-gray-100 rounded px-2 py-1 border-0 focus:ring-1 focus:ring-foremark-green"
-        >
-          <option value="weekly">Weekly</option>
-          <option value="monthly">Monthly</option>
-          <option value="all-time">All time</option>
-        </select>
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}
-          className="text-xs text-gray-500 bg-gray-100 rounded px-2 py-1 border-0 focus:ring-1 focus:ring-foremark-green"
-        >
-          <option value="all">All categories</option>
-          <option value="politics">Politics</option>
-          <option value="sports">Sports</option>
-          <option value="economics">Economics</option>
-          <option value="climate">Climate</option>
-          <option value="culture">Culture</option>
-          <option value="world">World</option>
-        </select>
       </div>
     </div>
   );
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div className="flex items-center gap-6">
-            <h1 className="text-2xl font-bold text-gray-900">Leaderboard</h1>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setActiveTab('leaderboard')}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === 'leaderboard'
-                    ? 'text-gray-900'
-                    : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                Leaderboard
-              </button>
-              <button
-                onClick={() => setActiveTab('activity')}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === 'activity'
-                    ? 'text-gray-900'
-                    : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                Activity
-              </button>
+      <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
+        {/* Header - Mobile Optimized */}
+        <div className="mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Leaderboard</h1>
+
+            {/* Countdown Timer */}
+            <div className="flex items-center gap-2 text-sm bg-foremark-green/10 px-3 py-2 rounded-lg">
+              <svg className="w-4 h-4 text-foremark-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-foremark-green font-medium">
+                {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m left
+              </span>
             </div>
           </div>
 
-          {/* Countdown Timer */}
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-foremark-green font-medium">
-              {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s left
-            </span>
-            <svg className="w-4 h-4 text-foremark-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+          {/* Tabs - Mobile Friendly */}
+          <div className="flex gap-1 mt-4 bg-gray-100 p-1 rounded-lg w-full sm:w-auto sm:inline-flex">
+            <button
+              onClick={() => setActiveTab('leaderboard')}
+              className={`flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'leaderboard'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Leaderboard
+            </button>
+            <button
+              onClick={() => setActiveTab('activity')}
+              className={`flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'activity'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Activity
+            </button>
           </div>
         </div>
 
         {/* Filters - Mobile */}
-        <div className="flex flex-wrap gap-2 mb-6 sm:hidden">
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
           <select
             value={timeFilter}
             onChange={(e) => setTimeFilter(e.target.value as TimeFilter)}
-            className="text-sm text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-foremark-green focus:border-transparent"
+            className="text-sm text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-foremark-green focus:border-transparent min-w-[100px]"
           >
             <option value="weekly">Weekly</option>
             <option value="monthly">Monthly</option>
@@ -221,7 +199,7 @@ export default function RankingsPage() {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}
-            className="text-sm text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-foremark-green focus:border-transparent"
+            className="text-sm text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-foremark-green focus:border-transparent min-w-[140px]"
           >
             <option value="all">All categories</option>
             <option value="politics">Politics</option>
