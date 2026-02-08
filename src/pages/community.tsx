@@ -311,32 +311,32 @@ export default function CommunityPage() {
   };
 
   const renderFeedItem = (item: FeedItem) => (
-    <div key={item.id} className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
+    <div key={item.id} className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 hover:shadow-md transition-shadow">
       {/* Author Header */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center space-x-3">
-          <span className="text-2xl">{item.author.avatar}</span>
-          <div>
-            <div className="flex items-center space-x-1">
-              <span className="font-semibold text-gray-900">{item.author.username}</span>
+      <div className="flex items-start justify-between mb-2 sm:mb-3">
+        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+          <span className="text-xl sm:text-2xl flex-shrink-0">{item.author.avatar}</span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center flex-wrap gap-1">
+              <span className="font-semibold text-gray-900 text-sm sm:text-base truncate">{item.author.username}</span>
               {item.author.isVerified && (
-                <span className="text-[#0F4C4C]" title="Verified Predictor">✓</span>
+                <span className="text-[#0F4C4C] flex-shrink-0" title="Verified Predictor">✓</span>
               )}
               {item.type === 'prediction' && (
-                <span className="text-xs bg-[#C8E64C] text-[#0F4C4C] px-2 py-0.5 rounded-full font-medium ml-1">
+                <span className="text-[10px] sm:text-xs bg-[#C8E64C] text-[#0F4C4C] px-1.5 sm:px-2 py-0.5 rounded-full font-medium flex-shrink-0">
                   Prediction
                 </span>
               )}
             </div>
-            <div className="flex items-center space-x-2 text-xs text-gray-500">
+            <div className="flex items-center space-x-1.5 sm:space-x-2 text-[10px] sm:text-xs text-gray-500">
               <span>{item.timestamp}</span>
               <span>•</span>
               <span className="capitalize">{item.category}</span>
             </div>
           </div>
         </div>
-        <button className="text-gray-400 hover:text-gray-600 p-1">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button className="text-gray-400 hover:text-gray-600 p-1 flex-shrink-0">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
           </svg>
         </button>
@@ -344,23 +344,23 @@ export default function CommunityPage() {
 
       {/* Content */}
       {item.type === 'post' && item.content && (
-        <p className="text-gray-800 mb-3 whitespace-pre-wrap">{item.content}</p>
+        <p className="text-sm sm:text-base text-gray-800 mb-2 sm:mb-3 whitespace-pre-wrap">{item.content}</p>
       )}
 
       {/* Linked Market (for posts) */}
       {item.linkedMarket && (
         <Link
           href={`/market/${item.linkedMarket.id}`}
-          className="block bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3 hover:bg-gray-100 transition-colors"
+          className="block bg-gray-50 border border-gray-200 rounded-lg p-2.5 sm:p-3 mb-2 sm:mb-3 hover:bg-gray-100 transition-colors"
         >
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <p className="text-xs text-gray-500 uppercase mb-1">Linked Market</p>
-              <p className="font-medium text-gray-900 text-sm">{item.linkedMarket.title}</p>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] sm:text-xs text-gray-500 uppercase mb-0.5 sm:mb-1">Linked Market</p>
+              <p className="font-medium text-gray-900 text-xs sm:text-sm line-clamp-2">{item.linkedMarket.title}</p>
             </div>
-            <div className="text-right">
-              <p className="text-lg font-bold text-[#0F4C4C]">{item.linkedMarket.yesPrice}%</p>
-              <p className="text-xs text-gray-500">Yes</p>
+            <div className="text-right flex-shrink-0">
+              <p className="text-base sm:text-lg font-bold text-[#0F4C4C]">{item.linkedMarket.yesPrice}%</p>
+              <p className="text-[10px] sm:text-xs text-gray-500">Yes</p>
             </div>
           </div>
         </Link>
@@ -368,19 +368,19 @@ export default function CommunityPage() {
 
       {/* Prediction Card (for predictions) */}
       {item.type === 'prediction' && item.prediction && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3">
-          <p className="text-sm text-gray-900 font-medium mb-2">{item.prediction.market}</p>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className={`px-2 py-1 text-xs font-semibold rounded ${
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-2.5 sm:p-3 mb-2 sm:mb-3">
+          <p className="text-xs sm:text-sm text-gray-900 font-medium mb-2 line-clamp-2">{item.prediction.market}</p>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold rounded ${
                 item.prediction.position === 'yes' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
               }`}>
                 {item.prediction.position.toUpperCase()} @ {item.prediction.odds}¢
               </span>
-              <span className="text-sm font-medium text-gray-900">{formatCurrency(item.prediction.amount)}</span>
+              <span className="text-xs sm:text-sm font-medium text-gray-900">{formatCurrency(item.prediction.amount)}</span>
             </div>
             {item.prediction.result && (
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+              <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium rounded-full ${
                 item.prediction.result === 'won' ? 'bg-green-100 text-green-700' :
                 item.prediction.result === 'lost' ? 'bg-red-100 text-red-700' :
                 'bg-gray-100 text-gray-700'
@@ -393,45 +393,45 @@ export default function CommunityPage() {
       )}
 
       {/* Actions */}
-      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-        <div className="flex items-center space-x-1">
+      <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-gray-100">
+        <div className="flex items-center space-x-0.5 sm:space-x-1">
           <button
             onClick={() => handleLike(item.id)}
-            className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-colors ${
+            className={`flex items-center space-x-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg transition-colors ${
               item.isLiked ? 'text-red-500 bg-red-50' : 'text-gray-500 hover:bg-gray-50'
             }`}
           >
-            <svg className="w-5 h-5" fill={item.isLiked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill={item.isLiked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
-            <span className="text-sm">{item.likes}</span>
+            <span className="text-xs sm:text-sm">{item.likes}</span>
           </button>
 
-          <button className="flex items-center space-x-1 px-3 py-1.5 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button className="flex items-center space-x-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
-            <span className="text-sm">{item.comments}</span>
+            <span className="text-xs sm:text-sm">{item.comments}</span>
           </button>
 
           {item.type === 'prediction' && (
-            <button className="flex items-center space-x-1 px-3 py-1.5 rounded-lg text-[#0F4C4C] hover:bg-[#C8E64C]/20 transition-colors">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button className="flex items-center space-x-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[#0F4C4C] hover:bg-[#C8E64C]/20 transition-colors">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
-              <span className="text-sm font-medium">Copy</span>
-              {item.copies && <span className="text-xs text-gray-400 ml-1">({item.copies})</span>}
+              <span className="text-xs sm:text-sm font-medium">Copy</span>
+              {item.copies && <span className="text-[10px] sm:text-xs text-gray-400 ml-0.5 sm:ml-1">({item.copies})</span>}
             </button>
           )}
         </div>
 
         <button
           onClick={() => handleBookmark(item.id)}
-          className={`p-1.5 rounded-lg transition-colors ${
+          className={`p-1 sm:p-1.5 rounded-lg transition-colors ${
             item.isBookmarked ? 'text-[#0F4C4C] bg-[#C8E64C]/20' : 'text-gray-400 hover:bg-gray-50'
           }`}
         >
-          <svg className="w-5 h-5" fill={item.isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill={item.isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
           </svg>
         </button>
@@ -447,7 +447,14 @@ export default function CommunityPage() {
           <div className="hidden lg:block lg:col-span-1">
             <div className="bg-white rounded-xl p-4 sticky top-24">
               <h1 className="text-2xl font-bold text-[#0F4C4C] mb-1">Community</h1>
-              <p className="text-sm text-gray-500 mb-4">Predictions, ideas & discussion</p>
+              <p className="text-sm text-gray-500 mb-3">Predictions, ideas & discussion</p>
+
+              {/* Desktop Explainer */}
+              <div className="bg-[#C8E64C]/20 border border-[#C8E64C] rounded-lg p-3 mb-4">
+                <p className="text-xs text-[#0F4C4C] leading-relaxed">
+                  <strong>Connect with predictors</strong> - Follow top traders, share your views, and discover predictions. Invite friends via link, even if they&apos;re not on Foremark!
+                </p>
+              </div>
 
               {/* Following Stats */}
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-4">
@@ -512,16 +519,26 @@ export default function CommunityPage() {
           <div className="lg:col-span-3">
             {/* Mobile Header */}
             <div className="lg:hidden mb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-2xl font-bold text-[#0F4C4C]">Community</h1>
-                  <p className="text-sm text-gray-500">Predictions, ideas & discussion</p>
+              <div className="mb-3">
+                <h1 className="text-2xl font-bold text-[#0F4C4C]">Community</h1>
+                <p className="text-sm text-gray-500">Predictions, ideas & discussion</p>
+              </div>
+
+              {/* Mobile Explainer Card */}
+              <div className="bg-gradient-to-r from-[#0F4C4C] to-[#1a6b6b] rounded-xl p-4 text-white">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-sm mb-1">Connect with predictors</h3>
+                    <p className="text-white/80 text-xs leading-relaxed">
+                      Follow top predictors, share your market views, and discover new predictions. Invite friends to join - even if they&apos;re not on Foremark yet!
+                    </p>
+                  </div>
                 </div>
-                <Link href="/chats" className="p-2 bg-[#0F4C4C] text-white rounded-lg">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </Link>
               </div>
             </div>
 
@@ -598,10 +615,10 @@ export default function CommunityPage() {
 
             {/* Discover Tab */}
             {activeTab === 'discover' && (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {/* Search */}
                 <div className="relative">
-                  <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                   <input
@@ -609,14 +626,14 @@ export default function CommunityPage() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search for predictors..."
-                    className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F4C4C]/20 focus:border-[#0F4C4C]"
+                    className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F4C4C]/20 focus:border-[#0F4C4C]"
                   />
                 </div>
 
                 {/* How to Follow */}
-                <div className="bg-[#C8E64C]/20 border border-[#C8E64C] rounded-xl p-4">
-                  <h3 className="font-semibold text-[#0F4C4C] mb-2">How to Follow</h3>
-                  <ul className="text-sm text-gray-600 space-y-1">
+                <div className="bg-[#C8E64C]/20 border border-[#C8E64C] rounded-xl p-3 sm:p-4">
+                  <h3 className="font-semibold text-[#0F4C4C] mb-2 text-sm sm:text-base">How to Follow</h3>
+                  <ul className="text-xs sm:text-sm text-gray-600 space-y-1">
                     <li>• <strong>Public profiles:</strong> Tap Follow and you&apos;ll automatically be accepted</li>
                     <li>• <strong>Private profiles:</strong> Send a follow request and wait for approval</li>
                     <li>• Once following, their posts and predictions appear in your Feed</li>
@@ -624,19 +641,19 @@ export default function CommunityPage() {
                 </div>
 
                 {/* Users */}
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {filteredUsers.map(user => (
-                    <div key={user.id} className="bg-white rounded-xl border border-gray-200 p-4">
-                      <div className="flex items-start gap-4">
-                        <span className="text-3xl">{user.avatar}</span>
+                    <div key={user.id} className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4">
+                      <div className="flex items-start gap-2 sm:gap-4">
+                        <span className="text-2xl sm:text-3xl flex-shrink-0">{user.avatar}</span>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-gray-900">{user.username}</span>
-                            {user.isVerified && <span className="text-[#0F4C4C]">✓</span>}
-                            {!user.isPublic && <span className="text-gray-400">🔒</span>}
+                          <div className="flex items-center flex-wrap gap-1 sm:gap-2 mb-1">
+                            <span className="font-semibold text-gray-900 text-sm sm:text-base truncate">{user.username}</span>
+                            {user.isVerified && <span className="text-[#0F4C4C] flex-shrink-0">✓</span>}
+                            {!user.isPublic && <span className="text-gray-400 flex-shrink-0">🔒</span>}
                           </div>
-                          <p className="text-sm text-gray-500 mb-2">{user.bio}</p>
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
+                          <p className="text-xs sm:text-sm text-gray-500 mb-2 line-clamp-2">{user.bio}</p>
+                          <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-4 gap-y-1 text-[10px] sm:text-xs text-gray-400">
                             <span>{formatNumber(user.followers)} followers</span>
                             <span>{formatNumber(user.predictions)} predictions</span>
                             <span className="text-[#0F4C4C] font-medium">{user.winRate}% win rate</span>
@@ -644,7 +661,7 @@ export default function CommunityPage() {
                         </div>
                         <button
                           onClick={() => handleFollow(user.id)}
-                          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex-shrink-0 ${
+                          className={`px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors flex-shrink-0 ${
                             user.isFollowing
                               ? 'border border-gray-300 text-gray-700 hover:bg-gray-50'
                               : user.isPending
@@ -663,23 +680,23 @@ export default function CommunityPage() {
 
             {/* Market Builder Tab */}
             {activeTab === 'market-builder' && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Market Builder</h2>
-                    <p className="text-sm text-gray-500">Suggest new markets for the community</p>
+                    <h2 className="text-base sm:text-lg font-semibold text-gray-900">Market Builder</h2>
+                    <p className="text-xs sm:text-sm text-gray-500">Suggest new markets for the community</p>
                   </div>
                   <button
                     onClick={() => setShowMarketBuilderModal(true)}
-                    className="bg-[#0F4C4C] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0a3a3a] transition-colors"
+                    className="bg-[#0F4C4C] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0a3a3a] transition-colors w-full sm:w-auto"
                   >
                     + Suggest Market
                   </button>
                 </div>
 
-                <div className="bg-[#C8E64C]/20 border border-[#C8E64C] rounded-xl p-4">
-                  <h3 className="font-medium text-[#0F4C4C] mb-2">How Market Builder works</h3>
-                  <ol className="text-sm text-gray-700 space-y-1 list-decimal list-inside">
+                <div className="bg-[#C8E64C]/20 border border-[#C8E64C] rounded-xl p-3 sm:p-4">
+                  <h3 className="font-medium text-[#0F4C4C] mb-2 text-sm sm:text-base">How Market Builder works</h3>
+                  <ol className="text-xs sm:text-sm text-gray-700 space-y-1 list-decimal list-inside">
                     <li>Submit your market idea with clear resolution criteria</li>
                     <li>Community members upvote suggestions they want to see</li>
                     <li>Our team reviews popular suggestions</li>
@@ -687,14 +704,14 @@ export default function CommunityPage() {
                   </ol>
                 </div>
 
-                <h3 className="font-medium text-gray-900 mt-6">Popular Suggestions</h3>
+                <h3 className="font-medium text-gray-900 mt-4 sm:mt-6 text-sm sm:text-base">Popular Suggestions</h3>
 
                 {mockMarketSuggestions.map(suggestion => (
-                  <div key={suggestion.id} className="bg-white rounded-xl p-4 border border-gray-100">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                  <div key={suggestion.id} className="bg-white rounded-xl p-3 sm:p-4 border border-gray-100">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center flex-wrap gap-1 sm:gap-2 mb-2">
+                          <span className={`text-[10px] sm:text-xs font-medium px-1.5 sm:px-2 py-0.5 rounded ${
                             suggestion.status === 'approved'
                               ? 'bg-green-100 text-green-700'
                               : suggestion.status === 'rejected'
@@ -703,23 +720,23 @@ export default function CommunityPage() {
                           }`}>
                             {suggestion.status === 'approved' ? '✓ Approved' : suggestion.status === 'rejected' ? '✗ Rejected' : '⏳ Pending'}
                           </span>
-                          <span className="text-xs text-gray-500 capitalize">{suggestion.category}</span>
+                          <span className="text-[10px] sm:text-xs text-gray-500 capitalize">{suggestion.category}</span>
                         </div>
-                        <h4 className="font-semibold text-gray-900 mb-1">{suggestion.title}</h4>
-                        <p className="text-sm text-gray-600 mb-2">{suggestion.description}</p>
-                        <p className="text-xs text-gray-500">
+                        <h4 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base line-clamp-2">{suggestion.title}</h4>
+                        <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">{suggestion.description}</p>
+                        <p className="text-[10px] sm:text-xs text-gray-500 line-clamp-1">
                           <strong>Resolution:</strong> {suggestion.resolutionSource}
                         </p>
-                        <div className="flex items-center space-x-2 mt-3 text-xs text-gray-500">
-                          <span className="text-lg">{suggestion.author.avatar}</span>
+                        <div className="flex items-center space-x-2 mt-2 sm:mt-3 text-[10px] sm:text-xs text-gray-500">
+                          <span className="text-base sm:text-lg">{suggestion.author.avatar}</span>
                           <span>{suggestion.author.username}</span>
                         </div>
                       </div>
-                      <button className="flex flex-col items-center p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <button className="flex flex-col items-center p-1.5 sm:p-2 rounded-lg hover:bg-gray-50 transition-colors flex-shrink-0">
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                         </svg>
-                        <span className="text-sm font-medium text-gray-900">{suggestion.upvotes}</span>
+                        <span className="text-xs sm:text-sm font-medium text-gray-900">{suggestion.upvotes}</span>
                       </button>
                     </div>
                   </div>
@@ -729,72 +746,72 @@ export default function CommunityPage() {
 
             {/* Rewards Tab */}
             {activeTab === 'rewards' && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* Overview */}
-                <div className="bg-gradient-to-br from-[#0F4C4C] to-teal-700 rounded-2xl p-6 text-white">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h2 className="text-2xl font-bold mb-2">Prediction Rewards</h2>
-                      <p className="text-white/80">Earn rewards when others copy your predictions</p>
+                <div className="bg-gradient-to-br from-[#0F4C4C] to-teal-700 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white">
+                  <div className="flex items-start justify-between mb-3 sm:mb-4">
+                    <div className="flex-1">
+                      <h2 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">Prediction Rewards</h2>
+                      <p className="text-white/80 text-sm sm:text-base">Earn rewards when others copy your predictions</p>
                     </div>
-                    <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                      <span className="text-3xl">💰</span>
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 ml-3">
+                      <span className="text-2xl sm:text-3xl">💰</span>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="bg-white/10 rounded-xl p-3 text-center">
-                      <p className="text-2xl font-bold">$0.10</p>
-                      <p className="text-xs text-white/70">per unique copy</p>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                    <div className="bg-white/10 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center">
+                      <p className="text-lg sm:text-2xl font-bold">$0.10</p>
+                      <p className="text-[10px] sm:text-xs text-white/70">per unique copy</p>
                     </div>
-                    <div className="bg-white/10 rounded-xl p-3 text-center">
-                      <p className="text-2xl font-bold">$1,000</p>
-                      <p className="text-xs text-white/70">max per week</p>
+                    <div className="bg-white/10 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center">
+                      <p className="text-lg sm:text-2xl font-bold">$1,000</p>
+                      <p className="text-[10px] sm:text-xs text-white/70">max per week</p>
                     </div>
-                    <div className="bg-white/10 rounded-xl p-3 text-center">
-                      <p className="text-2xl font-bold">Weekly</p>
-                      <p className="text-xs text-white/70">payouts</p>
+                    <div className="bg-white/10 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center">
+                      <p className="text-lg sm:text-2xl font-bold">Weekly</p>
+                      <p className="text-[10px] sm:text-xs text-white/70">payouts</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Your Stats */}
-                <div className="bg-white rounded-xl border border-gray-200 p-5">
-                  <h3 className="font-semibold text-gray-900 mb-4">Your Rewards This Week</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-gray-50 rounded-lg p-3 text-center">
-                      <p className="text-2xl font-bold text-[#0F4C4C]">127</p>
-                      <p className="text-xs text-gray-500">Unique Copies</p>
+                <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5">
+                  <h3 className="font-semibold text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">Your Rewards This Week</h3>
+                  <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                    <div className="bg-gray-50 rounded-lg p-2.5 sm:p-3 text-center">
+                      <p className="text-xl sm:text-2xl font-bold text-[#0F4C4C]">127</p>
+                      <p className="text-[10px] sm:text-xs text-gray-500">Unique Copies</p>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-3 text-center">
-                      <p className="text-2xl font-bold text-[#0F4C4C]">$12.70</p>
-                      <p className="text-xs text-gray-500">Earnings</p>
+                    <div className="bg-gray-50 rounded-lg p-2.5 sm:p-3 text-center">
+                      <p className="text-xl sm:text-2xl font-bold text-[#0F4C4C]">$12.70</p>
+                      <p className="text-[10px] sm:text-xs text-gray-500">Earnings</p>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-3 text-center">
-                      <p className="text-2xl font-bold text-gray-900">34</p>
-                      <p className="text-xs text-gray-500">Eligible Predictions</p>
+                    <div className="bg-gray-50 rounded-lg p-2.5 sm:p-3 text-center">
+                      <p className="text-xl sm:text-2xl font-bold text-gray-900">34</p>
+                      <p className="text-[10px] sm:text-xs text-gray-500">Eligible Predictions</p>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-3 text-center">
-                      <p className="text-2xl font-bold text-gray-900">5d 14h</p>
-                      <p className="text-xs text-gray-500">Until Payout</p>
+                    <div className="bg-gray-50 rounded-lg p-2.5 sm:p-3 text-center">
+                      <p className="text-xl sm:text-2xl font-bold text-gray-900">5d 14h</p>
+                      <p className="text-[10px] sm:text-xs text-gray-500">Until Payout</p>
                     </div>
                   </div>
                 </div>
 
                 {/* How It Works */}
-                <div className="bg-white rounded-xl border border-gray-200 p-5">
-                  <h3 className="font-semibold text-gray-900 mb-4">How It Works</h3>
-                  <div className="space-y-4">
+                <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5">
+                  <h3 className="font-semibold text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">How It Works</h3>
+                  <div className="space-y-3 sm:space-y-4">
                     {[
                       { step: 1, title: 'Make Predictions', desc: 'Place predictions with a minimum stake of $1 on any market.' },
                       { step: 2, title: 'Get Copied', desc: 'When other users copy your prediction (min $1 stake), you earn rewards.' },
                       { step: 3, title: 'Earn $0.10 Per Copy', desc: 'Each unique user who copies earns you $0.10, regardless of outcome.' },
                       { step: 4, title: 'Get Paid Weekly', desc: 'Rewards are calculated and paid every Thursday for the prior week.' },
                     ].map(item => (
-                      <div key={item.step} className="flex gap-4">
-                        <div className="w-8 h-8 bg-[#C8E64C] rounded-full flex items-center justify-center flex-shrink-0 text-[#0F4C4C] font-bold">{item.step}</div>
-                        <div>
-                          <p className="font-medium text-gray-900">{item.title}</p>
-                          <p className="text-sm text-gray-500">{item.desc}</p>
+                      <div key={item.step} className="flex gap-3 sm:gap-4">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 bg-[#C8E64C] rounded-full flex items-center justify-center flex-shrink-0 text-[#0F4C4C] font-bold text-sm sm:text-base">{item.step}</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 text-sm sm:text-base">{item.title}</p>
+                          <p className="text-xs sm:text-sm text-gray-500">{item.desc}</p>
                         </div>
                       </div>
                     ))}
