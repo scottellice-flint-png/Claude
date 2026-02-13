@@ -2,7 +2,8 @@
 // Supports full market lifecycle, multi-outcome markets, constraints, audit logging, etc.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "debian-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
