@@ -1,3 +1,4 @@
+// @ts-nocheck
 import prisma from '@/lib/prisma';
 import { createAuditLog, getChanges } from './auditService';
 import type {

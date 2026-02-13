@@ -48,6 +48,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email and password are required');
         }
 
+        if (!prisma) {
+          throw new Error('Database not available');
+        }
+
         const user = await prisma.adminUser.findUnique({
           where: { email: credentials.email },
         });

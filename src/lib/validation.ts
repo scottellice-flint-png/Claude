@@ -191,7 +191,7 @@ export const createResolutionSchema = z.object({
   resolution: z.string().min(1),
   resolutionNotes: z.string().max(2000).optional(),
   sourceUrl: z.string().url().optional().or(z.literal('')),
-  sourceData: z.record(z.unknown()).optional(),
+  sourceData: z.record(z.string(), z.unknown()).optional(),
 });
 
 // ============================================================================

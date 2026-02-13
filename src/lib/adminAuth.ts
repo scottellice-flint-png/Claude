@@ -55,7 +55,7 @@ export function withAdminAuth(
     res: NextApiResponse,
     session: AdminSession,
     ctx: AdminContext
-  ) => Promise<void>,
+  ) => Promise<void | NextApiResponse>,
   requiredPermission?: string
 ) {
   return async (req: NextApiRequest, res: NextApiResponse) => {
@@ -93,7 +93,7 @@ export function withAdminAuth(
 
 // Simplified wrapper for public admin routes (login page, etc.)
 export function withPublicAdminRoute(
-  handler: (req: NextApiRequest, res: NextApiResponse) => Promise<void>
+  handler: (req: NextApiRequest, res: NextApiResponse) => Promise<void | NextApiResponse>
 ) {
   return async (req: NextApiRequest, res: NextApiResponse) => {
     try {

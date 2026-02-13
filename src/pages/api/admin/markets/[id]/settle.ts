@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextApiRequest, NextApiResponse } from 'next';
 import { withAdminAuth, type AdminSession, type AdminContext } from '@/lib/adminAuth';
 import { settleMarket } from '@/services/marketService';

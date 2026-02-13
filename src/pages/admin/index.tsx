@@ -220,7 +220,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     });
 
     const countByStatus = (status: MarketStatus) =>
-      marketCounts.find((c) => c.status === status)?._count || 0;
+      marketCounts.find((c: { status: string; _count: number }) => c.status === status)?._count || 0;
 
     // Get entity counts
     const [totalCategories, totalTags, totalCollections, recentActivity] = await Promise.all([
@@ -242,7 +242,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     ]);
 
     const stats = {
-      totalMarkets: marketCounts.reduce((sum, c) => sum + c._count, 0),
+      totalMarkets: marketCounts.reduce((sum: number, c: { _count: number }) => sum + c._count, 0),
       draftMarkets: countByStatus('draft'),
       reviewMarkets: countByStatus('review'),
       publishedMarkets: countByStatus('published'),
@@ -250,7 +250,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       totalCategories,
       totalTags,
       totalCollections,
-      recentActivity: recentActivity.map((a) => ({
+      recentActivity: recentActivity.map((a: { createdAt: Date; [key: string]: unknown }) => ({
         ...a,
         createdAt: a.createdAt.toISOString(),
       })),

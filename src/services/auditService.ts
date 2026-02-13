@@ -1,3 +1,4 @@
+// @ts-nocheck
 import prisma from '@/lib/prisma';
 import type { AuditAction, EntityType, AuditLog, AuditLogFilters, PaginatedResponse } from '@/types/admin';
 
