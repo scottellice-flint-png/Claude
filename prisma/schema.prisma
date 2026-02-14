@@ -1,0 +1,489 @@
+// Prisma schema for MarketOps Admin System
+// Supports full market lifecycle, multi-outcome markets, constraints, audit logging, etc.
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "debian-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // For migrations (optional, for connection pooling)
+}
+
+// ============================================================================
+// PUBLIC USERS & AUTHENTICATION
+// ============================================================================
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  username      String    @unique
+  passwordHash  String
+  firstName     String?
+  lastName      String?
+  displayName   String?
+  avatarUrl     String?
+  isActive      Boolean   @default(true)
+  isVerified    Boolean   @default(false)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Trading stats
+  balance       Float     @default(0)
+  totalProfit   Float     @default(0)
+  totalTrades   Int       @default(0)
+
+  @@map("users")
+}
+
+// ============================================================================
+// ADMIN USERS & AUTHENTICATION
+// ============================================================================
+
+model AdminUser {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  role          String    @default("operator") // super_admin, admin, operator, viewer
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  marketVersions    MarketVersion[]
+  approvals         MarketApproval[]
+  auditLogs         AuditLog[]
+  createdMarkets    Market[]          @relation("MarketCreator")
+  assignedMarkets   Market[]          @relation("MarketAssignee")
+  resolutions       MarketResolution[]
+
+  @@map("admin_users")
+}
+
+// ============================================================================
+// MARKETS - Core entity
+// ============================================================================
+
+model Market {
+  id                String   @id @default(uuid())
+  slug              String   @unique
+
+  // Basic Info
+  title             String
+  shortDescription  String   // For market cards
+  description       String   // Full description (supports markdown)
+
+  // Status & Workflow
+  status            String   @default("draft") // draft, review, approved, published, trading_halted, resolved, settled, archived
+
+  // Category & Organization
+  categoryId        String
+  subcategoryId     String?
+  isFeatured        Boolean  @default(false)
+  featuredOrder     Int?
+
+  // Display Info (Market Card)
+  icon              String?  // Emoji or icon name
+  heroImageUrl      String?
+  cardImageUrl      String?
+
+  // Market Type
+  marketType        String   @default("binary") // binary, multi_outcome
+
+  // Dates & Timezone
+  timezone          String   @default("Australia/Sydney")
+  opensAt           DateTime?
+  closesAt          DateTime
+  resolvesBy        DateTime
+  settlesBy         DateTime
+
+  // Trading Constraints (stored as JSON)
+  constraints       String   @default("{}") // JSON: min/max trade, position limits, etc.
+
+  // Rules
+  rulesText         String   // Human readable rules
+  rulesStructured   String   @default("{}") // JSON: structured rules data
+  resolutionSource  String?  // e.g., "Australian Electoral Commission official results"
+
+  // Pricing
+  initialYesPrice   Float    @default(50)
+  currentYesPrice   Float    @default(50)
+  currentNoPrice    Float    @default(50)
+
+  // Stats
+  volume            Float    @default(0)
+  liquidity         Float    @default(0)
+  tradeCount        Int      @default(0)
+
+  // Resolution
+  resolvedOutcomeId String?
+  resolvedAt        DateTime?
+  settledAt         DateTime?
+
+  // Metadata
+  createdById       String?
+  assignedToId      String?
+  currentVersionId  String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  category          Category          @relation(fields: [categoryId], references: [id])
+  subcategory       Subcategory?      @relation(fields: [subcategoryId], references: [id])
+  creator           AdminUser?        @relation("MarketCreator", fields: [createdById], references: [id])
+  assignee          AdminUser?        @relation("MarketAssignee", fields: [assignedToId], references: [id])
+  outcomes          MarketOutcome[]
+  tags              MarketTag[]
+  versions          MarketVersion[]
+  approvals         MarketApproval[]
+  relatedMarkets    MarketRelation[]  @relation("SourceMarket")
+  relatedTo         MarketRelation[]  @relation("RelatedMarket")
+  collections       MarketCollectionItem[]
+  resolutions       MarketResolution[]
+  auditLogs         AuditLog[]
+
+  @@index([status])
+  @@index([categoryId])
+  @@index([closesAt])
+  @@index([isFeatured])
+  @@map("markets")
+}
+
+// ============================================================================
+// MARKET OUTCOMES - Supports binary and multi-outcome
+// ============================================================================
+
+model MarketOutcome {
+  id            String   @id @default(uuid())
+  marketId      String
+
+  // Outcome Info
+  label         String   // e.g., "Yes", "No", "Labor", "Liberal", "Greens"
+  displayLabel  String?  // Optional display override
+  description   String?
+
+  // For binary markets: position 0 = Yes, position 1 = No
+  // For multi-outcome: order determines display position
+  position      Int      @default(0)
+
+  // Pricing (probability 0-100)
+  currentPrice  Float    @default(50)
+  initialPrice  Float    @default(50)
+
+  // Color/styling
+  color         String?  // Hex color for charts/display
+
+  // Resolution
+  isResolved    Boolean  @default(false)
+  isWinner      Boolean  @default(false)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  market        Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  @@unique([marketId, position])
+  @@map("market_outcomes")
+}
+
+// ============================================================================
+// CATEGORIES & SUBCATEGORIES
+// ============================================================================
+
+model Category {
+  id            String   @id @default(uuid())
+  slug          String   @unique
+  name          String
+  description   String?
+  icon          String?
+  displayOrder  Int      @default(0)
+  isActive      Boolean  @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  subcategories Subcategory[]
+  markets       Market[]
+
+  @@map("categories")
+}
+
+model Subcategory {
+  id            String   @id @default(uuid())
+  categoryId    String
+  slug          String
+  name          String
+  description   String?
+  displayOrder  Int      @default(0)
+  isActive      Boolean  @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  category      Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  markets       Market[]
+
+  @@unique([categoryId, slug])
+  @@map("subcategories")
+}
+
+// ============================================================================
+// TAGS
+// ============================================================================
+
+model Tag {
+  id            String   @id @default(uuid())
+  slug          String   @unique
+  name          String
+  description   String?
+  color         String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  markets       MarketTag[]
+
+  @@map("tags")
+}
+
+model MarketTag {
+  id        String   @id @default(uuid())
+  marketId  String
+  tagId     String
+  createdAt DateTime @default(now())
+
+  // Relations
+  market    Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([marketId, tagId])
+  @@map("market_tags")
+}
+
+// ============================================================================
+// MARKET VERSIONING - For rollbacks and history
+// ============================================================================
+
+model MarketVersion {
+  id            String   @id @default(uuid())
+  marketId      String
+  version       Int
+
+  // Snapshot of market data at this version
+  data          String   // JSON snapshot of all market fields
+
+  // Change info
+  changeType    String   // created, updated, status_changed, resolved, etc.
+  changeSummary String?
+
+  // Who made the change
+  createdById   String
+  createdAt     DateTime @default(now())
+
+  // Relations
+  market        Market    @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  createdBy     AdminUser @relation(fields: [createdById], references: [id])
+
+  @@unique([marketId, version])
+  @@index([marketId])
+  @@map("market_versions")
+}
+
+// ============================================================================
+// MARKET APPROVALS - Workflow approvals
+// ============================================================================
+
+model MarketApproval {
+  id            String   @id @default(uuid())
+  marketId      String
+
+  // Approval info
+  fromStatus    String   // e.g., "draft"
+  toStatus      String   // e.g., "review"
+  action        String   // submitted, approved, rejected, needs_changes
+  comments      String?
+
+  // Who approved
+  approvedById  String
+  approvedAt    DateTime @default(now())
+
+  // Relations
+  market        Market    @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  approvedBy    AdminUser @relation(fields: [approvedById], references: [id])
+
+  @@index([marketId])
+  @@map("market_approvals")
+}
+
+// ============================================================================
+// MARKET RESOLUTION
+// ============================================================================
+
+model MarketResolution {
+  id              String   @id @default(uuid())
+  marketId        String
+
+  // Resolution details
+  outcomeId       String?  // Which outcome won (for multi-outcome)
+  resolution      String   // yes, no, void, or outcome label
+  resolutionNotes String?
+  sourceUrl       String?  // Evidence/source for resolution
+  sourceData      String?  // JSON: structured source data
+
+  // Who resolved
+  resolvedById    String
+  resolvedAt      DateTime @default(now())
+
+  // Settlement
+  settlementStatus String  @default("pending") // pending, processing, completed
+  settledAt        DateTime?
+
+  // Relations
+  market          Market    @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  resolvedBy      AdminUser @relation(fields: [resolvedById], references: [id])
+
+  @@index([marketId])
+  @@map("market_resolutions")
+}
+
+// ============================================================================
+// RELATED MARKETS - "People are also buying"
+// ============================================================================
+
+model MarketRelation {
+  id              String   @id @default(uuid())
+  sourceMarketId  String
+  relatedMarketId String
+
+  // Relation type
+  relationType    String   @default("related") // related, similar, same_event, follow_up
+  displayOrder    Int      @default(0)
+
+  createdAt       DateTime @default(now())
+
+  // Relations
+  sourceMarket    Market   @relation("SourceMarket", fields: [sourceMarketId], references: [id], onDelete: Cascade)
+  relatedMarket   Market   @relation("RelatedMarket", fields: [relatedMarketId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceMarketId, relatedMarketId])
+  @@map("market_relations")
+}
+
+// ============================================================================
+// MARKET COLLECTIONS
+// ============================================================================
+
+model MarketCollection {
+  id            String   @id @default(uuid())
+  slug          String   @unique
+  name          String
+  description   String?
+  heroImageUrl  String?
+
+  // Display
+  displayOrder  Int      @default(0)
+  isActive      Boolean  @default(true)
+  isFeatured    Boolean  @default(false)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  markets       MarketCollectionItem[]
+
+  @@map("market_collections")
+}
+
+model MarketCollectionItem {
+  id            String   @id @default(uuid())
+  collectionId  String
+  marketId      String
+  displayOrder  Int      @default(0)
+
+  createdAt     DateTime @default(now())
+
+  // Relations
+  collection    MarketCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  market        Market           @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, marketId])
+  @@map("market_collection_items")
+}
+
+// ============================================================================
+// AUDIT LOGGING - Complete action history
+// ============================================================================
+
+model AuditLog {
+  id            String   @id @default(uuid())
+
+  // Who
+  userId        String?
+  userEmail     String?
+  ipAddress     String?
+  userAgent     String?
+
+  // What
+  entityType    String   // market, category, tag, admin_user, etc.
+  entityId      String?
+  action        String   // create, update, delete, approve, reject, resolve, etc.
+
+  // Details
+  previousData  String?  // JSON: before state
+  newData       String?  // JSON: after state
+  metadata      String?  // JSON: additional context
+
+  createdAt     DateTime @default(now())
+
+  // Relations
+  user          AdminUser? @relation(fields: [userId], references: [id])
+  market        Market?    @relation(fields: [entityId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================================================
+// TRADING CONSTRAINTS TEMPLATE - Reusable constraint sets
+// ============================================================================
+
+model ConstraintTemplate {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+
+  // Constraints (JSON)
+  constraints   String   // JSON with all constraint fields
+
+  isDefault     Boolean  @default(false)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("constraint_templates")
+}
+
+// ============================================================================
+// SESSIONS - For NextAuth
+// ============================================================================
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  @@map("sessions")
+}

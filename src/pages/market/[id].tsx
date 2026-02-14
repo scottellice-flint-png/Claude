@@ -72,6 +72,7 @@ export default function MarketPage() {
     climate: 'Climate',
     sports: 'Sports',
     culture: 'Culture',
+    world: 'World',
   };
 
   return (
@@ -146,7 +147,7 @@ export default function MarketPage() {
 
             {/* Chart */}
             <div className="p-4">
-              <PriceChart marketId={market.id} currentPrice={market.yesPrice} />
+              <PriceChart marketId={market.id} currentPrice={market.yesPrice} outcomes={market.outcomes} />
             </div>
 
             {/* Price Info Bar */}
@@ -168,6 +169,15 @@ export default function MarketPage() {
                 })}
               </div>
             </div>
+          </div>
+
+          {/* Mobile Trade Panel - appears right after chart */}
+          <div className="lg:hidden">
+            <TradePanel
+              market={market}
+              selectedSide={selectedSide}
+              onSideChange={setSelectedSide}
+            />
           </div>
 
           {/* Rules Summary */}
@@ -404,8 +414,8 @@ export default function MarketPage() {
           </div>
         </div>
 
-        {/* Right Column - Trade Panel */}
-        <div className="lg:col-span-1">
+        {/* Right Column - Trade Panel (desktop only) */}
+        <div className="hidden lg:block lg:col-span-1">
           <div className="sticky top-20">
             <TradePanel
               market={market}
