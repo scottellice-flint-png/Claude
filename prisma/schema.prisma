@@ -13,6 +13,33 @@ datasource db {
 }
 
 // ============================================================================
+// PUBLIC USERS & AUTHENTICATION
+// ============================================================================
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  username      String    @unique
+  passwordHash  String
+  firstName     String?
+  lastName      String?
+  displayName   String?
+  avatarUrl     String?
+  isActive      Boolean   @default(true)
+  isVerified    Boolean   @default(false)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Trading stats
+  balance       Float     @default(0)
+  totalProfit   Float     @default(0)
+  totalTrades   Int       @default(0)
+
+  @@map("users")
+}
+
+// ============================================================================
 // ADMIN USERS & AUTHENTICATION
 // ============================================================================
 

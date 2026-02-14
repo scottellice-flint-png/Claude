@@ -4,6 +4,9 @@ import bcrypt from 'bcryptjs';
 import prisma from './prisma';
 import type { AdminRole } from '@/types/admin';
 
+// User type for public users vs admin users
+export type UserType = 'user' | 'admin';
+
 // Extend the default session type
 declare module 'next-auth' {
   interface Session {
@@ -11,34 +14,45 @@ declare module 'next-auth' {
       id: string;
       email: string;
       name: string;
-      role: AdminRole;
-      firstName: string;
-      lastName: string;
+      role: AdminRole | 'user';
+      userType: UserType;
+      firstName?: string;
+      lastName?: string;
+      username?: string;
+      balance?: number;
     };
   }
 
   interface User {
     id: string;
     email: string;
-    role: AdminRole;
-    firstName: string;
-    lastName: string;
+    role: AdminRole | 'user';
+    userType: UserType;
+    firstName?: string;
+    lastName?: string;
+    username?: string;
+    balance?: number;
   }
 }
 
 declare module 'next-auth/jwt' {
   interface JWT {
     id: string;
-    role: AdminRole;
-    firstName: string;
-    lastName: string;
+    role: AdminRole | 'user';
+    userType: UserType;
+    firstName?: string;
+    lastName?: string;
+    username?: string;
+    balance?: number;
   }
 }
 
 export const authOptions: NextAuthOptions = {
   providers: [
+    // Admin credentials provider
     CredentialsProvider({
-      name: 'Credentials',
+      id: 'admin-credentials',
+      name: 'Admin Credentials',
       credentials: {
         email: { label: 'Email', type: 'email', placeholder: 'admin@foremark.com' },
         password: { label: 'Password', type: 'password' },
@@ -80,8 +94,62 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           role: user.role as AdminRole,
+          userType: 'admin' as UserType,
           firstName: user.firstName,
           lastName: user.lastName,
+        };
+      },
+    }),
+    // Public user credentials provider
+    CredentialsProvider({
+      id: 'user-credentials',
+      name: 'User Credentials',
+      credentials: {
+        email: { label: 'Email', type: 'email', placeholder: 'you@example.com' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error('Email and password are required');
+        }
+
+        if (!prisma) {
+          throw new Error('Database not available');
+        }
+
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email.toLowerCase() },
+        });
+
+        if (!user) {
+          throw new Error('Invalid email or password');
+        }
+
+        if (!user.isActive) {
+          throw new Error('Account is deactivated');
+        }
+
+        const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
+
+        if (!isValid) {
+          throw new Error('Invalid email or password');
+        }
+
+        // Update last login
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { lastLoginAt: new Date() },
+        });
+
+        return {
+          id: user.id,
+          email: user.email,
+          role: 'user' as const,
+          userType: 'user' as UserType,
+          firstName: user.firstName || undefined,
+          lastName: user.lastName || undefined,
+          username: user.username,
+          balance: user.balance,
         };
       },
     }),
@@ -91,28 +159,38 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.userType = user.userType;
         token.firstName = user.firstName;
         token.lastName = user.lastName;
+        token.username = user.username;
+        token.balance = user.balance;
       }
       return token;
     },
     async session({ session, token }) {
       if (token) {
+        const name = token.userType === 'admin'
+          ? `${token.firstName || ''} ${token.lastName || ''}`.trim()
+          : token.username || token.email || '';
+
         session.user = {
           id: token.id,
           email: token.email || '',
-          name: `${token.firstName} ${token.lastName}`,
+          name: name || 'User',
           role: token.role,
+          userType: token.userType,
           firstName: token.firstName,
           lastName: token.lastName,
+          username: token.username,
+          balance: token.balance,
         };
       }
       return session;
     },
   },
   pages: {
-    signIn: '/admin/login',
-    error: '/admin/login',
+    signIn: '/login',
+    error: '/login',
   },
   session: {
     strategy: 'jwt',

@@ -1,31 +1,77 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { signIn, useSession } from 'next-auth/react';
 import Head from 'next/head';
 import Link from 'next/link';
 
 export default function Login() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.userType === 'user') {
+      router.push('/');
+    }
+  }, [status, session, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    // Simulate authentication delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    try {
+      if (isSignUp) {
+        // Registration flow
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, username, password }),
+        });
 
-    // For demo purposes, accept any credentials
-    // In production, this would connect to a real authentication system
-    if (email && password) {
-      // Redirect to home page after successful login
-      router.push('/');
-    } else {
-      setError('Please enter your email and password');
+        const data = await response.json();
+
+        if (!response.ok) {
+          setError(data.error || 'Registration failed');
+          setLoading(false);
+          return;
+        }
+
+        // Auto-login after successful registration
+        const result = await signIn('user-credentials', {
+          email,
+          password,
+          redirect: false,
+        });
+
+        if (result?.error) {
+          setError('Account created. Please log in.');
+          setIsSignUp(false);
+        } else {
+          router.push('/');
+        }
+      } else {
+        // Login flow
+        const result = await signIn('user-credentials', {
+          email,
+          password,
+          redirect: false,
+        });
+
+        if (result?.error) {
+          setError('Invalid email or password');
+        } else {
+          router.push('/');
+        }
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
     }
 
     setLoading(false);
@@ -59,7 +105,7 @@ export default function Login() {
                 <div className="flex flex-col">
                   <span className="text-2xl text-white foremark-logo">FOREMARK</span>
                   <span className="text-[10px] text-white/60 tracking-wider uppercase -mt-1 hidden sm:block">
-                    Australia's prediction market
+                    Australia&apos;s prediction market
                   </span>
                 </div>
               </Link>
@@ -96,8 +142,11 @@ export default function Login() {
                   <input
                     type="text"
                     id="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-foremark-green focus:border-transparent transition-shadow"
                     placeholder="Choose a username"
+                    required
                   />
                 </div>
               )}
@@ -241,7 +290,7 @@ export default function Login() {
                 </>
               ) : (
                 <>
-                  Don't have an account?{' '}
+                  Don&apos;t have an account?{' '}
                   <button
                     type="button"
                     onClick={() => setIsSignUp(true)}
