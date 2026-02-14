@@ -107,7 +107,7 @@ export default function Layout({ children }: LayoutProps) {
               </div>
               <div className="flex flex-col">
                 <span className="text-2xl text-white foremark-logo">FOREMARK</span>
-                <span className="text-[10px] text-white/60 tracking-wider uppercase -mt-1 hidden sm:block">Australia's prediction market</span>
+                <span className="text-[10px] text-white/60 tracking-wider uppercase -mt-1 hidden sm:block">Australia&apos;s prediction market</span>
               </div>
             </Link>
 

@@ -6,6 +6,60 @@ import { Market } from '@/types';
 import { useAllMarketsRealTimePrice } from '@/hooks/useRealTimePrice';
 import CategoryTabs from '@/components/CategoryTabs';
 
+// Category-specific subcategories with keywords for filtering
+const categorySubcategories: Record<string, { id: string; label: string; keywords: string[] }[]> = {
+  all: [
+    { id: 'for-you', label: 'For you', keywords: [] },
+    { id: 'federal-election', label: 'Federal Election', keywords: ['election', 'vote', 'labor', 'coalition', 'liberal', 'greens'] },
+    { id: 'rba', label: 'RBA Rates', keywords: ['rba', 'interest rate', 'cash rate', 'reserve bank'] },
+    { id: 'oscars', label: 'Oscars', keywords: ['oscar', 'academy award', 'best picture', 'best actor'] },
+    { id: 'afl', label: 'AFL', keywords: ['afl', 'premiership', 'brownlow', 'football'] },
+    { id: 'climate', label: 'Climate', keywords: ['temperature', 'weather', 'emissions', 'climate'] },
+  ],
+  politics: [
+    { id: 'all', label: 'All', keywords: [] },
+    { id: 'federal-election', label: 'Federal Election', keywords: ['election', 'vote', 'voter', 'seat', 'ballot', 'writ'] },
+    { id: 'leadership', label: 'Leadership', keywords: ['prime minister', 'albanese', 'dutton', 'leader', 'cabinet', 'minister'] },
+    { id: 'legislation', label: 'Legislation', keywords: ['tax', 'stage 3', 'bill', 'legislation', 'parliament', 'amend'] },
+    { id: 'policy', label: 'Policy', keywords: ['housing', 'safeguard', 'target', 'policy', 'reform'] },
+    { id: 'state', label: 'State Politics', keywords: ['nsw', 'victoria', 'queensland', 'state', 'premier'] },
+  ],
+  economics: [
+    { id: 'all', label: 'All', keywords: [] },
+    { id: 'rba', label: 'RBA', keywords: ['rba', 'reserve bank', 'cash rate', 'interest rate', 'monetary'] },
+    { id: 'inflation', label: 'Inflation', keywords: ['inflation', 'cpi', 'price', 'cost of living'] },
+    { id: 'employment', label: 'Employment', keywords: ['unemployment', 'job', 'employment', 'wage', 'labour'] },
+    { id: 'growth', label: 'Growth', keywords: ['gdp', 'growth', 'recession', 'economy'] },
+    { id: 'housing', label: 'Housing', keywords: ['housing', 'property', 'house price', 'mortgage', 'rent'] },
+    { id: 'markets', label: 'Markets', keywords: ['asx', 'stock', 'share', 'market', 'dollar', 'currency'] },
+  ],
+  culture: [
+    { id: 'all', label: 'All', keywords: [] },
+    { id: 'oscars', label: 'Oscars', keywords: ['oscar', 'academy award', 'best picture', 'best actor', 'best actress'] },
+    { id: 'film', label: 'Film', keywords: ['film', 'movie', 'cinema', 'box office', 'james bond'] },
+    { id: 'music', label: 'Music', keywords: ['music', 'artist', 'coachella', 'splendour', 'album', 'song'] },
+    { id: 'tv', label: 'TV', keywords: ['tv', 'streaming', 'netflix', 'series', 'show'] },
+    { id: 'eurovision', label: 'Eurovision', keywords: ['eurovision', 'song contest'] },
+    { id: 'festivals', label: 'Festivals', keywords: ['festival', 'vivid', 'event', 'attendance'] },
+  ],
+  climate: [
+    { id: 'all', label: 'All', keywords: [] },
+    { id: 'temperature', label: 'Temperature', keywords: ['temperature', 'hottest', 'warmest', 'record', 'degree'] },
+    { id: 'weather', label: 'Weather', keywords: ['rainfall', 'drought', 'weather', 'la nina', 'el nino'] },
+    { id: 'emissions', label: 'Emissions', keywords: ['emissions', 'carbon', 'co2', 'greenhouse', 'net zero'] },
+    { id: 'energy', label: 'Energy', keywords: ['renewable', 'solar', 'wind', 'energy', 'coal', 'gas'] },
+    { id: 'policy', label: 'Policy', keywords: ['target', 'agreement', 'cop', 'paris', 'legislation'] },
+  ],
+  world: [
+    { id: 'all', label: 'All', keywords: [] },
+    { id: 'us', label: 'US Politics', keywords: ['trump', 'biden', 'us ', 'america', 'congress', 'white house'] },
+    { id: 'asia', label: 'Asia', keywords: ['china', 'japan', 'korea', 'india', 'asia', 'pacific'] },
+    { id: 'europe', label: 'Europe', keywords: ['uk', 'brexit', 'eu', 'europe', 'germany', 'france'] },
+    { id: 'middle-east', label: 'Middle East', keywords: ['israel', 'gaza', 'iran', 'saudi', 'middle east'] },
+    { id: 'global', label: 'Global', keywords: ['un', 'global', 'world', 'international', 'summit'] },
+  ],
+};
+
 export default function Home() {
   const router = useRouter();
   useAllMarketsRealTimePrice(true);
@@ -68,60 +122,6 @@ export default function Home() {
       return `$${(volume / 1000000).toFixed(1)}M`;
     }
     return `$${(volume / 1000).toFixed(0)}K`;
-  };
-
-  // Category-specific subcategories with keywords for filtering
-  const categorySubcategories: Record<string, { id: string; label: string; keywords: string[] }[]> = {
-    all: [
-      { id: 'for-you', label: 'For you', keywords: [] },
-      { id: 'federal-election', label: 'Federal Election', keywords: ['election', 'vote', 'labor', 'coalition', 'liberal', 'greens'] },
-      { id: 'rba', label: 'RBA Rates', keywords: ['rba', 'interest rate', 'cash rate', 'reserve bank'] },
-      { id: 'oscars', label: 'Oscars', keywords: ['oscar', 'academy award', 'best picture', 'best actor'] },
-      { id: 'afl', label: 'AFL', keywords: ['afl', 'premiership', 'brownlow', 'football'] },
-      { id: 'climate', label: 'Climate', keywords: ['temperature', 'weather', 'emissions', 'climate'] },
-    ],
-    politics: [
-      { id: 'all', label: 'All', keywords: [] },
-      { id: 'federal-election', label: 'Federal Election', keywords: ['election', 'vote', 'voter', 'seat', 'ballot', 'writ'] },
-      { id: 'leadership', label: 'Leadership', keywords: ['prime minister', 'albanese', 'dutton', 'leader', 'cabinet', 'minister'] },
-      { id: 'legislation', label: 'Legislation', keywords: ['tax', 'stage 3', 'bill', 'legislation', 'parliament', 'amend'] },
-      { id: 'policy', label: 'Policy', keywords: ['housing', 'safeguard', 'target', 'policy', 'reform'] },
-      { id: 'state', label: 'State Politics', keywords: ['nsw', 'victoria', 'queensland', 'state', 'premier'] },
-    ],
-    economics: [
-      { id: 'all', label: 'All', keywords: [] },
-      { id: 'rba', label: 'RBA', keywords: ['rba', 'reserve bank', 'cash rate', 'interest rate', 'monetary'] },
-      { id: 'inflation', label: 'Inflation', keywords: ['inflation', 'cpi', 'price', 'cost of living'] },
-      { id: 'employment', label: 'Employment', keywords: ['unemployment', 'job', 'employment', 'wage', 'labour'] },
-      { id: 'growth', label: 'Growth', keywords: ['gdp', 'growth', 'recession', 'economy'] },
-      { id: 'housing', label: 'Housing', keywords: ['housing', 'property', 'house price', 'mortgage', 'rent'] },
-      { id: 'markets', label: 'Markets', keywords: ['asx', 'stock', 'share', 'market', 'dollar', 'currency'] },
-    ],
-    culture: [
-      { id: 'all', label: 'All', keywords: [] },
-      { id: 'oscars', label: 'Oscars', keywords: ['oscar', 'academy award', 'best picture', 'best actor', 'best actress'] },
-      { id: 'film', label: 'Film', keywords: ['film', 'movie', 'cinema', 'box office', 'james bond'] },
-      { id: 'music', label: 'Music', keywords: ['music', 'artist', 'coachella', 'splendour', 'album', 'song'] },
-      { id: 'tv', label: 'TV', keywords: ['tv', 'streaming', 'netflix', 'series', 'show'] },
-      { id: 'eurovision', label: 'Eurovision', keywords: ['eurovision', 'song contest'] },
-      { id: 'festivals', label: 'Festivals', keywords: ['festival', 'vivid', 'event', 'attendance'] },
-    ],
-    climate: [
-      { id: 'all', label: 'All', keywords: [] },
-      { id: 'temperature', label: 'Temperature', keywords: ['temperature', 'hottest', 'warmest', 'record', 'degree'] },
-      { id: 'weather', label: 'Weather', keywords: ['rainfall', 'drought', 'weather', 'la nina', 'el nino'] },
-      { id: 'emissions', label: 'Emissions', keywords: ['emissions', 'carbon', 'co2', 'greenhouse', 'net zero'] },
-      { id: 'energy', label: 'Energy', keywords: ['renewable', 'solar', 'wind', 'energy', 'coal', 'gas'] },
-      { id: 'policy', label: 'Policy', keywords: ['target', 'agreement', 'cop', 'paris', 'legislation'] },
-    ],
-    world: [
-      { id: 'all', label: 'All', keywords: [] },
-      { id: 'us', label: 'US Politics', keywords: ['trump', 'biden', 'us ', 'america', 'congress', 'white house'] },
-      { id: 'asia', label: 'Asia', keywords: ['china', 'japan', 'korea', 'india', 'asia', 'pacific'] },
-      { id: 'europe', label: 'Europe', keywords: ['uk', 'brexit', 'eu', 'europe', 'germany', 'france'] },
-      { id: 'middle-east', label: 'Middle East', keywords: ['israel', 'gaza', 'iran', 'saudi', 'middle east'] },
-      { id: 'global', label: 'Global', keywords: ['un', 'global', 'world', 'international', 'summit'] },
-    ],
   };
 
   // Get subcategories for current category

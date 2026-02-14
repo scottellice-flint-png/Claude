@@ -147,7 +147,7 @@ export default function UsersPage() {
     return (
       <AdminLayout title="Users">
         <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg">
-          You don't have permission to manage users.
+          You do not have permission to manage users.
         </div>
       </AdminLayout>
     );

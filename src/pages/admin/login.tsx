@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import Link from 'next/link';
 
 export default function AdminLogin() {
   const { status } = useSession();
@@ -111,9 +112,9 @@ export default function AdminLogin() {
           </form>
 
           <div className="mt-6 text-center">
-            <a href="/" className="text-sm text-foremark-green hover:underline">
+            <Link href="/" className="text-sm text-foremark-green hover:underline">
               ← Back to Foremark
-            </a>
+            </Link>
           </div>
         </div>
       </div>

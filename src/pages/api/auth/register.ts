@@ -27,7 +27,7 @@ export default async function handler(
     const validationResult = registerSchema.safeParse(req.body);
 
     if (!validationResult.success) {
-      const errors = validationResult.error.errors.map(e => e.message);
+      const errors = validationResult.error.issues.map(e => e.message);
       return res.status(400).json({ error: errors[0], errors });
     }
 

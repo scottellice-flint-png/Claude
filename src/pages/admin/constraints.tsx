@@ -140,8 +140,8 @@ export default function ConstraintsPage() {
           <p className="font-medium">What are Constraint Templates?</p>
           <p className="text-sm mt-1">
             Constraint templates define trading limits, KYC requirements, and jurisdiction rules that can be
-            applied to markets. Create templates for different market types (e.g., "Standard", "High Value",
-            "Novelty") to streamline market creation.
+            applied to markets. Create templates for different market types (e.g., &quot;Standard&quot;, &quot;High Value&quot;,
+            &quot;Novelty&quot;) to streamline market creation.
           </p>
         </div>
 
