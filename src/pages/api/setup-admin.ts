@@ -15,6 +15,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(403).json({ error: 'Invalid setup key' });
   }
 
+  // Check if Prisma client is available
+  if (!prisma) {
+    return res.status(500).json({
+      error: 'Database client not available',
+      details: 'Prisma client failed to initialize. This usually means:',
+      possibleCauses: [
+        '1. DATABASE_URL environment variable is not set in Vercel',
+        '2. Prisma client was not generated during build',
+        '3. Database connection failed',
+      ],
+      fix: 'Go to Vercel Dashboard > Project Settings > Environment Variables and add DATABASE_URL with your PostgreSQL connection string',
+    });
+  }
+
+  // Check if DATABASE_URL is set
+  if (!process.env.DATABASE_URL) {
+    return res.status(500).json({
+      error: 'DATABASE_URL not configured',
+      fix: 'Add DATABASE_URL environment variable in Vercel with your PostgreSQL connection string',
+    });
+  }
+
   try {
     const email = 'admin@foremark.com';
     const password = 'admin123';
@@ -61,9 +83,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (error) {
     console.error('Setup error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    // Provide helpful diagnostics based on error type
+    let diagnosis = '';
+    if (errorMessage.includes('does not exist') || errorMessage.includes('relation')) {
+      diagnosis = 'Database tables do not exist. You need to run migrations: npx prisma db push';
+    } else if (errorMessage.includes('connection') || errorMessage.includes('ECONNREFUSED')) {
+      diagnosis = 'Cannot connect to database. Check that DATABASE_URL is correct and the database is accessible.';
+    } else if (errorMessage.includes('authentication') || errorMessage.includes('password')) {
+      diagnosis = 'Database authentication failed. Check your DATABASE_URL credentials.';
+    }
+
     return res.status(500).json({
       error: 'Setup failed',
-      details: error instanceof Error ? error.message : 'Unknown error',
+      details: errorMessage,
+      diagnosis: diagnosis || 'Check Vercel logs for more details',
+      databaseUrlSet: !!process.env.DATABASE_URL,
     });
   }
 }
