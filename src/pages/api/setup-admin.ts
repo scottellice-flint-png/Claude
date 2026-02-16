@@ -46,8 +46,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const email = 'admin@foremark.com';
-    const password = 'admin123';
+    // Use environment variables for admin credentials
+    const emailFromEnv = !!process.env.ADMIN_INITIAL_EMAIL;
+    const passwordFromEnv = !!process.env.ADMIN_INITIAL_PASSWORD;
+    const email = process.env.ADMIN_INITIAL_EMAIL || 'admin@foremark.com';
+    const password = process.env.ADMIN_INITIAL_PASSWORD || 'admin123';
     const passwordHash = await bcrypt.hash(password, 12);
 
     // Check if admin exists
@@ -65,8 +68,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({
         message: 'Admin password has been reset',
         email,
-        password,
-        note: 'DELETE THIS ENDPOINT AFTER USE: src/pages/api/setup-admin.ts',
+        credentialsSource: {
+          email: emailFromEnv ? 'ADMIN_INITIAL_EMAIL env var' : 'default (admin@foremark.com)',
+          password: passwordFromEnv ? 'ADMIN_INITIAL_PASSWORD env var' : 'default (admin123)',
+        },
+        note: 'You can now login at /admin with these credentials',
       });
     }
 
@@ -85,9 +91,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(201).json({
       message: 'Admin user created successfully',
       email,
-      password,
       id: admin.id,
-      note: 'DELETE THIS ENDPOINT AFTER USE: src/pages/api/setup-admin.ts',
+      credentialsSource: {
+        email: emailFromEnv ? 'ADMIN_INITIAL_EMAIL env var' : 'default (admin@foremark.com)',
+        password: passwordFromEnv ? 'ADMIN_INITIAL_PASSWORD env var' : 'default (admin123)',
+      },
+      note: 'You can now login at /admin with these credentials',
     });
   } catch (error) {
     console.error('Setup error:', error);
