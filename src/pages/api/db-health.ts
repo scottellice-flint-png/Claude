@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import prisma, { prismaInitError } from '@/lib/prisma';
+import { isPrismaAvailable, getInitError, prisma } from '@/lib/prisma';
 
 // Database health check endpoint - helps diagnose connection issues
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -15,10 +15,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // Check 1: Is DATABASE_URL set?
   const databaseUrlSet = !!process.env.DATABASE_URL;
+  const databaseUrlLength = process.env.DATABASE_URL?.length || 0;
   (diagnostics.checks as Record<string, unknown>).DATABASE_URL_SET = {
     status: databaseUrlSet ? 'OK' : 'MISSING',
     message: databaseUrlSet
-      ? 'DATABASE_URL environment variable is configured'
+      ? `DATABASE_URL environment variable is configured (${databaseUrlLength} chars)`
       : 'DATABASE_URL environment variable is NOT set. Add it in Vercel Dashboard > Settings > Environment Variables',
   };
 
@@ -32,13 +33,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   };
 
   // Check 3: Is Prisma client available?
-  const prismaAvailable = !!prisma;
+  const prismaAvailable = isPrismaAvailable();
+  const initError = getInitError();
   (diagnostics.checks as Record<string, unknown>).PRISMA_CLIENT = {
     status: prismaAvailable ? 'OK' : 'FAILED',
     message: prismaAvailable
       ? 'Prisma client initialized successfully'
-      : 'Prisma client failed to initialize. This usually means DATABASE_URL is missing or invalid.',
-    ...(prismaInitError && { initError: prismaInitError }),
+      : 'Prisma client failed to initialize. See initError for details.',
+    ...(initError && { initError }),
   };
 
   // Check 4: Can we connect to the database?
