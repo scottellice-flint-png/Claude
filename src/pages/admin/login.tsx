@@ -58,7 +58,17 @@ export default function AdminLogin() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                {error}
+                {error === 'Database not available' ? (
+                  <div>
+                    <p className="font-medium">Database Connection Error</p>
+                    <p className="mt-1">The database is not configured or not accessible.</p>
+                    <p className="mt-2 text-xs">
+                      Visit <a href="/api/db-health" target="_blank" className="underline">/api/db-health</a> for diagnostics.
+                    </p>
+                  </div>
+                ) : (
+                  error
+                )}
               </div>
             )}
 
