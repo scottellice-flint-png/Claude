@@ -59,7 +59,7 @@ const prismaProxy = new Proxy({} as PrismaClient, {
     if (!client) {
       throw new Error(`Prisma client not available: ${prismaInitError || 'Unknown error'}`);
     }
-    return (client as Record<string | symbol, unknown>)[prop];
+    return (client as unknown as Record<string | symbol, unknown>)[prop];
   },
 });
 
