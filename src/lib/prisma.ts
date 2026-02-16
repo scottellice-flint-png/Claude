@@ -1,6 +1,7 @@
 // Conditional Prisma client - allows build to succeed without generated client
 let PrismaClient: any;
 let prisma: any;
+let prismaInitError: string | null = null;
 
 try {
   // Try to import the generated Prisma client
@@ -23,9 +24,11 @@ try {
   }
 } catch (e) {
   // Prisma client not generated - create a stub for build time
-  console.warn('Prisma client not available - admin features will be disabled');
+  const errorMessage = e instanceof Error ? e.message : String(e);
+  console.error('Prisma client initialization failed:', errorMessage);
+  prismaInitError = errorMessage;
   prisma = null;
 }
 
-export { prisma };
+export { prisma, prismaInitError };
 export default prisma;

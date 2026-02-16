@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import prisma from '@/lib/prisma';
+import prisma, { prismaInitError } from '@/lib/prisma';
 
 // Database health check endpoint - helps diagnose connection issues
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -38,6 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     message: prismaAvailable
       ? 'Prisma client initialized successfully'
       : 'Prisma client failed to initialize. This usually means DATABASE_URL is missing or invalid.',
+    ...(prismaInitError && { initError: prismaInitError }),
   };
 
   // Check 4: Can we connect to the database?

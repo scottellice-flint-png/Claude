@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import bcrypt from 'bcryptjs';
-import prisma from '@/lib/prisma';
+import prisma, { prismaInitError } from '@/lib/prisma';
 
 // ONE-TIME SETUP ENDPOINT - DELETE AFTER USE
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -19,7 +19,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!prisma) {
     return res.status(500).json({
       error: 'Database client not available',
-      details: 'Prisma client failed to initialize. This usually means:',
+      details: 'Prisma client failed to initialize.',
+      initError: prismaInitError || 'Unknown error',
+      diagnostics: {
+        DATABASE_URL_SET: !!process.env.DATABASE_URL,
+        DATABASE_URL_PREVIEW: process.env.DATABASE_URL
+          ? process.env.DATABASE_URL.substring(0, 30) + '...'
+          : 'NOT SET',
+        NODE_ENV: process.env.NODE_ENV,
+      },
       possibleCauses: [
         '1. DATABASE_URL environment variable is not set in Vercel',
         '2. Prisma client was not generated during build',
