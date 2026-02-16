@@ -1,7 +1,5 @@
-// Prisma client singleton for Next.js + Vercel serverless (Prisma 7.x)
+// Prisma client singleton for Next.js + Vercel serverless
 
-import { Pool } from 'pg';
-import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
 // Type declaration for global prisma instance
@@ -31,23 +29,15 @@ function getPrismaClient(): PrismaClient | null {
       throw new Error('DATABASE_URL environment variable is not set');
     }
 
-    // Create pg Pool for the adapter
-    const pool = new Pool({
-      connectionString,
-      max: 10, // Connection pool size
-    });
-
-    // Create Prisma adapter
-    const adapter = new PrismaPg(pool);
-
-    // Create new client with adapter
+    // Create new client
     prisma = new PrismaClient({
-      adapter,
       log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
 
-    // Store globally for reuse in serverless
-    global.__prisma = prisma;
+    // Store globally for reuse in serverless (avoid creating multiple connections)
+    if (process.env.NODE_ENV !== 'production') {
+      global.__prisma = prisma;
+    }
 
     console.log('[Prisma] Client initialized successfully');
     return prisma;
