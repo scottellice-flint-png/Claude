@@ -1,40 +1,49 @@
-// Prisma client singleton for Next.js + Vercel serverless
+// Prisma client singleton for Next.js + Vercel serverless (Prisma 7.x)
+
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '@prisma/client';
 
 // Type declaration for global prisma instance
 declare global {
   // eslint-disable-next-line no-var
-  var __prisma: InstanceType<typeof import('@prisma/client').PrismaClient> | undefined;
+  var __prisma: PrismaClient | undefined;
   var __prismaInitError: string | undefined;
 }
 
-let prisma: InstanceType<typeof import('@prisma/client').PrismaClient> | null = null;
+let prisma: PrismaClient | null = null;
 let prismaInitError: string | null = global.__prismaInitError || null;
 
 // Lazy initialization - only create client when first accessed
-function getPrismaClient() {
+function getPrismaClient(): PrismaClient | null {
   if (prisma) return prisma;
   if (prismaInitError) return null;
 
   try {
-    // Dynamic import to handle missing client gracefully
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { PrismaClient } = require('@prisma/client');
-
     // Check if already initialized globally (for serverless reuse)
     if (global.__prisma) {
       prisma = global.__prisma;
       return prisma;
     }
 
-    // Create new client
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error('DATABASE_URL environment variable is not set');
+    }
+
+    // Create pg Pool for the adapter
+    const pool = new Pool({
+      connectionString,
+      max: 10, // Connection pool size
+    });
+
+    // Create Prisma adapter
+    const adapter = new PrismaPg(pool);
+
+    // Create new client with adapter
     prisma = new PrismaClient({
+      adapter,
       log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-      // Connection pool settings for serverless
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL,
-        },
-      },
     });
 
     // Store globally for reuse in serverless
@@ -54,7 +63,7 @@ function getPrismaClient() {
 }
 
 // Export a proxy that lazily initializes the client
-const prismaProxy = new Proxy({} as NonNullable<typeof prisma>, {
+const prismaProxy = new Proxy({} as PrismaClient, {
   get(_target, prop) {
     const client = getPrismaClient();
     if (!client) {
