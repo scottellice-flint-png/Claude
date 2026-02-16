@@ -39,8 +39,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     status: prismaAvailable ? 'OK' : 'FAILED',
     message: prismaAvailable
       ? 'Prisma client initialized successfully'
-      : 'Prisma client failed to initialize. See initError for details.',
-    ...(initError && { initError }),
+      : `Prisma client failed to initialize: ${initError || 'Unknown error'}`,
+    ...(initError && { error: initError }),
   };
 
   // Check 4: Can we connect to the database?
