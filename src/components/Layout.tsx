@@ -2,6 +2,7 @@ import { ReactNode, useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useStore } from '@/store';
+import { useSession, signOut } from 'next-auth/react';
 
 interface LayoutProps {
   children: ReactNode;
@@ -9,8 +10,16 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const router = useRouter();
-  const user = useStore((state) => state.user);
+  const { data: session, status } = useSession();
+  const storeUser = useStore((state) => state.user);
   const markets = useStore((state) => state.markets);
+
+  // Use session user if authenticated, otherwise fall back to store user
+  const user = session?.user?.userType === 'user' ? {
+    id: session.user.id,
+    username: session.user.username || 'User',
+    balance: session.user.balance || 0,
+  } : storeUser;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -464,14 +473,33 @@ export default function Layout({ children }: LayoutProps) {
                     {/* Divider */}
                     <div className="border-t border-gray-100"></div>
 
-                    {/* Log Out */}
+                    {/* Login/Log Out */}
                     <div className="py-2">
-                      <button className="w-full flex items-center gap-3 px-4 py-2.5 text-red-600 hover:bg-red-50 transition-colors">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                        Log out
-                      </button>
+                      {session?.user ? (
+                        <button
+                          onClick={() => {
+                            setIsMenuOpen(false);
+                            signOut({ callbackUrl: '/' });
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                          Log out
+                        </button>
+                      ) : (
+                        <Link
+                          href="/login"
+                          onClick={() => setIsMenuOpen(false)}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-foremark-green hover:bg-gray-50 transition-colors"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                          Log in / Sign up
+                        </Link>
+                      )}
                     </div>
                   </div>
                 )}

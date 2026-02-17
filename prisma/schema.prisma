@@ -33,6 +33,17 @@ model User {
   balance       Float     @default(0)
   totalProfit   Float     @default(0)
   totalTrades   Int       @default(0)
+  totalVolume   Float     @default(0)
+
+  // Relations - Chats
+  createdChats      GroupChat[]         @relation("ChatCreator")
+  chatMemberships   GroupChatMember[]
+  chatMessages      ChatMessage[]
+  sharedPredictions SharedPrediction[]
+
+  // Relations - Social
+  followers         UserFollow[]        @relation("UserFollowing")
+  following         UserFollow[]        @relation("UserFollowers")
 
   @@map("users")
 }
@@ -484,4 +495,106 @@ model Session {
   expires      DateTime
 
   @@map("sessions")
+}
+
+// ============================================================================
+// GROUP CHATS - Social features
+// ============================================================================
+
+model GroupChat {
+  id            String    @id @default(uuid())
+  name          String
+  description   String?
+  emoji         String    @default("💬")
+  createdById   String
+  isActive      Boolean   @default(true)
+  maxMembers    Int       @default(20)
+  inviteCode    String    @unique @default(uuid())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  createdBy     User              @relation("ChatCreator", fields: [createdById], references: [id])
+  members       GroupChatMember[]
+  messages      ChatMessage[]
+  predictions   SharedPrediction[]
+
+  @@map("group_chats")
+}
+
+model GroupChatMember {
+  id          String    @id @default(uuid())
+  chatId      String
+  userId      String
+  isAdmin     Boolean   @default(false)
+  isMuted     Boolean   @default(false)
+  joinedAt    DateTime  @default(now())
+  lastReadAt  DateTime  @default(now())
+
+  // Relations
+  chat        GroupChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+  @@map("group_chat_members")
+}
+
+model ChatMessage {
+  id          String    @id @default(uuid())
+  chatId      String
+  senderId    String
+  content     String
+  isPinned    Boolean   @default(false)
+  predictionId String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  chat        GroupChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender      User      @relation(fields: [senderId], references: [id])
+  prediction  SharedPrediction? @relation(fields: [predictionId], references: [id])
+
+  @@index([chatId])
+  @@index([senderId])
+  @@map("chat_messages")
+}
+
+model SharedPrediction {
+  id          String    @id @default(uuid())
+  chatId      String
+  userId      String
+  market      String
+  position    String    // 'Yes' or 'No'
+  amount      Float
+  description String?
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  chat        GroupChat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id])
+  messages    ChatMessage[]
+
+  @@index([chatId])
+  @@index([userId])
+  @@map("shared_predictions")
+}
+
+// ============================================================================
+// USER FOLLOWS - Social graph
+// ============================================================================
+
+model UserFollow {
+  id          String    @id @default(uuid())
+  followerId  String    // User who is following
+  followingId String    // User being followed
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  follower    User      @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User      @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("user_follows")
 }

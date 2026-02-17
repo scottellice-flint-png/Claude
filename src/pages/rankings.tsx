@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 
 type TimeFilter = 'weekly' | 'monthly' | 'all-time';
 type CategoryFilter = 'all' | 'politics' | 'sports' | 'economics' | 'climate' | 'culture' | 'world';
@@ -7,13 +8,17 @@ type TabType = 'leaderboard' | 'activity';
 
 interface LeaderboardEntry {
   rank: number;
+  id?: string;
   username: string;
   avatar: string;
+  avatarUrl?: string;
   value: number;
   badge?: 'gold' | 'silver' | 'bronze' | 'verified';
 }
 
-// Mock leaderboard data
+const avatarColors = ['bg-red-400', 'bg-blue-400', 'bg-green-400', 'bg-yellow-400', 'bg-purple-400', 'bg-pink-400', 'bg-indigo-400', 'bg-teal-400'];
+
+// Mock leaderboard data (fallback when no users in DB)
 const generateMockData = (count: number, type: 'profit' | 'volume' | 'predictions'): LeaderboardEntry[] => {
   const usernames = [
     'AussiePunter', 'MarketMaster', 'PredictorPro', 'TradingKangaroo', 'SydneyTrader',
@@ -22,8 +27,6 @@ const generateMockData = (count: number, type: 'profit' | 'volume' | 'prediction
     'NSWNumbers', 'QLDQuant', 'WAPredictions', 'SASpeculator', 'TasTrader',
     'OutbackOracle', 'CoralCoaster', 'ReefReader', 'DesertDuke', 'BushBanker'
   ];
-
-  const avatarColors = ['bg-red-400', 'bg-blue-400', 'bg-green-400', 'bg-yellow-400', 'bg-purple-400', 'bg-pink-400', 'bg-indigo-400', 'bg-teal-400'];
 
   const baseValues: Record<string, number[]> = {
     profit: [145707, 126686, 95611, 87863, 71609, 46245, 26202, 25845, 25731, 24707, 18020, 14934, 12500, 11200, 9800],
@@ -54,12 +57,63 @@ const formatNumber = (num: number) => {
 };
 
 export default function RankingsPage() {
+  const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState<TabType>('leaderboard');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('weekly');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [timeLeft, setTimeLeft] = useState({ days: 6, hours: 22, minutes: 2, seconds: 21 });
+  const [profitLeaders, setProfitLeaders] = useState<LeaderboardEntry[]>(generateMockData(15, 'profit'));
+  const [volumeLeaders, setVolumeLeaders] = useState<LeaderboardEntry[]>(generateMockData(15, 'volume'));
+  const [predictionLeaders, setPredictionLeaders] = useState<LeaderboardEntry[]>(generateMockData(15, 'predictions'));
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock countdown timer
+  // Fetch leaderboard data from API
+  const fetchLeaderboard = useCallback(async (type: 'profit' | 'volume' | 'predictions') => {
+    try {
+      const response = await fetch(`/api/leaderboard?type=${type}&time=${timeFilter}&limit=15`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.leaders && data.leaders.length > 0) {
+          const formattedLeaders: LeaderboardEntry[] = data.leaders.map((leader: { rank: number; id: string; username: string; avatarUrl?: string; value: number; badge?: string }, index: number) => ({
+            rank: leader.rank,
+            id: leader.id,
+            username: leader.username,
+            avatar: avatarColors[index % avatarColors.length],
+            avatarUrl: leader.avatarUrl,
+            value: leader.value,
+            badge: leader.badge,
+          }));
+          return formattedLeaders;
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error(`Error fetching ${type} leaderboard:`, error);
+      return null;
+    }
+  }, [timeFilter]);
+
+  // Fetch all leaderboards
+  useEffect(() => {
+    const loadLeaderboards = async () => {
+      setIsLoading(true);
+      const [profit, volume, predictions] = await Promise.all([
+        fetchLeaderboard('profit'),
+        fetchLeaderboard('volume'),
+        fetchLeaderboard('predictions'),
+      ]);
+
+      if (profit) setProfitLeaders(profit);
+      if (volume) setVolumeLeaders(volume);
+      if (predictions) setPredictionLeaders(predictions);
+
+      setIsLoading(false);
+    };
+
+    loadLeaderboards();
+  }, [fetchLeaderboard]);
+
+  // Countdown timer
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prev => {
@@ -74,10 +128,6 @@ export default function RankingsPage() {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
-
-  const profitLeaders = generateMockData(15, 'profit');
-  const volumeLeaders = generateMockData(15, 'volume');
-  const predictionLeaders = generateMockData(15, 'predictions');
 
   const getBadgeIcon = (badge?: string) => {
     switch (badge) {

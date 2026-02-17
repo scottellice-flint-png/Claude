@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/router';
 
 interface ChatMember {
   id: string;
   username: string;
+  displayName?: string;
   avatar: string;
+  avatarUrl?: string;
   isAdmin: boolean;
   isOnline: boolean;
 }
@@ -18,6 +22,7 @@ interface ChatMessage {
   timestamp: Date;
   isPinned: boolean;
   prediction?: {
+    id: string;
     market: string;
     position: 'Yes' | 'No';
     amount: number;
@@ -29,6 +34,7 @@ interface Chat {
   id: string;
   name: string;
   description: string;
+  emoji: string;
   avatar: string;
   members: ChatMember[];
   lastMessage?: string;
@@ -36,6 +42,7 @@ interface Chat {
   unreadCount: number;
   isAdmin: boolean;
   isMuted: boolean;
+  inviteCode?: string;
 }
 
 interface GroupPrediction {
@@ -51,6 +58,8 @@ interface GroupPrediction {
 }
 
 export default function ChatsPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'chats' | 'create'>('chats');
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [chatView, setChatView] = useState<'messages' | 'predictions' | 'members' | 'settings'>('messages');
@@ -62,149 +71,237 @@ export default function ChatsPage() {
   const [inviteSearchQuery, setInviteSearchQuery] = useState('');
   const [selectedInvites, setSelectedInvites] = useState<string[]>([]);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
 
-  // Mock data for chats
-  const [chats] = useState<Chat[]>([
-    {
-      id: '1',
-      name: 'AFL Predictions Crew',
-      description: 'Discussing footy predictions and sharing tips',
-      avatar: '🏈',
-      members: [
-        { id: '1', username: 'FootyFan99', avatar: '🦘', isAdmin: true, isOnline: true },
-        { id: '2', username: 'MelbMaster', avatar: '🏏', isAdmin: false, isOnline: true },
-        { id: '3', username: 'SydneyPunter', avatar: '🌊', isAdmin: false, isOnline: false },
-        { id: '4', username: 'BrisbaneBets', avatar: '☀️', isAdmin: false, isOnline: true },
-      ],
-      lastMessage: 'Who else is backing Collingwood this week?',
-      lastMessageTime: new Date(Date.now() - 1000 * 60 * 5),
-      unreadCount: 3,
-      isAdmin: true,
-      isMuted: false,
-    },
-    {
-      id: '2',
-      name: 'Politics Watchers',
-      description: 'Federal and state election predictions',
-      avatar: '🏛️',
-      members: [
-        { id: '1', username: 'PollingPro', avatar: '📊', isAdmin: true, isOnline: false },
-        { id: '5', username: 'CanberraCalls', avatar: '🦅', isAdmin: false, isOnline: true },
-      ],
-      lastMessage: 'Rate cut looking likely now',
-      lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 2),
-      unreadCount: 0,
-      isAdmin: false,
-      isMuted: false,
-    },
-    {
-      id: '3',
-      name: 'Weather Predictors',
-      description: 'BOM watchers and climate predictions',
-      avatar: '🌦️',
-      members: [
-        { id: '6', username: 'StormChaser', avatar: '⛈️', isAdmin: true, isOnline: true },
-        { id: '7', username: 'SunnyDays', avatar: '☀️', isAdmin: false, isOnline: false },
-        { id: '8', username: 'RainMaker', avatar: '🌧️', isAdmin: false, isOnline: true },
-      ],
-      lastMessage: 'La Niña is definitely coming',
-      lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 24),
-      unreadCount: 0,
-      isAdmin: false,
-      isMuted: true,
-    },
-  ]);
+  // Chats from API (with fallback mock data)
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [groupPredictions, setGroupPredictions] = useState<GroupPrediction[]>([]);
 
-  // Mock messages for selected chat
-  const [messages] = useState<ChatMessage[]>([
-    {
-      id: '1',
-      senderId: '2',
-      senderName: 'MelbMaster',
-      senderAvatar: '🏏',
-      content: 'Anyone watching the game tonight?',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60),
-      isPinned: false,
-    },
-    {
-      id: '2',
-      senderId: '3',
-      senderName: 'SydneyPunter',
-      senderAvatar: '🌊',
-      content: "Yeah mate, got a good feeling about this one",
-      timestamp: new Date(Date.now() - 1000 * 60 * 45),
-      isPinned: false,
-    },
-    {
-      id: '3',
-      senderId: '4',
-      senderName: 'BrisbaneBets',
-      senderAvatar: '☀️',
-      content: "Just placed my prediction!",
-      timestamp: new Date(Date.now() - 1000 * 60 * 30),
-      isPinned: false,
-      prediction: {
-        market: 'Collingwood to win vs Carlton',
-        position: 'Yes',
-        amount: 50,
-        description: 'Pies have won 4 in a row and Carlton missing key players',
-      },
-    },
-    {
-      id: '4',
-      senderId: '1',
-      senderName: 'FootyFan99',
-      senderAvatar: '🦘',
-      content: '📌 Remember: Finals tipping comp starts next week!',
-      timestamp: new Date(Date.now() - 1000 * 60 * 15),
-      isPinned: true,
-    },
-    {
-      id: '5',
-      senderId: '2',
-      senderName: 'MelbMaster',
-      senderAvatar: '🏏',
-      content: 'Who else is backing Collingwood this week?',
-      timestamp: new Date(Date.now() - 1000 * 60 * 5),
-      isPinned: false,
-    },
-  ]);
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login?callbackUrl=/chats');
+    }
+  }, [status, router]);
 
-  // Mock group predictions
-  const [groupPredictions] = useState<GroupPrediction[]>([
-    {
-      id: '1',
-      userId: '4',
-      username: 'BrisbaneBets',
-      userAvatar: '☀️',
-      market: 'Collingwood to win vs Carlton',
-      position: 'Yes',
-      amount: 50,
-      description: 'Pies have won 4 in a row and Carlton missing key players',
-      timestamp: new Date(Date.now() - 1000 * 60 * 30),
-    },
-    {
-      id: '2',
-      userId: '2',
-      username: 'MelbMaster',
-      userAvatar: '🏏',
-      market: 'Melbourne to make top 4',
-      position: 'Yes',
-      amount: 100,
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3),
-    },
-    {
-      id: '3',
-      userId: '3',
-      username: 'SydneyPunter',
-      userAvatar: '🌊',
-      market: 'Sydney Swans Premiership 2025',
-      position: 'Yes',
-      amount: 25,
-      description: 'Bloods looking strong this year with new recruits',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    },
-  ]);
+  // Fetch chats from API
+  const fetchChats = useCallback(async () => {
+    try {
+      const response = await fetch('/api/chats');
+      if (response.ok) {
+        const data = await response.json();
+        const formattedChats: Chat[] = data.chats.map((chat: {
+          id: string;
+          name: string;
+          description?: string;
+          emoji: string;
+          members: Array<{ id: string; username: string; displayName?: string; avatarUrl?: string; isAdmin: boolean }>;
+          lastMessage?: string;
+          lastMessageTime?: string;
+          unreadCount: number;
+          isAdmin: boolean;
+          isMuted: boolean;
+          inviteCode?: string;
+        }) => ({
+          id: chat.id,
+          name: chat.name,
+          description: chat.description || '',
+          emoji: chat.emoji,
+          avatar: chat.emoji,
+          members: chat.members.map((m) => ({
+            id: m.id,
+            username: m.username,
+            displayName: m.displayName,
+            avatar: m.avatarUrl ? '' : '👤',
+            avatarUrl: m.avatarUrl,
+            isAdmin: m.isAdmin,
+            isOnline: false,
+          })),
+          lastMessage: chat.lastMessage,
+          lastMessageTime: chat.lastMessageTime ? new Date(chat.lastMessageTime) : undefined,
+          unreadCount: chat.unreadCount,
+          isAdmin: chat.isAdmin,
+          isMuted: chat.isMuted,
+          inviteCode: chat.inviteCode,
+        }));
+        setChats(formattedChats);
+      }
+    } catch (error) {
+      console.error('Error fetching chats:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Fetch messages for selected chat
+  const fetchMessages = useCallback(async (chatId: string) => {
+    try {
+      const response = await fetch(`/api/chats/${chatId}/messages`);
+      if (response.ok) {
+        const data = await response.json();
+        const formattedMessages: ChatMessage[] = data.messages.map((msg: {
+          id: string;
+          senderId: string;
+          senderName: string;
+          senderAvatar?: string;
+          content: string;
+          timestamp: string;
+          isPinned: boolean;
+          prediction?: { id: string; market: string; position: string; amount: number; description?: string };
+        }) => ({
+          id: msg.id,
+          senderId: msg.senderId,
+          senderName: msg.senderName,
+          senderAvatar: msg.senderAvatar || '👤',
+          content: msg.content,
+          timestamp: new Date(msg.timestamp),
+          isPinned: msg.isPinned,
+          prediction: msg.prediction ? {
+            id: msg.prediction.id,
+            market: msg.prediction.market,
+            position: msg.prediction.position as 'Yes' | 'No',
+            amount: msg.prediction.amount,
+            description: msg.prediction.description,
+          } : undefined,
+        }));
+        setMessages(formattedMessages);
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  }, []);
+
+  // Fetch predictions for selected chat
+  const fetchPredictions = useCallback(async (chatId: string) => {
+    try {
+      const response = await fetch(`/api/chats/${chatId}/predictions`);
+      if (response.ok) {
+        const data = await response.json();
+        const formattedPredictions: GroupPrediction[] = data.predictions.map((pred: {
+          id: string;
+          userId: string;
+          username: string;
+          userAvatar?: string;
+          market: string;
+          position: string;
+          amount: number;
+          description?: string;
+          timestamp: string;
+        }) => ({
+          id: pred.id,
+          userId: pred.userId,
+          username: pred.username,
+          userAvatar: pred.userAvatar || '👤',
+          market: pred.market,
+          position: pred.position as 'Yes' | 'No',
+          amount: pred.amount,
+          description: pred.description,
+          timestamp: new Date(pred.timestamp),
+        }));
+        setGroupPredictions(formattedPredictions);
+      }
+    } catch (error) {
+      console.error('Error fetching predictions:', error);
+    }
+  }, []);
+
+  // Initial fetch
+  useEffect(() => {
+    if (session?.user?.userType === 'user') {
+      fetchChats();
+    }
+  }, [session, fetchChats]);
+
+  // Fetch messages when chat is selected
+  useEffect(() => {
+    if (selectedChat) {
+      fetchMessages(selectedChat.id);
+      fetchPredictions(selectedChat.id);
+    }
+  }, [selectedChat, fetchMessages, fetchPredictions]);
+
+  // Send message via API
+  const sendMessage = async (content: string) => {
+    if (!selectedChat || !content.trim() || isSending) return;
+
+    setIsSending(true);
+    try {
+      const response = await fetch(`/api/chats/${selectedChat.id}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: content.trim() }),
+      });
+
+      if (response.ok) {
+        const newMessage = await response.json();
+        setMessages(prev => [...prev, {
+          id: newMessage.id,
+          senderId: newMessage.senderId,
+          senderName: newMessage.senderName,
+          senderAvatar: newMessage.senderAvatar || '👤',
+          content: newMessage.content,
+          timestamp: new Date(newMessage.timestamp),
+          isPinned: newMessage.isPinned,
+        }]);
+        setMessageInput('');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // Create chat via API
+  const createChat = async (name: string, description: string, emoji: string, memberIds: string[]) => {
+    try {
+      const response = await fetch('/api/chats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description, emoji, memberIds }),
+      });
+
+      if (response.ok) {
+        const newChat = await response.json();
+        await fetchChats();
+        setActiveTab('chats');
+        return newChat;
+      }
+    } catch (error) {
+      console.error('Error creating chat:', error);
+    }
+    return null;
+  };
+
+  // Show loading state
+  if (status === 'loading' || (status === 'authenticated' && isLoading)) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0F4C4C] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading chats...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login prompt if not authenticated
+  if (status === 'unauthenticated') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Please log in to access chats</p>
+          <Link href="/login?callbackUrl=/chats" className="bg-[#0F4C4C] text-white px-6 py-3 rounded-lg">
+            Log In
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Messages and predictions are now fetched from API (see above)
 
   // New chat creation state
   const [newChatName, setNewChatName] = useState('');
@@ -248,21 +345,27 @@ export default function ChatsPage() {
     return `${days}d ago`;
   };
 
-  const handleCreateChat = () => {
+  const handleCreateChat = async () => {
     if (newChatName.trim()) {
-      // In real app, would create chat via API
-      alert(`Chat "${newChatName}" created! Invites sent to ${selectedFollowers.length} followers.`);
-      setNewChatName('');
-      setNewChatDescription('');
-      setSelectedFollowers([]);
-      setActiveTab('chats');
+      const result = await createChat(
+        newChatName.trim(),
+        newChatDescription.trim(),
+        newChatEmoji,
+        selectedFollowers
+      );
+
+      if (result) {
+        setNewChatName('');
+        setNewChatDescription('');
+        setNewChatEmoji('💬');
+        setSelectedFollowers([]);
+      }
     }
   };
 
   const generateInviteLink = (chatId?: string) => {
-    const id = chatId || selectedChat?.id || 'new';
-    const code = Math.random().toString(36).substring(2, 10);
-    return `https://foremark.com.au/join/${code}`;
+    const code = selectedChat?.inviteCode || chatId || Math.random().toString(36).substring(2, 10);
+    return `https://foremark.com.au/chats/join/${code}`;
   };
 
   const copyInviteLink = () => {
@@ -323,9 +426,8 @@ export default function ChatsPage() {
   };
 
   const handleSendMessage = () => {
-    if (messageInput.trim()) {
-      // In real app, would send via API
-      setMessageInput('');
+    if (messageInput.trim() && !isSending) {
+      sendMessage(messageInput);
     }
   };
 
