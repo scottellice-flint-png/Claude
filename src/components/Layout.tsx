@@ -538,7 +538,7 @@ export default function Layout({ children }: LayoutProps) {
 
                     {/* Login/Log Out */}
                     <div className="py-2">
-                      {session?.user ? (
+                      {session?.user && (
                         <button
                           onClick={() => {
                             setIsMenuOpen(false);
@@ -551,17 +551,6 @@ export default function Layout({ children }: LayoutProps) {
                           </svg>
                           Log out
                         </button>
-                      ) : (
-                        <Link
-                          href="/login"
-                          onClick={() => setIsMenuOpen(false)}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-foremark-green hover:bg-gray-50 transition-colors"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                          </svg>
-                          Log in / Sign up
-                        </Link>
                       )}
                     </div>
                   </div>
