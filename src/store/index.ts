@@ -1792,7 +1792,7 @@ interface AppState {
 
 export const useStore = create<AppState>((set, get) => ({
   markets: mockMarkets,
-  user: mockUser,
+  user: null,
   orders: [],
   positions: mockPositions,
   trades: [],
