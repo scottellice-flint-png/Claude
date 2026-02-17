@@ -68,6 +68,13 @@ export default function LoginPage() {
     }
   }, [status, session, router]);
 
+  // Check for mode query parameter to set initial mode
+  useEffect(() => {
+    if (router.query.mode === 'signup') {
+      setMode('signup');
+    }
+  }, [router.query.mode]);
+
   const updateFormData = (field: keyof FormData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear field error when user starts typing

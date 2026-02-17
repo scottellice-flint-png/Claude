@@ -316,21 +316,41 @@ export default function Layout({ children }: LayoutProps) {
                 </svg>
               </button>
 
-              {/* Deposit Button */}
-              <Link href="/deposits" className="hidden sm:flex items-center gap-2 bg-foremark-lime text-gray-900 font-semibold px-4 py-2 rounded-full text-sm hover:bg-foremark-lime-dark transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Deposit
-              </Link>
+              {/* Show Login/Signup buttons when not authenticated */}
+              {!session?.user ? (
+                <>
+                  <Link
+                    href="/login"
+                    className="hidden sm:flex items-center px-4 py-2 text-white font-medium text-sm border border-white/40 rounded-full hover:bg-white/10 transition-colors"
+                  >
+                    Log in
+                  </Link>
+                  <Link
+                    href="/login?mode=signup"
+                    className="flex items-center px-4 py-2 bg-foremark-lime text-gray-900 font-semibold text-sm rounded-full hover:bg-foremark-lime-dark transition-colors"
+                  >
+                    Sign up
+                  </Link>
+                </>
+              ) : (
+                <>
+                  {/* Deposit Button - only for logged in users */}
+                  <Link href="/deposits" className="hidden sm:flex items-center gap-2 bg-foremark-lime text-gray-900 font-semibold px-4 py-2 rounded-full text-sm hover:bg-foremark-lime-dark transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Deposit
+                  </Link>
 
-              {/* Notification Bell */}
-              <button className="relative p-2 text-white/80 hover:text-white transition-colors">
-                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                <span className="absolute top-1 right-1 w-2 h-2 bg-foremark-lime rounded-full"></span>
-              </button>
+                  {/* Notification Bell - only for logged in users */}
+                  <button className="relative p-2 text-white/80 hover:text-white transition-colors">
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-foremark-lime rounded-full"></span>
+                  </button>
+                </>
+              )}
 
               {/* User Menu */}
               <div className="relative" ref={menuRef}>
