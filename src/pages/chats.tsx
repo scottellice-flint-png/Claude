@@ -79,6 +79,32 @@ export default function ChatsPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [groupPredictions, setGroupPredictions] = useState<GroupPrediction[]>([]);
 
+  // New chat creation state (moved up to follow Rules of Hooks)
+  const [newChatName, setNewChatName] = useState('');
+  const [newChatDescription, setNewChatDescription] = useState('');
+  const [newChatEmoji, setNewChatEmoji] = useState('💬');
+  const [inviteLink, setInviteLink] = useState('');
+
+  // Mock friends (mutual follows)
+  const [friends] = useState([
+    { id: '10', username: 'AussieTipper', avatar: '🦘', isOnline: true },
+    { id: '11', username: 'PerthPunter', avatar: '🌅', isOnline: false },
+    { id: '12', username: 'AdelaidePro', avatar: '🍷', isOnline: true },
+  ]);
+
+  // Mock followers (people who follow you)
+  const [followers] = useState([
+    { id: '10', username: 'AussieTipper', avatar: '🦘', isMutual: true, isOnline: true },
+    { id: '11', username: 'PerthPunter', avatar: '🌅', isMutual: true, isOnline: false },
+    { id: '12', username: 'AdelaidePro', avatar: '🍷', isMutual: true, isOnline: true },
+    { id: '13', username: 'HobartHero', avatar: '🏔️', isMutual: false, isOnline: false },
+    { id: '14', username: 'DarwinDave', avatar: '🐊', isMutual: false, isOnline: true },
+    { id: '15', username: 'GoldCoastGambler', avatar: '🏖️', isMutual: false, isOnline: false },
+    { id: '16', username: 'TassieTips', avatar: '🦔', isMutual: false, isOnline: true },
+  ]);
+
+  const [selectedFollowers, setSelectedFollowers] = useState<string[]>([]);
+
   // Redirect to login if not authenticated
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -301,35 +327,7 @@ export default function ChatsPage() {
     );
   }
 
-  // Messages and predictions are now fetched from API (see above)
-
-  // New chat creation state
-  const [newChatName, setNewChatName] = useState('');
-  const [newChatDescription, setNewChatDescription] = useState('');
-  const [newChatEmoji, setNewChatEmoji] = useState('💬');
-  const [inviteLink, setInviteLink] = useState('');
-
   const emojiOptions = ['💬', '🏈', '🏛️', '🌦️', '📊', '🎬', '🎵', '💰', '🌍', '⚽', '🏆', '🎯'];
-
-  // Mock friends (mutual follows)
-  const [friends] = useState([
-    { id: '10', username: 'AussieTipper', avatar: '🦘', isOnline: true },
-    { id: '11', username: 'PerthPunter', avatar: '🌅', isOnline: false },
-    { id: '12', username: 'AdelaidePro', avatar: '🍷', isOnline: true },
-  ]);
-
-  // Mock followers (people who follow you)
-  const [followers] = useState([
-    { id: '10', username: 'AussieTipper', avatar: '🦘', isMutual: true, isOnline: true },
-    { id: '11', username: 'PerthPunter', avatar: '🌅', isMutual: true, isOnline: false },
-    { id: '12', username: 'AdelaidePro', avatar: '🍷', isMutual: true, isOnline: true },
-    { id: '13', username: 'HobartHero', avatar: '🏔️', isMutual: false, isOnline: false },
-    { id: '14', username: 'DarwinDave', avatar: '🐊', isMutual: false, isOnline: true },
-    { id: '15', username: 'GoldCoastGambler', avatar: '🏖️', isMutual: false, isOnline: false },
-    { id: '16', username: 'TassieTips', avatar: '🦔', isMutual: false, isOnline: true },
-  ]);
-
-  const [selectedFollowers, setSelectedFollowers] = useState<string[]>([]);
 
   const formatTime = (date: Date) => {
     const now = new Date();

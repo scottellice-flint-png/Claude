@@ -68,7 +68,6 @@ export default async function handler(
         },
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const chats = memberships.map((membership: any) => {
         const lastMessage = membership.chat.messages[0];
         const unreadCount = lastMessage && lastMessage.createdAt > membership.lastReadAt ? 1 : 0;
@@ -78,7 +77,6 @@ export default async function handler(
           name: membership.chat.name,
           description: membership.chat.description,
           emoji: membership.chat.emoji,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           members: membership.chat.members.map((m: any) => ({
             id: m.user.id,
             username: m.user.username,
@@ -147,7 +145,6 @@ export default async function handler(
         description: chat.description,
         emoji: chat.emoji,
         inviteCode: chat.inviteCode,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         members: chat.members.map((m: any) => ({
           id: m.user.id,
           username: m.user.username,

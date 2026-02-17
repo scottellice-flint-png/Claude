@@ -38,7 +38,6 @@ export default async function handler(
     }
 
     // Check if already a member
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const existingMembership = chat.members.find((m: any) => m.userId === userId);
     if (existingMembership) {
       return res.status(200).json({

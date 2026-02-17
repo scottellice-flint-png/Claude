@@ -60,7 +60,6 @@ export default async function handler(
     });
 
     // Format response
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const leaders = users.map((user: any, index: number) => {
       let value: number;
       if (type === 'profit') {

@@ -48,7 +48,6 @@ export default async function handler(
       });
 
       return res.status(200).json({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         predictions: predictions.map((p: any) => ({
           id: p.id,
           userId: p.user.id,

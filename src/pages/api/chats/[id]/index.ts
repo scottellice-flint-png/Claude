@@ -70,7 +70,6 @@ export default async function handler(
         emoji: chat.emoji,
         inviteCode: chat.inviteCode,
         createdBy: chat.createdBy,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         members: chat.members.map((m: any) => ({
           id: m.user.id,
           username: m.user.username,

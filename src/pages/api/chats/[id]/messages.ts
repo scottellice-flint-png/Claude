@@ -59,7 +59,6 @@ export default async function handler(
       });
 
       return res.status(200).json({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         messages: messages.reverse().map((m: any) => ({
           id: m.id,
           senderId: m.sender.id,
