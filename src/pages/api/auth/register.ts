@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createUser } from '@/services/userService';
+import { isPrismaAvailable, getInitError } from '@/lib/prisma';
 import { z } from 'zod';
 
 const registerSchema = z.object({
@@ -20,6 +21,16 @@ export default async function handler(
 ) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Check database connection first
+  if (!isPrismaAvailable()) {
+    const initError = getInitError();
+    console.error('Database not available:', initError);
+    return res.status(503).json({
+      error: 'Database connection unavailable. Please try again later.',
+      details: process.env.NODE_ENV === 'development' ? initError : undefined
+    });
   }
 
   try {
@@ -57,6 +68,17 @@ export default async function handler(
     });
   } catch (error) {
     console.error('Registration error:', error);
-    return res.status(500).json({ error: 'Failed to create account' });
+
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('connect') || error.message.includes('ECONNREFUSED')) {
+        return res.status(503).json({ error: 'Database connection failed. Please try again later.' });
+      }
+      if (error.message.includes('does not exist') || error.message.includes('relation')) {
+        return res.status(503).json({ error: 'Database setup incomplete. Please contact support.' });
+      }
+    }
+
+    return res.status(500).json({ error: 'Failed to create account. Please try again.' });
   }
 }
