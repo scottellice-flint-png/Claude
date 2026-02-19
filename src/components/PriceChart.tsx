@@ -94,23 +94,9 @@ export default function PriceChart({ marketId, currentPrice, outcomes }: PriceCh
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      {/* Legend */}
-      <div className="px-4 pt-4 pb-2 flex flex-wrap gap-4">
-        {seriesData.map((series) => (
-          <div key={series.name} className="flex items-center gap-2">
-            <span
-              className="w-2.5 h-2.5 rounded-full"
-              style={{ backgroundColor: series.color }}
-            />
-            <span className="text-sm text-gray-600">{series.name}</span>
-            <span className="text-sm font-semibold text-gray-900">{series.currentPrice}%</span>
-          </div>
-        ))}
-      </div>
-
+    <div>
       {/* Chart */}
-      <div className="px-4 pb-2">
+      <div>
         <svg
           viewBox={`0 0 ${chartWidth} ${chartHeight}`}
           className="w-full"
@@ -201,29 +187,6 @@ export default function PriceChart({ marketId, currentPrice, outcomes }: PriceCh
             );
           })}
         </svg>
-      </div>
-
-      {/* Price labels on right side of chart */}
-      <div className="px-4 pb-4 flex flex-wrap gap-3 justify-end">
-        {seriesData.map((series) => (
-          <div
-            key={`${series.name}-label`}
-            className="flex items-center gap-1.5"
-          >
-            <span
-              className="text-sm font-semibold"
-              style={{ color: series.color }}
-            >
-              {series.name}
-            </span>
-            <span
-              className="text-lg font-bold"
-              style={{ color: series.color }}
-            >
-              {series.currentPrice}%
-            </span>
-          </div>
-        ))}
       </div>
     </div>
   );

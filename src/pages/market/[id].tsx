@@ -151,7 +151,7 @@ export default function MarketPage() {
             {market.title}
           </h1>
 
-          {/* Chart Legend - only show colored dots with names for multi-outcome markets (no percentages here - shown in outcomes list) */}
+          {/* Chart Legend - show colored dots with names and percentages for multi-outcome markets (Kalshi style) */}
           {market.outcomes && market.outcomes.length > 0 && (
             <div className="flex flex-wrap items-center gap-4 mb-4">
               {market.outcomes.slice(0, 3).map((outcome, index) => (
@@ -160,6 +160,7 @@ export default function MarketPage() {
                     index === 0 ? 'bg-foremark-green' : index === 1 ? 'bg-foremark-lime' : 'bg-gray-500'
                   }`}></span>
                   <span className="text-sm text-gray-700">{outcome.name}</span>
+                  <span className="text-sm font-bold text-gray-900">{outcome.probability}%</span>
                 </div>
               ))}
             </div>
@@ -297,9 +298,6 @@ export default function MarketPage() {
                   </button>
                 ))}
               </div>
-              <div className="text-sm text-gray-500">
-                ${(market.volume / 1000000).toFixed(1)}M vol
-              </div>
             </div>
 
             {/* Chart */}
@@ -307,25 +305,6 @@ export default function MarketPage() {
               <PriceChart marketId={market.id} currentPrice={market.yesPrice} outcomes={market.outcomes} />
             </div>
 
-            {/* Price Info Bar */}
-            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-100">
-              <div className="flex items-center gap-6">
-                <div>
-                  <span className="text-2xl font-bold text-gray-900">{market.yesPrice}¢</span>
-                  <span className="text-sm text-gray-500 ml-2">Yes</span>
-                </div>
-                <div className="text-foremark-green font-semibold">
-                  +{Math.floor(Math.random() * 5 + 1)}%
-                </div>
-              </div>
-              <div className="text-sm text-gray-500">
-                Closes: {new Date(market.closeDate).toLocaleDateString('en-AU', {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                })}
-              </div>
-            </div>
           </div>
 
           {/* Outcomes List - Clickable contracts like Kalshi */}
