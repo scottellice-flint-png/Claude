@@ -103,8 +103,8 @@ export default function TradePanel({
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">{market.title}</p>
             <p className="text-sm">
-              <span className={`font-semibold ${selectedSide === 'yes' ? 'text-emerald-500' : 'text-red-500'}`}>
-                {tradeMode === 'buy' ? 'Buy' : 'Sell'} {selectedSide === 'yes' ? 'Yes' : 'No'}
+              <span className={`font-semibold ${selectedSide === 'yes' ? 'text-foremark-green' : 'text-gray-700'}`}>
+                {tradeMode === 'buy' ? 'Place Bet' : 'Cash Out'} {selectedSide === 'yes' ? 'Yes' : 'No'}
               </span>
               <span className="text-gray-500"> · {getOutcomeTitle()}</span>
             </p>
@@ -112,28 +112,28 @@ export default function TradePanel({
         </div>
       </div>
 
-      {/* Buy/Sell Toggle */}
+      {/* Place Bet / Cash Out Toggle */}
       <div className="flex items-center gap-2 p-4 border-b border-gray-100">
         <div className="flex bg-gray-100 rounded-full p-1">
           <button
             onClick={() => setTradeMode('buy')}
             className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-all ${
               tradeMode === 'buy'
-                ? 'bg-emerald-500 text-white'
+                ? 'bg-foremark-green text-white'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            Buy
+            Place Bet
           </button>
           <button
             onClick={() => setTradeMode('sell')}
             className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-all ${
               tradeMode === 'sell'
-                ? 'bg-gray-700 text-white'
+                ? 'bg-gray-900 text-white'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            {tradeMode === 'sell' ? 'Cash Out' : 'Sell'}
+            Cash Out
           </button>
         </div>
         <div className="ml-auto">
@@ -151,8 +151,8 @@ export default function TradePanel({
             onClick={() => onSideChange('yes')}
             className={`py-3 text-center font-bold rounded-full transition-all border-2 ${
               selectedSide === 'yes'
-                ? 'bg-emerald-50 border-emerald-500 text-emerald-600'
-                : 'bg-white border-gray-200 text-emerald-600 hover:border-emerald-300'
+                ? 'bg-foremark-lime text-gray-900 border-foremark-lime'
+                : 'bg-white border-gray-200 text-gray-900 hover:border-foremark-lime'
             }`}
           >
             Yes {yesPrice}¢
@@ -161,8 +161,8 @@ export default function TradePanel({
             onClick={() => onSideChange('no')}
             className={`py-3 text-center font-bold rounded-full transition-all border-2 ${
               selectedSide === 'no'
-                ? 'bg-red-50 border-red-400 text-red-500'
-                : 'bg-white border-gray-200 text-red-500 hover:border-red-300'
+                ? 'bg-gray-900 text-white border-gray-900'
+                : 'bg-white border-gray-200 text-gray-900 hover:border-gray-900'
             }`}
           >
             No {noPrice}¢
@@ -176,7 +176,7 @@ export default function TradePanel({
               <span className="text-sm text-gray-500">Amount</span>
               {isAuthenticated && (
                 <div className="mt-1">
-                  <Link href="/deposits" className="text-xs text-emerald-500 hover:underline">
+                  <Link href="/deposits" className="text-xs text-foremark-green hover:underline">
                     Earn 3.25% Interest
                   </Link>
                 </div>
@@ -220,7 +220,7 @@ export default function TradePanel({
           <div className="bg-gray-50 rounded-xl p-4">
             <div className="flex justify-between items-center">
               <span className="text-gray-500">Potential Payout</span>
-              <span className="text-xl font-bold text-emerald-500">
+              <span className="text-xl font-bold text-foremark-green">
                 {formatCurrency(potentialPayout)}
               </span>
             </div>
@@ -256,18 +256,18 @@ export default function TradePanel({
           <button
             onClick={handleSubmit}
             disabled={isSubmitting || amount <= 0 || amount * 100 > (user?.balance || 0)}
-            className="w-full py-4 rounded-full font-bold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-emerald-500 text-white hover:bg-emerald-600"
+            className="w-full py-4 rounded-full font-bold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-foremark-green text-white hover:bg-foremark-green-light"
           >
             {isSubmitting
-              ? 'Placing Order...'
+              ? 'Placing Bet...'
               : tradeMode === 'buy'
-                ? `Buy ${selectedSide.toUpperCase()} for ${formatCurrency(amount)}`
+                ? `Place Bet · ${selectedSide.toUpperCase()} for ${formatCurrency(amount)}`
                 : `Cash Out for ${formatCurrency(amount)}`}
           </button>
         ) : (
           <Link
             href="/login?mode=signup"
-            className="block w-full py-4 rounded-full font-bold text-lg text-center transition-all bg-emerald-500 text-white hover:bg-emerald-600"
+            className="block w-full py-4 rounded-full font-bold text-lg text-center transition-all bg-foremark-green text-white hover:bg-foremark-green-light"
           >
             Sign up to trade
           </Link>

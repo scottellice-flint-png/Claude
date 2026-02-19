@@ -134,13 +134,13 @@ export default function MarketPage() {
             {market.title}
           </h1>
 
-          {/* Probability and Outcomes - Kalshi Style */}
+          {/* Probability and Outcomes */}
           <div className="flex flex-wrap items-center gap-4 mb-4">
             {market.outcomes && market.outcomes.length > 0 ? (
               market.outcomes.slice(0, 3).map((outcome, index) => (
                 <div key={outcome.id} className="flex items-center gap-2">
                   <span className={`w-2.5 h-2.5 rounded-full ${
-                    index === 0 ? 'bg-emerald-500' : index === 1 ? 'bg-blue-500' : 'bg-orange-500'
+                    index === 0 ? 'bg-foremark-green' : index === 1 ? 'bg-foremark-lime' : 'bg-gray-500'
                   }`}></span>
                   <span className="text-sm text-gray-700">{outcome.name}</span>
                   <span className="text-sm font-bold text-gray-900">{outcome.probability}%</span>
@@ -148,7 +148,7 @@ export default function MarketPage() {
               ))
             ) : (
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-foremark-green"></span>
                 <span className="text-sm text-gray-700">Chance</span>
                 <span className="text-sm font-bold text-gray-900">{market.yesPrice}%</span>
               </div>

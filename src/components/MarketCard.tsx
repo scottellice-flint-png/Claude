@@ -54,12 +54,12 @@ export default function MarketCard({ market, showHotBadge = false }: MarketCardP
           </div>
         </div>
 
-        {/* Buy Buttons - Kalshi Style */}
+        {/* Buy Buttons */}
         <div className="flex gap-2">
-          <button className="flex-1 py-2.5 px-4 rounded-full border-2 border-gray-200 text-emerald-500 font-bold text-sm hover:border-emerald-400 hover:bg-emerald-50 transition-colors">
+          <button className="flex-1 py-2.5 px-4 rounded-full bg-foremark-lime text-gray-900 font-bold text-sm hover:bg-foremark-lime-dark transition-colors">
             Yes {market.yesPrice}¢
           </button>
-          <button className="flex-1 py-2.5 px-4 rounded-full border-2 border-gray-200 text-red-500 font-bold text-sm hover:border-red-400 hover:bg-red-50 transition-colors">
+          <button className="flex-1 py-2.5 px-4 rounded-full bg-white border-2 border-gray-900 text-gray-900 font-bold text-sm hover:bg-gray-50 transition-colors">
             No {market.noPrice}¢
           </button>
         </div>
