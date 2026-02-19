@@ -62,29 +62,30 @@ export default function PriceChart({ marketId, currentPrice, outcomes }: PriceCh
     return labels;
   }, []);
 
-  const chartWidth = 400;
-  const chartHeight = 160;
-  const paddingLeft = 0;
-  const paddingRight = 50;
-  const paddingTop = 10;
-  const paddingBottom = 25;
+  // Chart dimensions - optimized to fill container like Kalshi
+  const chartWidth = 500;
+  const chartHeight = 200;
+  const paddingLeft = 0;      // Start from left edge
+  const paddingRight = 45;    // Space for percentage labels
+  const paddingTop = 8;
+  const paddingBottom = 28;
   const graphWidth = chartWidth - paddingLeft - paddingRight;
   const graphHeight = chartHeight - paddingTop - paddingBottom;
 
-  // Generate step line path for a series
+  // Generate step line path for a series - start from left edge
   const generateStepPath = (data: number[]) => {
     if (data.length === 0) return '';
 
     const points: string[] = [];
     data.forEach((price, i) => {
-      const x = paddingLeft + (i / (data.length - 1)) * graphWidth;
+      // Lines start from x=0 and extend to graphWidth
+      const x = (i / (data.length - 1)) * graphWidth;
       const y = paddingTop + graphHeight - (price / 100) * graphHeight;
 
       if (i === 0) {
         points.push(`M ${x} ${y}`);
       } else {
         // Step line: horizontal then vertical
-        const prevX = paddingLeft + ((i - 1) / (data.length - 1)) * graphWidth;
         points.push(`H ${x}`);
         points.push(`V ${y}`);
       }
@@ -94,34 +95,33 @@ export default function PriceChart({ marketId, currentPrice, outcomes }: PriceCh
   };
 
   return (
-    <div>
-      {/* Chart */}
-      <div>
+    <div className="w-full">
+      {/* Chart - responsive container */}
+      <div className="w-full">
         <svg
           viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-          className="w-full"
-          style={{ height: '180px' }}
-          preserveAspectRatio="xMidYMid meet"
+          className="w-full h-[180px] sm:h-[200px] md:h-[220px]"
+          preserveAspectRatio="none"
         >
-          {/* Horizontal grid lines (dotted) */}
+          {/* Horizontal grid lines (dotted) - extend full width like Kalshi */}
           {[0, 25, 50, 75, 100].map((pct) => {
             const y = paddingTop + graphHeight - (pct / 100) * graphHeight;
             return (
               <g key={pct}>
                 <line
-                  x1={paddingLeft}
+                  x1={0}
                   y1={y}
                   x2={chartWidth - paddingRight}
                   y2={y}
                   stroke="#E5E7EB"
                   strokeWidth="1"
-                  strokeDasharray="4 4"
+                  strokeDasharray="3 3"
                 />
                 {/* Y-axis label on right */}
                 <text
-                  x={chartWidth - paddingRight + 8}
+                  x={chartWidth - paddingRight + 6}
                   y={y + 4}
-                  className="text-xs"
+                  fontSize="11"
                   fill="#9CA3AF"
                 >
                   {pct}%
@@ -143,10 +143,10 @@ export default function PriceChart({ marketId, currentPrice, outcomes }: PriceCh
             />
           ))}
 
-          {/* End points with circles */}
+          {/* End points with circles - positioned at end of graph area */}
           {seriesData.map((series) => {
             const lastPrice = series.data[series.data.length - 1];
-            const x = chartWidth - paddingRight;
+            const x = graphWidth;
             const y = paddingTop + graphHeight - (lastPrice / 100) * graphHeight;
             return (
               <g key={`${series.name}-dot`}>
@@ -154,7 +154,7 @@ export default function PriceChart({ marketId, currentPrice, outcomes }: PriceCh
                 <circle
                   cx={x}
                   cy={y}
-                  r="6"
+                  r="5"
                   fill="white"
                   stroke={series.color}
                   strokeWidth="2"
@@ -163,24 +163,25 @@ export default function PriceChart({ marketId, currentPrice, outcomes }: PriceCh
                 <circle
                   cx={x}
                   cy={y}
-                  r="4"
+                  r="3"
                   fill={series.color}
                 />
               </g>
             );
           })}
 
-          {/* X-axis date labels */}
+          {/* X-axis date labels - spread across full width */}
           {dateLabels.map((label, i) => {
-            const x = paddingLeft + (i / (dateLabels.length - 1)) * graphWidth;
+            // Position labels across the graph width, with first at start and last near end
+            const x = (i / (dateLabels.length - 1)) * graphWidth;
             return (
               <text
                 key={label}
                 x={x}
-                y={chartHeight - 5}
-                className="text-xs"
+                y={chartHeight - 6}
+                fontSize="11"
                 fill="#9CA3AF"
-                textAnchor="middle"
+                textAnchor={i === 0 ? 'start' : i === dateLabels.length - 1 ? 'end' : 'middle'}
               >
                 {label}
               </text>

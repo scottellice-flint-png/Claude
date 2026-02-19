@@ -300,8 +300,8 @@ export default function MarketPage() {
               </div>
             </div>
 
-            {/* Chart */}
-            <div className="p-4">
+            {/* Chart - minimal horizontal padding so chart extends edge to edge */}
+            <div className="px-2 py-4 sm:px-4">
               <PriceChart marketId={market.id} currentPrice={market.yesPrice} outcomes={market.outcomes} />
             </div>
 
