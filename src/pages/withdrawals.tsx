@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
+import { useStore } from '@/store';
+import { useSession } from 'next-auth/react';
 
 type WithdrawalMethod = 'bank' | 'paypal';
 
@@ -9,17 +11,43 @@ const methodTabs: { id: WithdrawalMethod; label: string }[] = [
 ];
 
 export default function WithdrawalsPage() {
+  const { data: session } = useSession();
+  const storeUser = useStore((state) => state.user);
+
+  // Use session user if authenticated, otherwise fall back to store user
+  const user = session?.user?.userType === 'user' ? {
+    id: session.user.id,
+    username: session.user.username || 'User',
+    balance: session.user.balance || 0,
+  } : storeUser;
+
   const [activeMethod, setActiveMethod] = useState<WithdrawalMethod>('bank');
   const [amount, setAmount] = useState('');
   const [selectedBank, setSelectedBank] = useState('');
 
-  const availableBalance = 0.00;
+  const availableBalance = user?.balance ? user.balance / 100 : 0.00;
 
   const quickAmounts = [10, 25, 50, 100, 500];
 
   const handleQuickAmount = (value: number) => {
     setAmount(value.toString());
   };
+
+  if (!user) {
+    return (
+      <div className="text-center py-16">
+        <div className="text-6xl mb-4">🔒</div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Please log in</h2>
+        <p className="text-gray-500 mb-6">You need to be logged in to make withdrawals.</p>
+        <Link
+          href="/login"
+          className="inline-flex items-center px-6 py-3 bg-foremark-green text-white font-semibold rounded-lg hover:bg-foremark-green-light transition-colors"
+        >
+          Log in
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

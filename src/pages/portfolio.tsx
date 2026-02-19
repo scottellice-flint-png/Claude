@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/store';
+import { useSession } from 'next-auth/react';
 
 type ActivityFilter = 'all' | 'deposits' | 'withdrawals' | 'bets' | 'results' | 'bonuses';
 
@@ -95,7 +96,15 @@ const FILTER_OPTIONS: { id: ActivityFilter; label: string }[] = [
 
 export default function PortfolioPage() {
   const [activeFilter, setActiveFilter] = useState<ActivityFilter>('all');
-  const user = useStore((state) => state.user);
+  const { data: session } = useSession();
+  const storeUser = useStore((state) => state.user);
+
+  // Use session user if authenticated, otherwise fall back to store user
+  const user = session?.user?.userType === 'user' ? {
+    id: session.user.id,
+    username: session.user.username || 'User',
+    balance: session.user.balance || 0,
+  } : storeUser;
 
   const filteredActivities = useMemo(() => {
     if (activeFilter === 'all') return MOCK_ACTIVITIES;
@@ -218,7 +227,13 @@ export default function PortfolioPage() {
       <div className="text-center py-16">
         <div className="text-6xl mb-4">🔒</div>
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Please log in</h2>
-        <p className="text-gray-500">You need to be logged in to view your activity.</p>
+        <p className="text-gray-500 mb-6">You need to be logged in to view your activity.</p>
+        <Link
+          href="/login"
+          className="inline-flex items-center px-6 py-3 bg-foremark-green text-white font-semibold rounded-lg hover:bg-foremark-green-light transition-colors"
+        >
+          Log in
+        </Link>
       </div>
     );
   }

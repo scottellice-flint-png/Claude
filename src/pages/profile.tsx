@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/store';
+import { useSession } from 'next-auth/react';
 
 // Sidebar navigation items
 const NAV_ITEMS = [
@@ -15,7 +16,16 @@ const NAV_ITEMS = [
 type TwoFactorMethod = 'sms-email' | 'sms-only' | 'email-only' | 'authenticator';
 
 export default function ProfilePage() {
-  const user = useStore((state) => state.user);
+  const { data: session } = useSession();
+  const storeUser = useStore((state) => state.user);
+
+  // Use session user if authenticated, otherwise fall back to store user
+  const user = session?.user?.userType === 'user' ? {
+    id: session.user.id,
+    username: session.user.username || 'User',
+    email: session.user.email || '',
+    balance: session.user.balance || 0,
+  } : storeUser;
   const [twoFactorMethod, setTwoFactorMethod] = useState<TwoFactorMethod>('sms-email');
   const [isVerified] = useState(true);
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
@@ -52,7 +62,13 @@ export default function ProfilePage() {
       <div className="text-center py-16">
         <div className="text-6xl mb-4">🔒</div>
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Please log in</h2>
-        <p className="text-gray-500">You need to be logged in to view your account settings.</p>
+        <p className="text-gray-500 mb-6">You need to be logged in to view your account settings.</p>
+        <Link
+          href="/login"
+          className="inline-flex items-center px-6 py-3 bg-foremark-green text-white font-semibold rounded-lg hover:bg-foremark-green-light transition-colors"
+        >
+          Log in
+        </Link>
       </div>
     );
   }
