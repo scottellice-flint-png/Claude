@@ -198,7 +198,7 @@ export default function UsersPage() {
                     <td colSpan={5} className="px-4 py-12 text-center">
                       <div className="text-gray-500">
                         <p className="text-lg font-medium">No users found</p>
-                        <p className="text-sm mt-1">Click "Add User" to create the first admin user.</p>
+                        <p className="text-sm mt-1">Click &quot;Add User&quot; to create the first admin user.</p>
                       </div>
                     </td>
                   </tr>

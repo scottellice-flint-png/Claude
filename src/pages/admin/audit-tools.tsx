@@ -607,7 +607,7 @@ export default function AuditToolsPage() {
 
             {events.length === 0 && !eventsLoading && (
               <p className="text-gray-500 text-center py-8">
-                No events found. Click "Search Events" to load audit events.
+                No events found. Click &quot;Search Events&quot; to load audit events.
               </p>
             )}
           </div>
