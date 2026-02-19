@@ -13,8 +13,8 @@ const markets: Market[] = [
     settlementDate: '2026-05-25T12:00:00+10:00',
     yesPrice: 52,
     noPrice: 48,
-    volume: 8750000,
-    liquidity: 2890000,
+    volume: 2450000,
+    liquidity: 890000,
     createdAt: '2025-01-15T10:00:00+10:00',
   },
   {
@@ -27,8 +27,8 @@ const markets: Market[] = [
     settlementDate: '2026-02-18T12:00:00+11:00',
     yesPrice: 8,
     noPrice: 92,
-    volume: 6780000,
-    liquidity: 2450000,
+    volume: 485000,
+    liquidity: 178000,
     createdAt: '2025-01-08T09:00:00+11:00',
   },
 ];
