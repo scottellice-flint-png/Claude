@@ -677,36 +677,18 @@ export default function MarketPage() {
 
           {/* Modal */}
           <div className="absolute inset-x-0 bottom-0 bg-white rounded-t-2xl max-h-[90vh] overflow-hidden animate-slide-up">
-            {/* Header with close button */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-              <div className="flex items-start gap-3 flex-1">
-                <div className="w-10 h-10 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
-                  <span className="text-gray-500 text-lg font-semibold">
-                    {selectedOutcome.name.charAt(0)}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{market.title}</p>
-                  <p className="text-sm">
-                    <span className={`font-semibold ${selectedSide === 'yes' ? 'text-foremark-green' : 'text-gray-700'}`}>
-                      Place Bet {selectedSide === 'yes' ? 'Yes' : 'No'}
-                    </span>
-                    <span className="text-gray-500"> · {selectedOutcome.name}</span>
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={closeMobileBetModal}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+            {/* Close button */}
+            <button
+              onClick={closeMobileBetModal}
+              className="absolute right-3 top-3 z-10 p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
 
             {/* Trade Panel Content */}
-            <div className="p-4 overflow-y-auto max-h-[calc(90vh-60px)]">
+            <div className="p-4 overflow-y-auto max-h-[90vh]">
               <TradePanel
                 market={market}
                 selectedSide={selectedSide}
