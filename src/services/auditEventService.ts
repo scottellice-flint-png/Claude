@@ -4,6 +4,9 @@
 
 import { createHash } from 'crypto';
 import prisma from '@/lib/prisma';
+import {
+  EVENT_TYPE_CONFIG,
+} from '@/types/auditEvents';
 import type {
   AuditEventType,
   ActorType,
@@ -13,7 +16,6 @@ import type {
   MarketStateSnapshot,
   AuditExportFilters,
   ExportFormat,
-  EVENT_TYPE_CONFIG,
 } from '@/types/auditEvents';
 
 // ============================================================================
