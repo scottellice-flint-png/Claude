@@ -33,7 +33,7 @@ export default function TradePanel({
   const placeOrder = useStore((state) => state.placeOrder);
 
   // Use session user if authenticated
-  const user = session?.user?.userType === 'user' ? {
+  const user = session?.user ? {
     id: session.user.id,
     username: session.user.username || 'User',
     balance: session.user.balance || 0,

@@ -9,11 +9,11 @@ const QUICK_AMOUNTS_CARD = [5, 10, 25, 50, 100];
 const QUICK_AMOUNTS_PAYPAL = [10, 25, 50, 100, 500];
 
 export default function DepositsPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const storeUser = useStore((state) => state.user);
 
   // Use session user if authenticated, otherwise fall back to store user
-  const user = session?.user?.userType === 'user' ? {
+  const user = session?.user ? {
     id: session.user.id,
     username: session.user.username || 'User',
     balance: session.user.balance || 0,
@@ -29,6 +29,16 @@ export default function DepositsPage() {
       currency: 'AUD',
     }).format(cents / 100);
   };
+
+  // Show loading state while session is being fetched
+  if (status === 'loading') {
+    return (
+      <div className="text-center py-16">
+        <div className="animate-spin w-8 h-8 border-4 border-foremark-green border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    );
+  }
 
   if (!user) {
     return (

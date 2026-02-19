@@ -1,11 +1,19 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/store';
+import { useSession } from 'next-auth/react';
 
 export default function OrdersPage() {
   const [filter, setFilter] = useState<'all' | 'open' | 'filled' | 'cancelled'>('all');
+  const { data: session, status } = useSession();
+  const storeUser = useStore((state) => state.user);
 
-  const user = useStore((state) => state.user);
+  // Use session user if authenticated, otherwise fall back to store user
+  const user = session?.user ? {
+    id: session.user.id,
+    username: session.user.username || 'User',
+    balance: session.user.balance || 0,
+  } : storeUser;
   const orders = useStore((state) => state.getUserOrders());
   const markets = useStore((state) => state.markets);
   const cancelOrder = useStore((state) => state.cancelOrder);
@@ -50,6 +58,16 @@ export default function OrdersPage() {
     };
     return styles[status] || styles.open;
   };
+
+  // Show loading state while session is being fetched
+  if (status === 'loading') {
+    return (
+      <div className="text-center py-16">
+        <div className="animate-spin w-8 h-8 border-4 border-foremark-green border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    );
+  }
 
   if (!user) {
     return (

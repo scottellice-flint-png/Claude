@@ -16,11 +16,11 @@ const NAV_ITEMS = [
 type TwoFactorMethod = 'sms-email' | 'sms-only' | 'email-only' | 'authenticator';
 
 export default function ProfilePage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const storeUser = useStore((state) => state.user);
 
   // Use session user if authenticated, otherwise fall back to store user
-  const user = session?.user?.userType === 'user' ? {
+  const user = session?.user ? {
     id: session.user.id,
     username: session.user.username || 'User',
     email: session.user.email || '',
@@ -56,6 +56,16 @@ export default function ProfilePage() {
     { id: '1', username: 'MarketMaster', avatar: 'bg-blue-400' },
     { id: '2', username: 'AussiePunter', avatar: 'bg-green-400' },
   ]);
+
+  // Show loading state while session is being fetched
+  if (status === 'loading') {
+    return (
+      <div className="text-center py-16">
+        <div className="animate-spin w-8 h-8 border-4 border-foremark-green border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    );
+  }
 
   if (!user) {
     return (

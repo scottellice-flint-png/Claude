@@ -15,7 +15,7 @@ export default function Layout({ children }: LayoutProps) {
   const markets = useStore((state) => state.markets);
 
   // Use session user if authenticated, otherwise fall back to store user
-  const user = session?.user?.userType === 'user' ? {
+  const user = session?.user ? {
     id: session.user.id,
     username: session.user.username || 'User',
     balance: session.user.balance || 0,

@@ -235,7 +235,7 @@ export default function ChatsPage() {
 
   // Initial fetch
   useEffect(() => {
-    if (session?.user?.userType === 'user') {
+    if (session?.user) {
       fetchChats();
     }
   }, [session, fetchChats]);
