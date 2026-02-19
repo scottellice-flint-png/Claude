@@ -307,14 +307,11 @@ export default function LoginPage() {
 
         {/* Right Side - Form */}
         <div className="flex-1 flex flex-col bg-gray-50 lg:bg-white">
-          {/* Mobile Header */}
-          <div className="lg:hidden bg-[#0F4C4C] pt-6 pb-16 px-4 sm:px-6">
-            <div className="max-w-md mx-auto">
-              <Logo />
-
-              {/* Step indicator for signup on mobile */}
-              {mode === 'signup' && (
-                <div className="flex justify-center gap-3 mt-6">
+          {/* Mobile Header - Step indicator only (branding is in navbar) */}
+          {mode === 'signup' && (
+            <div className="lg:hidden bg-[#0F4C4C] pt-4 pb-12 px-4 sm:px-6">
+              <div className="max-w-md mx-auto">
+                <div className="flex justify-center gap-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
                     signupStep >= 1 ? 'bg-[#C8E64C] text-[#0F4C4C]' : 'bg-white/20 text-white/60'
                   }`}>
@@ -326,13 +323,13 @@ export default function LoginPage() {
                     2
                   </div>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Form Container */}
-          <div className="flex-1 -mt-10 lg:mt-0 lg:flex lg:items-center lg:justify-center">
-            <div className="bg-white rounded-t-3xl lg:rounded-none lg:bg-transparent px-4 sm:px-6 py-8 lg:py-12 w-full max-w-md lg:max-w-lg mx-auto lg:px-8">
+          <div className={`flex-1 lg:flex lg:items-center lg:justify-center ${mode === 'signup' ? '-mt-8' : 'mt-0'} lg:mt-0`}>
+            <div className={`${mode === 'signup' ? 'bg-white rounded-t-3xl' : 'bg-white'} lg:rounded-none lg:bg-transparent px-4 sm:px-6 py-8 lg:py-12 w-full max-w-md lg:max-w-lg mx-auto lg:px-8`}>
 
               {/* Desktop Step Indicator */}
               {mode === 'signup' && (
