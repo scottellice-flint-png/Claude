@@ -229,26 +229,6 @@ export default function LoginPage() {
     }
   };
 
-  // Logo Component
-  const Logo = ({ size = 'default' }: { size?: 'default' | 'large' }) => (
-    <Link href="/" className="inline-flex items-center gap-2">
-      <div className={`${size === 'large' ? 'w-12 h-12' : 'w-10 h-10'} bg-[#C8E64C] rounded-lg flex items-center justify-center`}>
-        <svg
-          className={`${size === 'large' ? 'w-7 h-7' : 'w-6 h-6'} text-[#0F4C4C]`}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      </div>
-      <span className={`text-white ${size === 'large' ? 'text-3xl' : 'text-2xl'} font-bold`}>Foremark</span>
-    </Link>
-  );
-
   return (
     <>
       <Head>
@@ -258,10 +238,6 @@ export default function LoginPage() {
       <div className="min-h-screen flex flex-col lg:flex-row">
         {/* Left Side - Branding (hidden on mobile, visible on lg+) */}
         <div className="hidden lg:flex lg:w-1/2 xl:w-2/5 bg-[#0F4C4C] flex-col justify-between p-8 xl:p-12">
-          <div>
-            <Logo size="large" />
-          </div>
-
           <div className="space-y-6">
             <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
               Australia&apos;s Premier<br />Prediction Market
