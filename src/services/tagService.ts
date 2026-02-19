@@ -1,6 +1,7 @@
 // @ts-nocheck
 import prisma from '@/lib/prisma';
 import { createAuditLog } from './auditService';
+import { writeAuditEvent } from './auditEventService';
 import type { Tag, CreateTagInput } from '@/types/admin';
 
 interface AdminContext {
@@ -28,6 +29,20 @@ export async function createTag(input: CreateTagInput, ctx: AdminContext): Promi
     action: 'create',
     newData: tag as unknown as Record<string, unknown>,
   });
+
+  // Comprehensive audit event
+  await writeAuditEvent({
+    eventType: 'TAG_CREATED',
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    afterState: {
+      id: tag.id,
+      name: tag.name,
+      slug: tag.slug,
+    },
+  }).catch(console.error);
 
   return formatTag(tag);
 }
@@ -112,6 +127,23 @@ export async function updateTag(
     newData: tag as unknown as Record<string, unknown>,
   });
 
+  // Comprehensive audit event
+  await writeAuditEvent({
+    eventType: 'TAG_UPDATED',
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    beforeState: {
+      name: previous?.name,
+      slug: previous?.slug,
+    },
+    afterState: {
+      name: tag.name,
+      slug: tag.slug,
+    },
+  }).catch(console.error);
+
   return formatTag(tag);
 }
 
@@ -141,6 +173,20 @@ export async function deleteTag(id: string, ctx: AdminContext): Promise<void> {
     action: 'delete',
     previousData: tag as unknown as Record<string, unknown>,
   });
+
+  // Comprehensive audit event
+  await writeAuditEvent({
+    eventType: 'TAG_DELETED',
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    beforeState: {
+      id: tag.id,
+      name: tag.name,
+      slug: tag.slug,
+    },
+  }).catch(console.error);
 }
 
 function formatTag(tag: Record<string, unknown>): Tag {

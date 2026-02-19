@@ -1,6 +1,7 @@
 // @ts-nocheck
 import prisma from '@/lib/prisma';
 import { createAuditLog } from './auditService';
+import { writeAuditEvent } from './auditEventService';
 import type {
   Category,
   Subcategory,
@@ -41,6 +42,21 @@ export async function createCategory(
     action: 'create',
     newData: category as unknown as Record<string, unknown>,
   });
+
+  // Comprehensive audit event
+  await writeAuditEvent({
+    eventType: 'CATEGORY_CREATED',
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    afterState: {
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      isActive: category.isActive,
+    },
+  }).catch(console.error);
 
   return formatCategory(category);
 }
@@ -115,6 +131,25 @@ export async function updateCategory(
     newData: category as unknown as Record<string, unknown>,
   });
 
+  // Comprehensive audit event
+  await writeAuditEvent({
+    eventType: 'CATEGORY_UPDATED',
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    beforeState: {
+      name: previous?.name,
+      slug: previous?.slug,
+      isActive: previous?.isActive,
+    },
+    afterState: {
+      name: category.name,
+      slug: category.slug,
+      isActive: category.isActive,
+    },
+  }).catch(console.error);
+
   return formatCategory(category);
 }
 
@@ -144,6 +179,20 @@ export async function deleteCategory(id: string, ctx: AdminContext): Promise<voi
     action: 'delete',
     previousData: category as unknown as Record<string, unknown>,
   });
+
+  // Comprehensive audit event
+  await writeAuditEvent({
+    eventType: 'CATEGORY_DELETED',
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    beforeState: {
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+    },
+  }).catch(console.error);
 }
 
 // ============================================================================
@@ -169,6 +218,22 @@ export async function createSubcategory(
     action: 'create',
     newData: subcategory as unknown as Record<string, unknown>,
   });
+
+  // Comprehensive audit event
+  await writeAuditEvent({
+    eventType: 'SUBCATEGORY_CREATED',
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    afterState: {
+      id: subcategory.id,
+      name: subcategory.name,
+      slug: subcategory.slug,
+      categoryId: subcategory.categoryId,
+      isActive: subcategory.isActive,
+    },
+  }).catch(console.error);
 
   return formatSubcategory(subcategory);
 }
@@ -218,6 +283,25 @@ export async function updateSubcategory(
     newData: subcategory as unknown as Record<string, unknown>,
   });
 
+  // Comprehensive audit event
+  await writeAuditEvent({
+    eventType: 'SUBCATEGORY_UPDATED',
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    beforeState: {
+      name: previous?.name,
+      slug: previous?.slug,
+      isActive: previous?.isActive,
+    },
+    afterState: {
+      name: subcategory.name,
+      slug: subcategory.slug,
+      isActive: subcategory.isActive,
+    },
+  }).catch(console.error);
+
   return formatSubcategory(subcategory);
 }
 
@@ -251,6 +335,21 @@ export async function deleteSubcategory(id: string, ctx: AdminContext): Promise<
     action: 'delete',
     previousData: subcategory as unknown as Record<string, unknown>,
   });
+
+  // Comprehensive audit event
+  await writeAuditEvent({
+    eventType: 'SUBCATEGORY_DELETED',
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    beforeState: {
+      id: subcategory.id,
+      name: subcategory.name,
+      slug: subcategory.slug,
+      categoryId: subcategory.categoryId,
+    },
+  }).catch(console.error);
 }
 
 // ============================================================================

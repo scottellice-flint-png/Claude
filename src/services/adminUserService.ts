@@ -2,6 +2,7 @@
 import prisma from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
 import { createAuditLog } from './auditService';
+import { writeAuditEvent } from './auditEventService';
 import type {
   AdminUser,
   AdminRole,
@@ -43,6 +44,22 @@ export async function createAdminUser(
     action: 'create',
     newData: { ...formatUser(user), password: '[REDACTED]' },
   });
+
+  // Comprehensive audit event
+  await writeAuditEvent({
+    eventType: 'ADMIN_USER_CREATED',
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    afterState: {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+    },
+    metadata: { createdUserId: user.id },
+  }).catch(console.error);
 
   return formatUser(user);
 }
@@ -132,6 +149,32 @@ export async function updateAdminUser(
     },
   });
 
+  // Comprehensive audit event - check if role changed (permission change)
+  const eventType = (input.role && input.role !== previous?.role)
+    ? 'ADMIN_PERMISSION_CHANGED'
+    : 'ADMIN_USER_UPDATED';
+
+  await writeAuditEvent({
+    eventType,
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    reasonCode: eventType === 'ADMIN_PERMISSION_CHANGED' ? 'POLICY_CHANGE' : undefined,
+    beforeState: {
+      email: previous?.email,
+      role: previous?.role,
+      isActive: previous?.isActive,
+    },
+    afterState: {
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+      passwordChanged: !!input.password,
+    },
+    metadata: { targetUserId: id },
+  }).catch(console.error);
+
   return formatUser(user);
 }
 
@@ -140,6 +183,8 @@ export async function deactivateAdminUser(id: string, ctx: AdminContext): Promis
   if (id === ctx.userId) {
     throw new Error('Cannot deactivate your own account');
   }
+
+  const previous = await prisma.adminUser.findUnique({ where: { id } });
 
   const user = await prisma.adminUser.update({
     where: { id },
@@ -157,10 +202,25 @@ export async function deactivateAdminUser(id: string, ctx: AdminContext): Promis
     metadata: { deactivated: true },
   });
 
+  // Comprehensive audit event
+  await writeAuditEvent({
+    eventType: 'ADMIN_USER_DEACTIVATED',
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    reasonCode: 'POLICY_CHANGE',
+    beforeState: { isActive: previous?.isActive, email: previous?.email },
+    afterState: { isActive: user.isActive, email: user.email },
+    metadata: { targetUserId: id },
+  }).catch(console.error);
+
   return formatUser(user);
 }
 
 export async function reactivateAdminUser(id: string, ctx: AdminContext): Promise<AdminUser> {
+  const previous = await prisma.adminUser.findUnique({ where: { id } });
+
   const user = await prisma.adminUser.update({
     where: { id },
     data: { isActive: true },
@@ -176,6 +236,19 @@ export async function reactivateAdminUser(id: string, ctx: AdminContext): Promis
     action: 'update',
     metadata: { reactivated: true },
   });
+
+  // Comprehensive audit event
+  await writeAuditEvent({
+    eventType: 'ADMIN_USER_REACTIVATED',
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    reasonCode: 'POLICY_CHANGE',
+    beforeState: { isActive: previous?.isActive, email: previous?.email },
+    afterState: { isActive: user.isActive, email: user.email },
+    metadata: { targetUserId: id },
+  }).catch(console.error);
 
   return formatUser(user);
 }

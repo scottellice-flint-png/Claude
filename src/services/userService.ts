@@ -1,5 +1,6 @@
 import prisma from '@/lib/prisma';
 import { hashPassword, verifyPassword } from '@/lib/auth';
+import { writeAuditEvent } from './auditEventService';
 
 export interface PublicUser {
   id: string;
@@ -79,6 +80,21 @@ export async function createUser(input: CreateUserInput): Promise<AuthResult> {
       displayName: input.username,
     },
   });
+
+  // Audit event for user registration
+  await writeAuditEvent({
+    eventType: 'USER_REGISTERED',
+    actorType: 'user',
+    actorId: user.id,
+    afterState: {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      isActive: user.isActive,
+      isVerified: user.isVerified,
+      balance: user.balance,
+    },
+  }).catch(console.error);
 
   return { success: true, user: formatUser(user) };
 }
@@ -208,6 +224,14 @@ export async function changeUserPassword(
     data: { passwordHash },
   });
 
+  // Audit event for password change
+  await writeAuditEvent({
+    eventType: 'PASSWORD_CHANGED',
+    actorType: 'user',
+    actorId: id,
+    metadata: { changedBy: 'user' },
+  }).catch(console.error);
+
   return { success: true };
 }
 
@@ -215,10 +239,23 @@ export async function changeUserPassword(
  * Deactivate user account
  */
 export async function deactivateUser(id: string): Promise<PublicUser> {
+  const previous = await prisma.user.findUnique({ where: { id } });
+
   const user = await prisma.user.update({
     where: { id },
     data: { isActive: false },
   });
+
+  // Audit event for account status change
+  await writeAuditEvent({
+    eventType: 'ACCOUNT_STATUS_CHANGED',
+    actorType: 'user',
+    actorId: id,
+    reasonCode: 'USER_REQUEST',
+    beforeState: { isActive: previous?.isActive },
+    afterState: { isActive: user.isActive },
+    metadata: { action: 'self_deactivation' },
+  }).catch(console.error);
 
   return formatUser(user);
 }
