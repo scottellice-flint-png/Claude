@@ -106,7 +106,7 @@ export default function TradePanel({
             <span className="text-lg">{market.icon || '📊'}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{market.title}</p>
+            <p className="text-sm font-medium text-gray-900 break-words">{market.title}</p>
             <p className="text-sm">
               <span className={`font-semibold ${selectedSide === 'yes' ? 'text-foremark-green' : 'text-gray-700'}`}>
                 {tradeMode === 'buy' ? 'Place Bet' : 'Cash Out'} {selectedSide === 'yes' ? 'Yes' : 'No'}
@@ -118,68 +118,61 @@ export default function TradePanel({
       </div>
 
       {/* Place Bet / Cash Out Toggle */}
-      <div className="flex items-center gap-2 p-4 border-b border-gray-100">
-        <div className="flex bg-gray-100 rounded-full p-1">
-          <button
-            onClick={() => setTradeMode('buy')}
-            className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-all ${
-              tradeMode === 'buy'
-                ? 'bg-foremark-green text-white'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Place Bet
-          </button>
-          <button
-            onClick={() => setTradeMode('sell')}
-            className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-all ${
-              tradeMode === 'sell'
-                ? 'bg-gray-900 text-white'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Cash Out
-          </button>
-        </div>
+      <div className="flex items-center gap-3 p-4 border-b border-gray-100">
+        <button
+          onClick={() => setTradeMode('buy')}
+          className={`px-5 py-2 text-sm font-bold rounded-full transition-all border-2 ${
+            tradeMode === 'buy'
+              ? 'bg-foremark-green text-white border-foremark-green shadow-md'
+              : 'bg-white text-gray-500 border-gray-200 hover:border-foremark-green hover:text-gray-700'
+          }`}
+        >
+          Place Bet
+        </button>
+        <button
+          onClick={() => setTradeMode('sell')}
+          className={`px-5 py-2 text-sm font-bold rounded-full transition-all border-2 ${
+            tradeMode === 'sell'
+              ? 'bg-gray-900 text-white border-gray-900 shadow-md'
+              : 'bg-white text-gray-500 border-gray-200 hover:border-gray-900 hover:text-gray-700'
+          }`}
+        >
+          Cash Out
+        </button>
       </div>
 
       <div className="p-4 space-y-4">
-        {/* Yes/No Price Buttons */}
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => onSideChange('yes')}
-            className={`py-3 text-center font-bold rounded-full transition-all border-2 ${
-              selectedSide === 'yes'
-                ? 'bg-foremark-lime text-gray-900 border-foremark-lime'
-                : 'bg-white border-gray-200 text-gray-900 hover:border-foremark-lime'
-            }`}
-          >
-            Yes {yesPrice}¢
-          </button>
-          <button
-            onClick={() => onSideChange('no')}
-            className={`py-3 text-center font-bold rounded-full transition-all border-2 ${
-              selectedSide === 'no'
-                ? 'bg-gray-900 text-white border-gray-900'
-                : 'bg-white border-gray-200 text-gray-900 hover:border-gray-900'
-            }`}
-          >
-            No {noPrice}¢
-          </button>
-        </div>
+        {/* Yes/No Price Buttons - hidden in Cash Out mode */}
+        {tradeMode === 'buy' && (
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => onSideChange('yes')}
+              className={`py-3 text-center font-bold rounded-full transition-all border-2 ${
+                selectedSide === 'yes'
+                  ? 'bg-foremark-lime text-gray-900 border-foremark-lime'
+                  : 'bg-white border-gray-200 text-gray-900 hover:border-foremark-lime'
+              }`}
+            >
+              Yes {yesPrice}¢
+            </button>
+            <button
+              onClick={() => onSideChange('no')}
+              className={`py-3 text-center font-bold rounded-full transition-all border-2 ${
+                selectedSide === 'no'
+                  ? 'bg-gray-900 text-white border-gray-900'
+                  : 'bg-white border-gray-200 text-gray-900 hover:border-gray-900'
+              }`}
+            >
+              No {noPrice}¢
+            </button>
+          </div>
+        )}
 
         {/* Amount Input */}
         <div className="border border-gray-200 rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
               <span className="text-sm text-gray-500">Amount</span>
-              {isAuthenticated && (
-                <div className="mt-1">
-                  <Link href="/deposits" className="text-xs text-foremark-green hover:underline">
-                    Earn 3.25% Interest
-                  </Link>
-                </div>
-              )}
             </div>
             <div className="flex items-center gap-1">
               <span className="text-3xl font-semibold text-gray-300">$</span>
@@ -194,25 +187,6 @@ export default function TradePanel({
             </div>
           </div>
         </div>
-
-        {/* Quick amount buttons - only show for authenticated users */}
-        {isAuthenticated && (
-          <div className="flex gap-2">
-            {[10, 50, 100, 500].map((q) => (
-              <button
-                key={q}
-                onClick={() => setAmount(q)}
-                className={`flex-1 py-2 text-sm font-semibold rounded-full transition-colors ${
-                  amount === q
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                ${q}
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* Payout Info - only show when amount > 0 */}
         {amount > 0 && isAuthenticated && (
