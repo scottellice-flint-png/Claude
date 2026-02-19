@@ -380,35 +380,6 @@ export default function Layout({ children }: LayoutProps) {
                 {/* Dropdown Menu */}
                 {isMenuOpen && (
                   <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
-                    {/* User Header with Logout - only when logged in */}
-                    {session?.user && (
-                      <div className="p-4 bg-gray-50 border-b border-gray-100">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-foremark-green rounded-full flex items-center justify-center text-white font-bold">
-                              {(session.user.username || session.user.name || 'U').charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <p className="font-semibold text-gray-900">{session.user.username || session.user.name || 'User'}</p>
-                              <p className="text-xs text-gray-500">{session.user.email}</p>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => {
-                              setIsMenuOpen(false);
-                              signOut({ callbackUrl: '/' });
-                            }}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Log out"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
                     {/* Quick Actions */}
                     <div className="p-4 border-b border-gray-100">
                       <div className="flex justify-around">
