@@ -24,6 +24,8 @@ export default function MarketPage() {
   const [isSaved, setIsSaved] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [selectedOutcome, setSelectedOutcome] = useState<{ id: string; name: string; yesPrice: number; noPrice: number } | null>(null);
+  const [showMobileBetModal, setShowMobileBetModal] = useState(false);
 
   const market = useStore((state) => state.getMarket(id as string));
   const updateMarketPrice = useStore((state) => state.updateMarketPrice);
@@ -80,6 +82,21 @@ export default function MarketPage() {
     }));
   };
 
+  // Handle outcome selection
+  const handleOutcomeSelect = (outcome: { id: string; name: string; yesPrice: number; noPrice: number }, side: 'yes' | 'no') => {
+    setSelectedOutcome(outcome);
+    setSelectedSide(side);
+    // On mobile, show the bet modal
+    if (window.innerWidth < 1024) {
+      setShowMobileBetModal(true);
+    }
+  };
+
+  // Close mobile modal
+  const closeMobileBetModal = () => {
+    setShowMobileBetModal(false);
+  };
+
   const handleAddComment = () => {
     if (!commentText.trim() || !market) return;
     addComment(market.id, commentText);
@@ -134,26 +151,19 @@ export default function MarketPage() {
             {market.title}
           </h1>
 
-          {/* Probability and Outcomes */}
-          <div className="flex flex-wrap items-center gap-4 mb-4">
-            {market.outcomes && market.outcomes.length > 0 ? (
-              market.outcomes.slice(0, 3).map((outcome, index) => (
+          {/* Chart Legend - only show colored dots with names for multi-outcome markets (no percentages here - shown in outcomes list) */}
+          {market.outcomes && market.outcomes.length > 0 && (
+            <div className="flex flex-wrap items-center gap-4 mb-4">
+              {market.outcomes.slice(0, 3).map((outcome, index) => (
                 <div key={outcome.id} className="flex items-center gap-2">
                   <span className={`w-2.5 h-2.5 rounded-full ${
                     index === 0 ? 'bg-foremark-green' : index === 1 ? 'bg-foremark-lime' : 'bg-gray-500'
                   }`}></span>
                   <span className="text-sm text-gray-700">{outcome.name}</span>
-                  <span className="text-sm font-bold text-gray-900">{outcome.probability}%</span>
                 </div>
-              ))
-            ) : (
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-foremark-green"></span>
-                <span className="text-sm text-gray-700">Chance</span>
-                <span className="text-sm font-bold text-gray-900">{market.yesPrice}%</span>
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          )}
 
           {/* Volume/Amount Wagered */}
           <div className="flex items-center gap-4 mb-4">
@@ -318,14 +328,91 @@ export default function MarketPage() {
             </div>
           </div>
 
-          {/* Mobile Trade Panel - appears right after chart */}
-          <div className="lg:hidden">
-            <TradePanel
-              market={market}
-              selectedSide={selectedSide}
-              onSideChange={setSelectedSide}
-            />
-          </div>
+          {/* Outcomes List - Clickable contracts like Kalshi */}
+          {market.outcomes && market.outcomes.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                <span className="text-sm text-gray-500">Chance</span>
+                <button className="text-gray-400 hover:text-gray-600">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Outcomes */}
+              <div className="divide-y divide-gray-100">
+                {market.outcomes.map((outcome) => (
+                  <div
+                    key={outcome.id}
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => handleOutcomeSelect(outcome, 'yes')}
+                  >
+                    {/* Avatar placeholder */}
+                    <div className="w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
+                      <span className="text-gray-500 text-lg font-semibold">
+                        {outcome.name.charAt(0)}
+                      </span>
+                    </div>
+
+                    {/* Name */}
+                    <div className="flex-1 min-w-0">
+                      <span className="text-gray-900 font-medium">{outcome.name}</span>
+                    </div>
+
+                    {/* Probability */}
+                    <div className="text-right mr-2">
+                      <span className="text-xl font-bold text-gray-900">
+                        {outcome.probability < 1 ? '<1' : outcome.probability}%
+                      </span>
+                    </div>
+
+                    {/* Yes/No Buttons */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOutcomeSelect(outcome, 'yes');
+                        }}
+                        className={`px-4 py-2 text-sm font-semibold rounded-full border-2 transition-all ${
+                          selectedOutcome?.id === outcome.id && selectedSide === 'yes'
+                            ? 'bg-foremark-lime border-foremark-lime text-gray-900'
+                            : 'border-foremark-lime text-foremark-green hover:bg-foremark-lime/10'
+                        }`}
+                      >
+                        Yes {outcome.yesPrice}¢
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOutcomeSelect(outcome, 'no');
+                        }}
+                        className={`px-4 py-2 text-sm font-semibold rounded-full border-2 transition-all ${
+                          selectedOutcome?.id === outcome.id && selectedSide === 'no'
+                            ? 'bg-gray-900 border-gray-900 text-white'
+                            : 'border-gray-200 text-gray-700 hover:border-gray-400'
+                        }`}
+                      >
+                        No {outcome.noPrice > 0 ? `${outcome.noPrice}¢` : ''}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Single outcome market - show simple bet card */}
+          {(!market.outcomes || market.outcomes.length === 0) && (
+            <div className="lg:hidden">
+              <TradePanel
+                market={market}
+                selectedSide={selectedSide}
+                onSideChange={setSelectedSide}
+              />
+            </div>
+          )}
 
           {/* Rules Summary */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -568,10 +655,81 @@ export default function MarketPage() {
               market={market}
               selectedSide={selectedSide}
               onSideChange={setSelectedSide}
+              selectedOutcome={selectedOutcome?.name}
+              outcomeYesPrice={selectedOutcome?.yesPrice}
+              outcomeNoPrice={selectedOutcome?.noPrice}
             />
           </div>
         </div>
       </div>
+
+      {/* Mobile Bottom Sheet Modal for Betting */}
+      {showMobileBetModal && selectedOutcome && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={closeMobileBetModal}
+          />
+
+          {/* Modal */}
+          <div className="absolute inset-x-0 bottom-0 bg-white rounded-t-2xl max-h-[90vh] overflow-hidden animate-slide-up">
+            {/* Header with close button */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <div className="flex items-start gap-3 flex-1">
+                <div className="w-10 h-10 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
+                  <span className="text-gray-500 text-lg font-semibold">
+                    {selectedOutcome.name.charAt(0)}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{market.title}</p>
+                  <p className="text-sm">
+                    <span className={`font-semibold ${selectedSide === 'yes' ? 'text-foremark-green' : 'text-gray-700'}`}>
+                      Place Bet {selectedSide === 'yes' ? 'Yes' : 'No'}
+                    </span>
+                    <span className="text-gray-500"> · {selectedOutcome.name}</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={closeMobileBetModal}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Trade Panel Content */}
+            <div className="p-4 overflow-y-auto max-h-[calc(90vh-60px)]">
+              <TradePanel
+                market={market}
+                selectedSide={selectedSide}
+                onSideChange={setSelectedSide}
+                selectedOutcome={selectedOutcome.name}
+                outcomeYesPrice={selectedOutcome.yesPrice}
+                outcomeNoPrice={selectedOutcome.noPrice}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes slide-up {
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0);
+          }
+        }
+        .animate-slide-up {
+          animation: slide-up 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 }

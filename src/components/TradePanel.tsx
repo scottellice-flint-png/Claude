@@ -10,6 +10,8 @@ interface TradePanelProps {
   onSideChange: (side: 'yes' | 'no') => void;
   selectedPrice?: number;
   selectedOutcome?: string;
+  outcomeYesPrice?: number;
+  outcomeNoPrice?: number;
 }
 
 export default function TradePanel({
@@ -18,6 +20,8 @@ export default function TradePanel({
   onSideChange,
   selectedPrice,
   selectedOutcome,
+  outcomeYesPrice,
+  outcomeNoPrice,
 }: TradePanelProps) {
   const { data: session } = useSession();
   const [tradeMode, setTradeMode] = useState<'buy' | 'sell'>('buy');
@@ -37,8 +41,9 @@ export default function TradePanel({
 
   const isAuthenticated = !!session?.user || !!storeUser;
 
-  const yesPrice = market.yesPrice;
-  const noPrice = market.noPrice;
+  // Use outcome-specific prices if available, otherwise use market prices
+  const yesPrice = outcomeYesPrice ?? market.yesPrice;
+  const noPrice = outcomeNoPrice ?? market.noPrice;
   const currentPrice = selectedSide === 'yes' ? yesPrice : noPrice;
   const quantity = amount > 0 ? Math.floor((amount * 100) / currentPrice) : 0;
   const potentialPayout = (quantity * 100) / 100;
