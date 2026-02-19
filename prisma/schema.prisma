@@ -431,7 +431,7 @@ model MarketCollectionItem {
 }
 
 // ============================================================================
-// AUDIT LOGGING - Complete action history
+// AUDIT LOGGING - Legacy table (kept for backward compatibility)
 // ============================================================================
 
 model AuditLog {
@@ -463,6 +463,86 @@ model AuditLog {
   @@index([userId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ============================================================================
+// AUDIT EVENT - Comprehensive append-only event log for regulatory compliance
+// ============================================================================
+
+model AuditEvent {
+  id                String   @id @default(uuid())
+
+  // Timing - UTC millisecond precision with monotonic sequence
+  occurredAt        DateTime @default(now())      // UTC timestamp
+  occurredAtMs      BigInt                        // Millisecond timestamp for precise ordering
+  seq               BigInt   @default(autoincrement()) // Monotonic sequence for strict ordering
+
+  // Event classification
+  eventType         String   // Enum: USER_LOGIN_SUCCESS, MARKET_CREATED, ORDER_PLACED, etc.
+
+  // Actor identification
+  actorType         String   // user, admin, system
+  actorId           String?  // User or admin ID
+  actorKycRef       String?  // KYC reference (never store raw PII)
+  sessionId         String?  // Session ID for correlation
+
+  // Request context
+  requestId         String?  // Correlation ID for request tracing
+  ipAddress         String?  // Client IP
+  userAgent         String?  // Browser/client info
+  deviceFingerprint String?  // Device fingerprint hash
+  geo               String?  // JSON: { country, region, city } best-effort
+
+  // Entity references
+  marketId          String?  // Market ID if applicable
+  betId             String?  // Bet/Order ID if applicable
+  tradeId           String?  // Trade ID if applicable
+  orderId           String?  // Order ID if applicable
+
+  // Versioning
+  rulesVersion      Int?     // Market rules version at time of event
+  pricingVersion    Int?     // Pricing/AMM formula version
+
+  // Admin/compliance fields
+  reasonCode        String?  // Required for admin actions (e.g., COMPLIANCE_REVIEW, USER_REQUEST)
+
+  // State snapshots (JSON - lightweight critical fields only)
+  beforeState       String?  // JSON: state before mutation
+  afterState        String?  // JSON: state after mutation
+
+  // Freeform metadata
+  metadata          String?  // JSON: additional context
+
+  // Tamper evidence - hash chaining
+  integrityHash     String?  // SHA-256 hash of canonical payload + previous hash
+  previousHash      String?  // Hash of previous event for chain verification
+
+  // Retention
+  retentionPolicy   String   @default("7_years") // Retention period
+
+  createdAt         DateTime @default(now())
+
+  @@index([eventType])
+  @@index([actorType, actorId])
+  @@index([marketId])
+  @@index([betId])
+  @@index([orderId])
+  @@index([occurredAt])
+  @@index([seq])
+  @@index([requestId])
+  @@map("audit_events")
+}
+
+// ============================================================================
+// SYSTEM SEQUENCE - Global sequence counter for audit events
+// ============================================================================
+
+model SystemSequence {
+  id        String @id @default("audit_seq")
+  lastSeq   BigInt @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@map("system_sequences")
 }
 
 // ============================================================================

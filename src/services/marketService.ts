@@ -1,6 +1,7 @@
 // @ts-nocheck
 import prisma from '@/lib/prisma';
 import { createAuditLog, getChanges } from './auditService';
+import { writeAuditEvent, logMarketEvent, createAuditContext } from './auditEventService';
 import type {
   Market,
   MarketStatus,
@@ -16,6 +17,7 @@ import type {
   MarketRulesStructured,
   MARKET_STATUS_TRANSITIONS,
 } from '@/types/admin';
+import type { AuditEventType } from '@/types/auditEvents';
 
 interface MarketFilters {
   status?: MarketStatus;
@@ -139,7 +141,7 @@ export async function createMarket(
     return fullMarket;
   });
 
-  // Create audit log
+  // Create audit log (legacy)
   await createAuditLog({
     userId: ctx.userId,
     userEmail: ctx.userEmail,
@@ -150,6 +152,32 @@ export async function createMarket(
     action: 'create',
     newData: market as unknown as Record<string, unknown>,
   });
+
+  // Create comprehensive audit event
+  await writeAuditEvent({
+    eventType: 'ADMIN_MARKET_CREATED',
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    marketId: market!.id,
+    rulesVersion: 1,
+    afterState: {
+      id: market!.id,
+      slug: market!.slug,
+      title: market!.title,
+      status: market!.status,
+      marketType: market!.marketType,
+      currentYesPrice: market!.currentYesPrice,
+      currentNoPrice: market!.currentNoPrice,
+      volume: 0,
+      liquidity: 0,
+      tradeCount: 0,
+      outcomes: market!.outcomes,
+      closesAt: market!.closesAt,
+      resolvesBy: market!.resolvesBy,
+    },
+  }).catch(console.error);
 
   return formatMarket(market!);
 }
@@ -368,7 +396,7 @@ export async function updateMarket(
     return updated;
   });
 
-  // Create audit log
+  // Create audit log (legacy)
   const changes = getChanges(
     previousMarket as unknown as Record<string, unknown>,
     market as unknown as Record<string, unknown>
@@ -386,6 +414,34 @@ export async function updateMarket(
     newData: market as unknown as Record<string, unknown>,
     metadata: { changes },
   });
+
+  // Create comprehensive audit event
+  await writeAuditEvent({
+    eventType: 'ADMIN_MARKET_UPDATED',
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    marketId: id,
+    rulesVersion: nextVersion,
+    beforeState: {
+      status: previousMarket.status,
+      title: previousMarket.title,
+      currentYesPrice: previousMarket.currentYesPrice,
+      currentNoPrice: previousMarket.currentNoPrice,
+      volume: previousMarket.volume,
+      liquidity: previousMarket.liquidity,
+    },
+    afterState: {
+      status: market.status,
+      title: market.title,
+      currentYesPrice: market.currentYesPrice,
+      currentNoPrice: market.currentNoPrice,
+      volume: market.volume,
+      liquidity: market.liquidity,
+    },
+    metadata: { changes },
+  }).catch(console.error);
 
   return formatMarket(market);
 }
@@ -416,6 +472,26 @@ export async function deleteMarket(id: string, ctx: AdminContext): Promise<void>
     action: 'delete',
     previousData: market as unknown as Record<string, unknown>,
   });
+
+  // Create comprehensive audit event (market voided since it was a draft)
+  await writeAuditEvent({
+    eventType: 'MARKET_VOIDED',
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    marketId: id,
+    reasonCode: 'DATA_CORRECTION',
+    beforeState: {
+      id: market.id,
+      slug: market.slug,
+      title: market.title,
+      status: market.status,
+    },
+    metadata: {
+      reason: 'Draft market deleted',
+    },
+  }).catch(console.error);
 }
 
 // ============================================================================
@@ -504,7 +580,7 @@ export async function transitionMarketStatus(
     return updatedMarket;
   });
 
-  // Audit log
+  // Audit log (legacy)
   await createAuditLog({
     userId: ctx.userId,
     userEmail: ctx.userEmail,
@@ -517,6 +593,65 @@ export async function transitionMarketStatus(
     newData: { status: toStatus },
     metadata: { approval },
   });
+
+  // Determine the comprehensive event type based on status transition
+  let eventType: AuditEventType;
+  switch (toStatus) {
+    case 'review':
+      eventType = 'MARKET_SUBMITTED_FOR_REVIEW';
+      break;
+    case 'approved':
+      eventType = approval.action === 'approved' ? 'MARKET_APPROVED' : 'MARKET_UPDATED';
+      break;
+    case 'published':
+      eventType = 'MARKET_PUBLISHED';
+      break;
+    case 'trading_halted':
+      eventType = 'ADMIN_MARKET_SUSPENDED';
+      break;
+    case 'archived':
+      eventType = 'MARKET_ARCHIVED';
+      break;
+    default:
+      eventType = 'MARKET_UPDATED';
+  }
+
+  // Handle rejection
+  if (approval.action === 'rejected') {
+    eventType = 'MARKET_REJECTED';
+  }
+
+  // Create comprehensive audit event
+  await writeAuditEvent({
+    eventType,
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    marketId: id,
+    rulesVersion: nextVersion,
+    reasonCode: (toStatus === 'trading_halted' || approval.action === 'rejected') ? 'POLICY_CHANGE' : undefined,
+    beforeState: {
+      status: currentStatus,
+      currentYesPrice: market.currentYesPrice,
+      currentNoPrice: market.currentNoPrice,
+      volume: market.volume,
+      liquidity: market.liquidity,
+    },
+    afterState: {
+      status: toStatus,
+      currentYesPrice: updated.currentYesPrice,
+      currentNoPrice: updated.currentNoPrice,
+      volume: updated.volume,
+      liquidity: updated.liquidity,
+    },
+    metadata: {
+      fromStatus: currentStatus,
+      toStatus,
+      approvalAction: approval.action,
+      comments: approval.comments,
+    },
+  }).catch(console.error);
 
   return formatMarket(updated);
 }
@@ -628,6 +763,47 @@ export async function resolveMarket(
     newData: resolution as unknown as Record<string, unknown>,
   });
 
+  // Create comprehensive audit event
+  await writeAuditEvent({
+    eventType: 'ADMIN_MARKET_RESOLVED',
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    marketId: id,
+    rulesVersion: nextVersion,
+    beforeState: {
+      status: market.status,
+      resolvedOutcomeId: null,
+      resolvedAt: null,
+      outcomes: market.outcomes.map(o => ({
+        id: o.id,
+        label: o.label,
+        currentPrice: o.currentPrice,
+        isResolved: o.isResolved,
+        isWinner: o.isWinner,
+      })),
+    },
+    afterState: {
+      status: 'resolved',
+      resolvedOutcomeId: resolution.outcomeId || null,
+      resolution: resolution.resolution,
+      resolvedAt: new Date().toISOString(),
+      outcomes: updated.outcomes.map(o => ({
+        id: o.id,
+        label: o.label,
+        currentPrice: o.currentPrice,
+        isResolved: o.isResolved,
+        isWinner: o.isWinner,
+      })),
+    },
+    metadata: {
+      resolutionNotes: resolution.resolutionNotes,
+      sourceUrl: resolution.sourceUrl,
+      sourceData: resolution.sourceData,
+    },
+  }).catch(console.error);
+
   return formatMarket(updated);
 }
 
@@ -698,6 +874,30 @@ export async function settleMarket(id: string, ctx: AdminContext): Promise<Marke
     entityId: id,
     action: 'settle',
   });
+
+  // Create comprehensive audit event
+  await writeAuditEvent({
+    eventType: 'ADMIN_MARKET_SETTLED',
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    marketId: id,
+    rulesVersion: nextVersion,
+    beforeState: {
+      status: market.status,
+      settledAt: null,
+    },
+    afterState: {
+      status: 'settled',
+      settledAt: new Date().toISOString(),
+      volume: updated.volume,
+      tradeCount: updated.tradeCount,
+    },
+    metadata: {
+      settlementStatus: 'completed',
+    },
+  }).catch(console.error);
 
   return formatMarket(updated);
 }
@@ -804,6 +1004,30 @@ export async function rollbackMarket(
     action: 'rollback',
     metadata: { rolledBackToVersion: version.version },
   });
+
+  // Create comprehensive audit event
+  await writeAuditEvent({
+    eventType: 'MARKET_ROLLED_BACK',
+    actorType: 'admin',
+    actorId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    marketId,
+    rulesVersion: nextVersion,
+    reasonCode: 'DATA_CORRECTION',
+    beforeState: {
+      version: lastVersion?.version || 0,
+    },
+    afterState: {
+      version: nextVersion,
+      rolledBackToVersion: version.version,
+      status: updated.status,
+    },
+    metadata: {
+      rolledBackToVersion: version.version,
+      rolledBackToVersionId: versionId,
+    },
+  }).catch(console.error);
 
   return formatMarket(updated);
 }

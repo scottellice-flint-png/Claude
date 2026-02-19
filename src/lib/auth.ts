@@ -3,6 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import prisma from './prisma';
 import type { AdminRole } from '@/types/admin';
+import { writeAuditEvent } from '@/services/auditEventService';
 
 // User type for public users vs admin users
 export type UserType = 'user' | 'admin';
@@ -57,7 +58,7 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email', placeholder: 'admin@foremark.com' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Email and password are required');
         }
@@ -70,17 +71,47 @@ export const authOptions: NextAuthOptions = {
           where: { email: credentials.email },
         });
 
+        // Extract request context for audit logging
+        const ipAddress = (req?.headers?.['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown';
+        const userAgent = req?.headers?.['user-agent'] as string;
+
         if (!user) {
+          // Log failed login attempt
+          await writeAuditEvent({
+            eventType: 'ADMIN_LOGIN_FAIL',
+            actorType: 'admin',
+            ipAddress,
+            userAgent,
+            metadata: { email: credentials.email, reason: 'user_not_found' },
+          }).catch(console.error);
           throw new Error('Invalid email or password');
         }
 
         if (!user.isActive) {
+          // Log failed login attempt for deactivated account
+          await writeAuditEvent({
+            eventType: 'ADMIN_LOGIN_FAIL',
+            actorType: 'admin',
+            actorId: user.id,
+            ipAddress,
+            userAgent,
+            metadata: { email: credentials.email, reason: 'account_deactivated' },
+          }).catch(console.error);
           throw new Error('Account is deactivated');
         }
 
         const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
 
         if (!isValid) {
+          // Log failed login attempt for invalid password
+          await writeAuditEvent({
+            eventType: 'ADMIN_LOGIN_FAIL',
+            actorType: 'admin',
+            actorId: user.id,
+            ipAddress,
+            userAgent,
+            metadata: { email: credentials.email, reason: 'invalid_password' },
+          }).catch(console.error);
           throw new Error('Invalid email or password');
         }
 
@@ -89,6 +120,20 @@ export const authOptions: NextAuthOptions = {
           where: { id: user.id },
           data: { lastLoginAt: new Date() },
         });
+
+        // Log successful login
+        await writeAuditEvent({
+          eventType: 'ADMIN_LOGIN_SUCCESS',
+          actorType: 'admin',
+          actorId: user.id,
+          ipAddress,
+          userAgent,
+          afterState: {
+            email: user.email,
+            role: user.role,
+            lastLoginAt: new Date().toISOString(),
+          },
+        }).catch(console.error);
 
         return {
           id: user.id,
@@ -108,7 +153,7 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email', placeholder: 'you@example.com' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Email and password are required');
         }
@@ -121,17 +166,47 @@ export const authOptions: NextAuthOptions = {
           where: { email: credentials.email.toLowerCase() },
         });
 
+        // Extract request context for audit logging
+        const ipAddress = (req?.headers?.['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown';
+        const userAgent = req?.headers?.['user-agent'] as string;
+
         if (!user) {
+          // Log failed login attempt
+          await writeAuditEvent({
+            eventType: 'USER_LOGIN_FAIL',
+            actorType: 'user',
+            ipAddress,
+            userAgent,
+            metadata: { email: credentials.email.toLowerCase(), reason: 'user_not_found' },
+          }).catch(console.error);
           throw new Error('Invalid email or password');
         }
 
         if (!user.isActive) {
+          // Log failed login attempt for deactivated account
+          await writeAuditEvent({
+            eventType: 'USER_LOGIN_FAIL',
+            actorType: 'user',
+            actorId: user.id,
+            ipAddress,
+            userAgent,
+            metadata: { email: credentials.email.toLowerCase(), reason: 'account_deactivated' },
+          }).catch(console.error);
           throw new Error('Account is deactivated');
         }
 
         const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
 
         if (!isValid) {
+          // Log failed login attempt for invalid password
+          await writeAuditEvent({
+            eventType: 'USER_LOGIN_FAIL',
+            actorType: 'user',
+            actorId: user.id,
+            ipAddress,
+            userAgent,
+            metadata: { email: credentials.email.toLowerCase(), reason: 'invalid_password' },
+          }).catch(console.error);
           throw new Error('Invalid email or password');
         }
 
@@ -140,6 +215,20 @@ export const authOptions: NextAuthOptions = {
           where: { id: user.id },
           data: { lastLoginAt: new Date() },
         });
+
+        // Log successful login
+        await writeAuditEvent({
+          eventType: 'USER_LOGIN_SUCCESS',
+          actorType: 'user',
+          actorId: user.id,
+          ipAddress,
+          userAgent,
+          afterState: {
+            email: user.email,
+            username: user.username,
+            lastLoginAt: new Date().toISOString(),
+          },
+        }).catch(console.error);
 
         return {
           id: user.id,
