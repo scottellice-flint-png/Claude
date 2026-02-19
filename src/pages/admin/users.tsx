@@ -193,62 +193,73 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {users.map((user) => (
-                  <tr key={user.id} className={!user.isActive ? 'bg-gray-50' : ''}>
-                    <td className="px-4 py-4">
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {user.firstName} {user.lastName}
-                        </p>
-                        <p className="text-sm text-gray-500">{user.email}</p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${roleColors[user.role]}`}>
-                        {roleLabels[user.role]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          user.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                        }`}
-                      >
-                        {user.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-sm text-gray-500">
-                      {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : 'Never'}
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => openModal(user)}
-                          className="text-sm text-foremark-green hover:underline"
-                        >
-                          Edit
-                        </button>
-                        {user.id !== session?.user?.id && (
-                          user.isActive ? (
-                            <button
-                              onClick={() => handleDeactivate(user.id)}
-                              className="text-sm text-red-500 hover:underline"
-                            >
-                              Deactivate
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleReactivate(user.id)}
-                              className="text-sm text-green-600 hover:underline"
-                            >
-                              Reactivate
-                            </button>
-                          )
-                        )}
+                {users.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-12 text-center">
+                      <div className="text-gray-500">
+                        <p className="text-lg font-medium">No users found</p>
+                        <p className="text-sm mt-1">Click "Add User" to create the first admin user.</p>
                       </div>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  users.map((user) => (
+                    <tr key={user.id} className={!user.isActive ? 'bg-gray-50' : ''}>
+                      <td className="px-4 py-4">
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {user.firstName} {user.lastName}
+                          </p>
+                          <p className="text-sm text-gray-500">{user.email}</p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${roleColors[user.role]}`}>
+                          {roleLabels[user.role]}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            user.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          }`}
+                        >
+                          {user.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-500">
+                        {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : 'Never'}
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => openModal(user)}
+                            className="text-sm text-foremark-green hover:underline"
+                          >
+                            Edit
+                          </button>
+                          {user.id !== session?.user?.id && (
+                            user.isActive ? (
+                              <button
+                                onClick={() => handleDeactivate(user.id)}
+                                className="text-sm text-red-500 hover:underline"
+                              >
+                                Deactivate
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleReactivate(user.id)}
+                                className="text-sm text-green-600 hover:underline"
+                              >
+                                Reactivate
+                              </button>
+                            )
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
