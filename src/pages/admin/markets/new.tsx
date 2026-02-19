@@ -320,7 +320,18 @@ export default function NewMarketPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Market Type</label>
                       <select
                         value={formData.marketType}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, marketType: e.target.value as 'binary' | 'multi_outcome' }))}
+                        onChange={(e) => {
+                          const newType = e.target.value as 'binary' | 'multi_outcome';
+                          setFormData((prev) => ({
+                            ...prev,
+                            marketType: newType,
+                            outcomes: newType === 'multi_outcome' && prev.outcomes.length === 0
+                              ? [{ label: '', initialPrice: 50 }, { label: '', initialPrice: 50 }]
+                              : newType === 'binary'
+                              ? []
+                              : prev.outcomes,
+                          }));
+                        }}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-foremark-green focus:border-transparent"
                       >
                         <option value="binary">Binary (Yes/No)</option>
@@ -731,77 +742,157 @@ export default function NewMarketPage() {
                       <p className="text-blue-700">
                         Binary markets automatically have Yes/No outcomes. The initial price is set in the Basic Info tab.
                       </p>
+                      <button
+                        type="button"
+                        onClick={() => setFormData((prev) => ({
+                          ...prev,
+                          marketType: 'multi_outcome',
+                          outcomes: [
+                            { label: '', initialPrice: 50 },
+                            { label: '', initialPrice: 50 },
+                          ],
+                        }))}
+                        className="mt-3 text-sm text-foremark-green hover:underline font-medium"
+                      >
+                        Switch to multi-outcome market
+                      </button>
                     </div>
                   ) : (
                     <>
                       <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-gray-900">Market Outcomes</h3>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              outcomes: [
-                                ...prev.outcomes,
-                                { label: '', initialPrice: Math.floor(100 / (prev.outcomes.length + 1)) },
-                              ],
-                            }))
-                          }
-                          className="text-sm text-foremark-green hover:underline"
-                        >
-                          + Add Outcome
-                        </button>
+                        <div>
+                          <h3 className="font-medium text-gray-900">Market Outcomes</h3>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Add the people, teams, or options that users can bet on. Probabilities should sum to 100%.
+                          </p>
+                        </div>
                       </div>
 
+                      {/* Total probability indicator */}
+                      {formData.outcomes.length > 0 && (
+                        <div className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                          formData.outcomes.reduce((sum, o) => sum + (o.initialPrice || 0), 0) === 100
+                            ? 'bg-green-50 text-green-700'
+                            : 'bg-amber-50 text-amber-700'
+                        }`}>
+                          Total probability: {formData.outcomes.reduce((sum, o) => sum + (o.initialPrice || 0), 0)}%
+                          {formData.outcomes.reduce((sum, o) => sum + (o.initialPrice || 0), 0) !== 100 && ' (should be 100%)'}
+                        </div>
+                      )}
+
                       {formData.outcomes.length === 0 ? (
-                        <p className="text-gray-500 text-center py-4">No outcomes added yet</p>
+                        <div className="text-center py-8 bg-gray-50 rounded-lg">
+                          <p className="text-gray-500 mb-4">No outcomes added yet. Start by adding at least 2 outcomes.</p>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                outcomes: [
+                                  { label: '', initialPrice: 50 },
+                                  { label: '', initialPrice: 50 },
+                                ],
+                              }))
+                            }
+                            className="px-4 py-2 bg-foremark-green text-white rounded-lg text-sm font-medium hover:bg-foremark-green-dark"
+                          >
+                            Add 2 Outcomes
+                          </button>
+                        </div>
                       ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                           {formData.outcomes.map((outcome, index) => (
-                            <div key={index} className="flex gap-4 items-start bg-gray-50 p-4 rounded-lg">
-                              <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Label</label>
-                                <input
-                                  type="text"
-                                  value={outcome.label}
-                                  onChange={(e) => {
-                                    const updated = [...formData.outcomes];
-                                    updated[index] = { ...updated[index], label: e.target.value };
+                            <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                              <div className="flex items-center justify-between mb-3">
+                                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                  Outcome {index + 1}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = formData.outcomes.filter((_, i) => i !== index);
                                     setFormData((prev) => ({ ...prev, outcomes: updated }));
                                   }}
-                                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-foremark-green focus:border-transparent"
-                                  placeholder="e.g., Labor, Liberal, Greens"
-                                />
+                                  className="text-sm text-red-500 hover:text-red-700 font-medium"
+                                >
+                                  Remove
+                                </button>
                               </div>
 
-                              <div className="w-32">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Initial %</label>
-                                <input
-                                  type="number"
-                                  value={outcome.initialPrice || ''}
-                                  onChange={(e) => {
-                                    const updated = [...formData.outcomes];
-                                    updated[index] = { ...updated[index], initialPrice: parseInt(e.target.value) || 0 };
-                                    setFormData((prev) => ({ ...prev, outcomes: updated }));
-                                  }}
-                                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-foremark-green focus:border-transparent"
-                                  min={1}
-                                  max={99}
-                                />
-                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                                <div className="md:col-span-5">
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Name / Label <span className="text-red-500">*</span>
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={outcome.label}
+                                    onChange={(e) => {
+                                      const updated = [...formData.outcomes];
+                                      updated[index] = { ...updated[index], label: e.target.value };
+                                      setFormData((prev) => ({ ...prev, outcomes: updated }));
+                                    }}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-foremark-green focus:border-transparent"
+                                    placeholder="e.g., Kevin Warsh, Labor, Collingwood"
+                                  />
+                                </div>
 
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const updated = formData.outcomes.filter((_, i) => i !== index);
-                                  setFormData((prev) => ({ ...prev, outcomes: updated }));
-                                }}
-                                className="mt-6 text-red-500 hover:text-red-700"
-                              >
-                                Remove
-                              </button>
+                                <div className="md:col-span-3">
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Initial % <span className="text-red-500">*</span>
+                                  </label>
+                                  <input
+                                    type="number"
+                                    value={outcome.initialPrice || ''}
+                                    onChange={(e) => {
+                                      const updated = [...formData.outcomes];
+                                      updated[index] = { ...updated[index], initialPrice: parseInt(e.target.value) || 0 };
+                                      setFormData((prev) => ({ ...prev, outcomes: updated }));
+                                    }}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-foremark-green focus:border-transparent"
+                                    min={1}
+                                    max={99}
+                                    placeholder="50"
+                                  />
+                                </div>
+
+                                <div className="md:col-span-4">
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                                  <input
+                                    type="url"
+                                    value={outcome.imageUrl || ''}
+                                    onChange={(e) => {
+                                      const updated = [...formData.outcomes];
+                                      updated[index] = { ...updated[index], imageUrl: e.target.value };
+                                      setFormData((prev) => ({ ...prev, outcomes: updated }));
+                                    }}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-foremark-green focus:border-transparent"
+                                    placeholder="https://..."
+                                  />
+                                </div>
+                              </div>
                             </div>
                           ))}
+
+                          {/* Add Outcome Button */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                outcomes: [
+                                  ...prev.outcomes,
+                                  { label: '', initialPrice: Math.max(1, Math.floor((100 - prev.outcomes.reduce((s, o) => s + (o.initialPrice || 0), 0)) / 1)) },
+                                ],
+                              }))
+                            }
+                            className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-foremark-green hover:text-foremark-green transition-colors flex items-center justify-center gap-2 font-medium"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Add Another Outcome
+                          </button>
                         </div>
                       )}
                     </>

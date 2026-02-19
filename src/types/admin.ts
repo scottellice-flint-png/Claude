@@ -245,6 +245,7 @@ export interface CreateOutcomeInput {
   position?: number;
   initialPrice?: number;
   color?: string;
+  imageUrl?: string;
 }
 
 export interface UpdateOutcomeInput extends Partial<CreateOutcomeInput> {
