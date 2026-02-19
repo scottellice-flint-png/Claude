@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { useStore } from '@/store';
 import TradePanel from '@/components/TradePanel';
 import PriceChart from '@/components/PriceChart';
@@ -9,6 +10,7 @@ import { Comment } from '@/types';
 export default function MarketPage() {
   const router = useRouter();
   const { id } = router.query;
+  const { data: session } = useSession();
 
   const [selectedSide, setSelectedSide] = useState<'yes' | 'no'>('yes');
   const [timeFilter, setTimeFilter] = useState<'1D' | '1W' | '1M' | 'ALL'>('1M');
@@ -19,6 +21,9 @@ export default function MarketPage() {
   });
   const [commentText, setCommentText] = useState('');
   const [commentTab, setCommentTab] = useState<'event' | 'all'>('event');
+  const [isSaved, setIsSaved] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   const market = useStore((state) => state.getMarket(id as string));
   const updateMarketPrice = useStore((state) => state.updateMarketPrice);
@@ -26,6 +31,33 @@ export default function MarketPage() {
   const comments = useStore((state) => state.getMarketComments(id as string));
   const rules = useStore((state) => state.getMarketRules(id as string));
   const addComment = useStore((state) => state.addComment);
+
+  // Handle copy link
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy link');
+    }
+  };
+
+  // Handle save market
+  const handleSaveMarket = () => {
+    setIsSaved(!isSaved);
+  };
+
+  // Format volume
+  const formatVolume = (volume: number) => {
+    if (volume >= 1000000) {
+      return `$${(volume / 1000000).toFixed(2)}M`;
+    }
+    if (volume >= 1000) {
+      return `$${Math.round(volume / 1000)}K`;
+    }
+    return `$${volume}`;
+  };
 
   useEffect(() => {
     if (!market) return;
@@ -85,32 +117,147 @@ export default function MarketPage() {
             <Link href="/" className="hover:text-foremark-green">
               Markets
             </Link>
-            <span>›</span>
-            <Link href={`/?category=${market.category}`} className="hover:text-foremark-green">
+            <span>·</span>
+            <Link href={`/?category=${market.category}`} className="hover:text-foremark-green font-medium">
               {categoryLabels[market.category]}
             </Link>
+            {market.subcategory && (
+              <>
+                <span>·</span>
+                <span className="uppercase text-xs">{market.subcategory.replace(/-/g, ' ')}</span>
+              </>
+            )}
           </div>
 
           {/* Title */}
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight mb-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight mb-4">
             {market.title}
           </h1>
 
-          {/* Action Icons */}
-          <div className="flex items-center gap-3">
-            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          {/* Probability and Outcomes - Kalshi Style */}
+          <div className="flex flex-wrap items-center gap-4 mb-4">
+            {market.outcomes && market.outcomes.length > 0 ? (
+              market.outcomes.slice(0, 3).map((outcome, index) => (
+                <div key={outcome.id} className="flex items-center gap-2">
+                  <span className={`w-2.5 h-2.5 rounded-full ${
+                    index === 0 ? 'bg-emerald-500' : index === 1 ? 'bg-blue-500' : 'bg-orange-500'
+                  }`}></span>
+                  <span className="text-sm text-gray-700">{outcome.name}</span>
+                  <span className="text-sm font-bold text-gray-900">{outcome.probability}%</span>
+                </div>
+              ))
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <span className="text-sm text-gray-700">Chance</span>
+                <span className="text-sm font-bold text-gray-900">{market.yesPrice}%</span>
+              </div>
+            )}
+          </div>
+
+          {/* Volume/Amount Wagered */}
+          <div className="flex items-center gap-4 mb-4">
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
+              <span className="font-semibold text-gray-900">{formatVolume(market.volume)}</span>
+              <span>wagered</span>
+            </div>
+          </div>
+
+          {/* Action Icons - Kalshi Style */}
+          <div className="flex items-center gap-2 relative">
+            {/* Comment */}
+            <button
+              onClick={() => {
+                const commentsSection = document.getElementById('comments-section');
+                commentsSection?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full hover:bg-gray-100 transition-colors text-gray-600"
+              title="Comment"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              <span className="text-sm font-medium">{comments.length}</span>
             </button>
-            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+            {/* Share/Copy Link */}
+            <div className="relative">
+              <button
+                onClick={() => setShowShareMenu(!showShareMenu)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-full hover:bg-gray-100 transition-colors text-gray-600"
+                title="Share"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+              </button>
+
+              {/* Share Dropdown */}
+              {showShareMenu && (
+                <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
+                  <button
+                    onClick={() => {
+                      handleCopyLink();
+                      setShowShareMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                    <span className="text-sm font-medium">Copy link</span>
+                  </button>
+                  {session?.user && (
+                    <Link
+                      href={`/chats?market=${market.id}`}
+                      onClick={() => setShowShareMenu(false)}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                      </svg>
+                      <span className="text-sm font-medium">Share with friends</span>
+                    </Link>
+                  )}
+                  <Link
+                    href="/community"
+                    onClick={() => setShowShareMenu(false)}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span className="text-sm font-medium">Discuss in community</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Copy Success Toast */}
+            {copySuccess && (
+              <div className="absolute left-0 top-full mt-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg">
+                Link copied!
+              </div>
+            )}
+
+            {/* Save/Bookmark */}
+            <button
+              onClick={handleSaveMarket}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-full hover:bg-gray-100 transition-colors ${
+                isSaved ? 'text-foremark-green' : 'text-gray-600'
+              }`}
+              title={isSaved ? 'Saved' : 'Save'}
+            >
+              <svg
+                className="w-5 h-5"
+                fill={isSaved ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-              </svg>
-            </button>
-            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
               </svg>
             </button>
           </div>
@@ -331,7 +478,7 @@ export default function MarketPage() {
           )}
 
           {/* Comments Section */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div id="comments-section" className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             {/* Tab Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
               <div className="flex items-center gap-4">

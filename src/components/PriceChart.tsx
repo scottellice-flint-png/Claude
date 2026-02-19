@@ -7,11 +7,11 @@ interface PriceChartProps {
   outcomes?: MarketOutcome[];
 }
 
-// Foremark brand colors for chart lines
+// Kalshi-style colors for chart lines
 const CHART_COLORS = [
-  { line: '#0F4C4C', name: 'Teal' },      // foremark-green
-  { line: '#C8E64C', name: 'Lime' },      // foremark-lime
-  { line: '#6B7280', name: 'Gray' },      // gray-500
+  { line: '#10B981', name: 'Green' },     // emerald-500
+  { line: '#3B82F6', name: 'Blue' },      // blue-500
+  { line: '#F97316', name: 'Orange' },    // orange-500
 ];
 
 interface SeriesData {

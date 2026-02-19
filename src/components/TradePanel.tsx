@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 import { Market } from '@/types';
 import { useStore } from '@/store';
 
@@ -7,6 +9,7 @@ interface TradePanelProps {
   selectedSide: 'yes' | 'no';
   onSideChange: (side: 'yes' | 'no') => void;
   selectedPrice?: number;
+  selectedOutcome?: string;
 }
 
 export default function TradePanel({
@@ -14,16 +17,30 @@ export default function TradePanel({
   selectedSide,
   onSideChange,
   selectedPrice,
+  selectedOutcome,
 }: TradePanelProps) {
-  const [amount, setAmount] = useState(100);
+  const { data: session } = useSession();
+  const [tradeMode, setTradeMode] = useState<'buy' | 'sell'>('buy');
+  const [amount, setAmount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const user = useStore((state) => state.user);
+  const storeUser = useStore((state) => state.user);
   const placeOrder = useStore((state) => state.placeOrder);
 
-  const currentPrice = selectedSide === 'yes' ? market.yesPrice : market.noPrice;
-  const quantity = Math.floor((amount * 100) / currentPrice);
+  // Use session user if authenticated
+  const user = session?.user?.userType === 'user' ? {
+    id: session.user.id,
+    username: session.user.username || 'User',
+    balance: session.user.balance || 0,
+  } : storeUser;
+
+  const isAuthenticated = !!session?.user || !!storeUser;
+
+  const yesPrice = market.yesPrice;
+  const noPrice = market.noPrice;
+  const currentPrice = selectedSide === 'yes' ? yesPrice : noPrice;
+  const quantity = amount > 0 ? Math.floor((amount * 100) / currentPrice) : 0;
   const potentialPayout = (quantity * 100) / 100;
 
   const handleSubmit = async () => {
@@ -52,7 +69,7 @@ export default function TradePanel({
 
     if (result.success) {
       setMessage({ type: 'success', text: `Order placed! Bought ${quantity} ${selectedSide.toUpperCase()} contracts.` });
-      setAmount(100);
+      setAmount(0);
     } else {
       setMessage({ type: 'error', text: result.error || 'Failed to place order' });
     }
@@ -65,54 +82,124 @@ export default function TradePanel({
     }).format(value);
   };
 
+  // Get display title for the outcome
+  const getOutcomeTitle = () => {
+    if (selectedOutcome) {
+      return selectedOutcome;
+    }
+    // Default to showing main market info
+    const closeDate = new Date(market.closeDate);
+    return closeDate.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+  };
+
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-      {/* Side Toggle */}
-      <div className="grid grid-cols-2 p-2 gap-2 bg-gray-50">
-        <button
-          onClick={() => onSideChange('yes')}
-          className={`py-3 text-center font-bold rounded-full transition-all ${
-            selectedSide === 'yes'
-              ? 'bg-foremark-lime text-gray-900'
-              : 'bg-white text-gray-500 border border-gray-200'
-          }`}
-        >
-          BUY YES
-        </button>
-        <button
-          onClick={() => onSideChange('no')}
-          className={`py-3 text-center font-bold rounded-full transition-all ${
-            selectedSide === 'no'
-              ? 'bg-gray-900 text-white'
-              : 'bg-white text-gray-500 border border-gray-200'
-          }`}
-        >
-          BUY NO
-        </button>
+      {/* Header with Market Info */}
+      <div className="p-4 border-b border-gray-100">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 bg-foremark-green/10 rounded-lg flex items-center justify-center flex-shrink-0">
+            <span className="text-lg">{market.icon || '📊'}</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">{market.title}</p>
+            <p className="text-sm">
+              <span className={`font-semibold ${selectedSide === 'yes' ? 'text-emerald-500' : 'text-red-500'}`}>
+                {tradeMode === 'buy' ? 'Buy' : 'Sell'} {selectedSide === 'yes' ? 'Yes' : 'No'}
+              </span>
+              <span className="text-gray-500"> · {getOutcomeTitle()}</span>
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="p-5 space-y-5">
-        {/* Trade Amount */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
-            Trade Amount
-          </label>
-          <div className="relative">
-            <input
-              type="number"
-              min="1"
-              value={amount}
-              onChange={(e) => setAmount(Math.max(1, parseInt(e.target.value) || 1))}
-              className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-4 text-2xl font-bold text-gray-900 focus:outline-none focus:border-foremark-green pr-12"
-            />
-            <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl">
-              $
-            </span>
-          </div>
+      {/* Buy/Sell Toggle */}
+      <div className="flex items-center gap-2 p-4 border-b border-gray-100">
+        <div className="flex bg-gray-100 rounded-full p-1">
+          <button
+            onClick={() => setTradeMode('buy')}
+            className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-all ${
+              tradeMode === 'buy'
+                ? 'bg-emerald-500 text-white'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Buy
+          </button>
+          <button
+            onClick={() => setTradeMode('sell')}
+            className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-all ${
+              tradeMode === 'sell'
+                ? 'bg-gray-700 text-white'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {tradeMode === 'sell' ? 'Cash Out' : 'Sell'}
+          </button>
+        </div>
+        <div className="ml-auto">
+          <select className="text-sm text-gray-600 bg-transparent border-0 focus:ring-0 cursor-pointer">
+            <option>Dollars</option>
+            <option>Contracts</option>
+          </select>
+        </div>
+      </div>
 
-          {/* Quick amount buttons */}
-          <div className="flex gap-2 mt-3">
-            {[50, 100, 250, 500].map((q) => (
+      <div className="p-4 space-y-4">
+        {/* Yes/No Price Buttons */}
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => onSideChange('yes')}
+            className={`py-3 text-center font-bold rounded-full transition-all border-2 ${
+              selectedSide === 'yes'
+                ? 'bg-emerald-50 border-emerald-500 text-emerald-600'
+                : 'bg-white border-gray-200 text-emerald-600 hover:border-emerald-300'
+            }`}
+          >
+            Yes {yesPrice}¢
+          </button>
+          <button
+            onClick={() => onSideChange('no')}
+            className={`py-3 text-center font-bold rounded-full transition-all border-2 ${
+              selectedSide === 'no'
+                ? 'bg-red-50 border-red-400 text-red-500'
+                : 'bg-white border-gray-200 text-red-500 hover:border-red-300'
+            }`}
+          >
+            No {noPrice}¢
+          </button>
+        </div>
+
+        {/* Amount Input */}
+        <div className="border border-gray-200 rounded-xl p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-sm text-gray-500">Amount</span>
+              {isAuthenticated && (
+                <div className="mt-1">
+                  <Link href="/deposits" className="text-xs text-emerald-500 hover:underline">
+                    Earn 3.25% Interest
+                  </Link>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-3xl font-semibold text-gray-300">$</span>
+              <input
+                type="number"
+                min="0"
+                value={amount || ''}
+                onChange={(e) => setAmount(Math.max(0, parseInt(e.target.value) || 0))}
+                placeholder="0"
+                className="w-20 text-3xl font-semibold text-right text-gray-900 bg-transparent border-0 focus:ring-0 focus:outline-none placeholder-gray-300"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Quick amount buttons - only show for authenticated users */}
+        {isAuthenticated && (
+          <div className="flex gap-2">
+            {[10, 50, 100, 500].map((q) => (
               <button
                 key={q}
                 onClick={() => setAmount(q)}
@@ -126,23 +213,25 @@ export default function TradePanel({
               </button>
             ))}
           </div>
-        </div>
+        )}
 
-        {/* Payout Info */}
-        <div className="bg-gray-50 rounded-xl p-4">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-500">Potential Payout</span>
-            <span className="text-2xl font-bold text-foremark-green">
-              {formatCurrency(potentialPayout)}
-            </span>
+        {/* Payout Info - only show when amount > 0 */}
+        {amount > 0 && isAuthenticated && (
+          <div className="bg-gray-50 rounded-xl p-4">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500">Potential Payout</span>
+              <span className="text-xl font-bold text-emerald-500">
+                {formatCurrency(potentialPayout)}
+              </span>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              If {selectedSide.toUpperCase()} wins, you receive {formatCurrency(potentialPayout)}
+            </p>
           </div>
-          <p className="text-xs text-gray-400 mt-1">
-            If {selectedSide.toUpperCase()} wins, you receive {formatCurrency(potentialPayout)}
-          </p>
-        </div>
+        )}
 
-        {/* Available Balance */}
-        {user && (
+        {/* Available Balance - only show for authenticated users */}
+        {user && isAuthenticated && (
           <div className="flex justify-between text-sm">
             <span className="text-gray-500">Available Balance</span>
             <span className="font-semibold text-gray-900">{formatCurrency(user.balance / 100)}</span>
@@ -162,20 +251,27 @@ export default function TradePanel({
           </div>
         )}
 
-        {/* Submit Button */}
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting || !user || amount * 100 > (user?.balance || 0)}
-          className={`w-full py-4 rounded-full font-bold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-            selectedSide === 'yes'
-              ? 'bg-foremark-lime text-gray-900 hover:bg-foremark-lime-dark'
-              : 'bg-gray-900 text-white hover:bg-gray-800'
-          }`}
-        >
-          {isSubmitting
-            ? 'Placing Order...'
-            : `Buy ${selectedSide.toUpperCase()} for ${formatCurrency(amount)}`}
-        </button>
+        {/* Submit Button - Show "Sign up to trade" for non-authenticated users */}
+        {isAuthenticated ? (
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting || amount <= 0 || amount * 100 > (user?.balance || 0)}
+            className="w-full py-4 rounded-full font-bold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-emerald-500 text-white hover:bg-emerald-600"
+          >
+            {isSubmitting
+              ? 'Placing Order...'
+              : tradeMode === 'buy'
+                ? `Buy ${selectedSide.toUpperCase()} for ${formatCurrency(amount)}`
+                : `Cash Out for ${formatCurrency(amount)}`}
+          </button>
+        ) : (
+          <Link
+            href="/login?mode=signup"
+            className="block w-full py-4 rounded-full font-bold text-lg text-center transition-all bg-emerald-500 text-white hover:bg-emerald-600"
+          >
+            Sign up to trade
+          </Link>
+        )}
       </div>
     </div>
   );
