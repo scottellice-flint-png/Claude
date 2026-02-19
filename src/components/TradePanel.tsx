@@ -136,12 +136,6 @@ export default function TradePanel({
             Cash Out
           </button>
         </div>
-        <div className="ml-auto">
-          <select className="text-sm text-gray-600 bg-transparent border-0 focus:ring-0 cursor-pointer">
-            <option>Dollars</option>
-            <option>Contracts</option>
-          </select>
-        </div>
       </div>
 
       <div className="p-4 space-y-4">
@@ -269,7 +263,7 @@ export default function TradePanel({
             href="/login?mode=signup"
             className="block w-full py-4 rounded-full font-bold text-lg text-center transition-all bg-foremark-green text-white hover:bg-foremark-green-light"
           >
-            Sign up to trade
+            Sign up to bet
           </Link>
         )}
       </div>

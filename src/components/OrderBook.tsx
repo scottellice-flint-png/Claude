@@ -19,7 +19,7 @@ export default function OrderBook({ orderBook, selectedSide, onPriceSelect }: Or
       <div className="p-4 border-b border-slate-700">
         <h3 className="text-lg font-semibold text-white">Order Book</h3>
         <p className="text-sm text-slate-400">
-          {selectedSide === 'yes' ? 'Yes' : 'No'} contracts
+          {selectedSide === 'yes' ? 'Yes' : 'No'} bets
         </p>
       </div>
 
