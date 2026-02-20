@@ -1756,6 +1756,7 @@ const mockMarketRules: Record<string, MarketRules> = {
 interface AppState {
   // Data
   markets: Market[];
+  marketsLoaded: boolean;
   user: User | null;
   orders: Order[];
   positions: Position[];
@@ -1763,6 +1764,8 @@ interface AppState {
   comments: Comment[];
 
   // Actions
+  fetchMarkets: () => Promise<void>;
+  setMarkets: (markets: Market[]) => void;
   getMarket: (id: string) => Market | undefined;
   getMarketsByCategory: (category: string) => Market[];
   getRelatedMarkets: (marketId: string, limit?: number) => Market[];
@@ -1792,11 +1795,33 @@ interface AppState {
 
 export const useStore = create<AppState>((set, get) => ({
   markets: mockMarkets,
+  marketsLoaded: false,
   user: null,
   orders: [],
   positions: mockPositions,
   trades: [],
   comments: mockComments,
+
+  fetchMarkets: async () => {
+    try {
+      const res = await fetch('/api/markets');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          set({ markets: data, marketsLoaded: true });
+          return;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch markets from API, using fallback data:', err);
+    }
+    // If API returns empty or fails, keep mock data as fallback
+    set({ marketsLoaded: true });
+  },
+
+  setMarkets: (markets: Market[]) => {
+    set({ markets });
+  },
 
   getMarket: (id: string) => {
     return get().markets.find(m => m.id === id);

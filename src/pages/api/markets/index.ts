@@ -1,52 +1,84 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { Market } from '@/types';
+import prisma from '@/lib/prisma';
 
-// Sample markets for API (main data is in Zustand store)
-const markets: Market[] = [
-  {
-    id: '1',
-    title: 'Who will win the next Australian Federal Election?',
-    description: 'This market resolves to Yes if the Australian Labor Party wins the next Federal Election.',
-    category: 'politics',
-    status: 'open',
-    closeDate: '2026-05-21T18:00:00+10:00',
-    settlementDate: '2026-05-25T12:00:00+10:00',
-    yesPrice: 52,
-    noPrice: 48,
-    volume: 2450000,
-    liquidity: 890000,
-    createdAt: '2025-01-15T10:00:00+10:00',
-  },
-  {
-    id: '10',
-    title: 'Will the RBA raise the cash rate at the Feb 2026 meeting?',
-    description: 'Resolves Yes if the Reserve Bank of Australia announces a cash rate increase at the February 2026 monetary policy meeting.',
-    category: 'economics',
-    status: 'open',
-    closeDate: '2026-02-17T14:30:00+11:00',
-    settlementDate: '2026-02-18T12:00:00+11:00',
-    yesPrice: 8,
-    noPrice: 92,
-    volume: 485000,
-    liquidity: 178000,
-    createdAt: '2025-01-08T09:00:00+11:00',
-  },
-];
-
-export default function handler(
+export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method === 'GET') {
-    const { category } = req.query;
-    let filteredMarkets = markets;
-
-    if (category && category !== 'all') {
-      filteredMarkets = markets.filter(m => m.category === category);
-    }
-
-    return res.status(200).json(filteredMarkets);
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  return res.status(405).json({ error: 'Method not allowed' });
+  try {
+    const { category } = req.query;
+
+    const where: Record<string, unknown> = {
+      // Only show published markets on the public site
+      status: { in: ['published', 'resolved', 'settled'] },
+    };
+
+    if (category && category !== 'all') {
+      where.category = { slug: category as string };
+    }
+
+    const markets = await prisma.market.findMany({
+      where,
+      include: {
+        category: true,
+        subcategory: true,
+        outcomes: { orderBy: { position: 'asc' } },
+      },
+      orderBy: { volume: 'desc' },
+    });
+
+    // Transform DB markets into the frontend Market shape
+    const transformed = markets.map((m: Record<string, unknown>) => {
+      const outcomes = m.outcomes as Array<Record<string, unknown>> | undefined;
+      return {
+        id: m.id,
+        title: m.title,
+        description: (m.shortDescription || m.description) as string,
+        category: (m.category as Record<string, unknown>)?.slug as string,
+        status: mapStatus(m.status as string),
+        closeDate: (m.closesAt as Date).toISOString(),
+        settlementDate: (m.settlesBy as Date).toISOString(),
+        yesPrice: m.currentYesPrice,
+        noPrice: m.currentNoPrice,
+        volume: m.volume,
+        liquidity: m.liquidity,
+        createdAt: (m.createdAt as Date).toISOString(),
+        icon: m.icon || undefined,
+        isFeatured: m.isFeatured,
+        outcomes: outcomes && outcomes.length > 0
+          ? outcomes.map((o) => ({
+              id: o.id as string,
+              name: o.label as string,
+              probability: o.currentPrice as number,
+              yesPrice: o.currentPrice as number,
+              noPrice: 100 - (o.currentPrice as number),
+            }))
+          : undefined,
+      };
+    });
+
+    return res.status(200).json(transformed);
+  } catch (error) {
+    console.error('Error fetching markets:', error);
+    return res.status(500).json({ error: 'Failed to fetch markets' });
+  }
+}
+
+function mapStatus(dbStatus: string): 'open' | 'closed' | 'settled' {
+  switch (dbStatus) {
+    case 'published':
+      return 'open';
+    case 'resolved':
+    case 'trading_halted':
+      return 'closed';
+    case 'settled':
+    case 'archived':
+      return 'settled';
+    default:
+      return 'open';
+  }
 }
