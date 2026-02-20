@@ -295,6 +295,228 @@ async function main() {
   ]);
   console.log('Created constraint templates');
 
+  // Create sample markets
+  const adminUserId = admin.id;
+
+  const sampleMarkets = [
+    {
+      slug: 'australian-federal-election-2026',
+      title: 'Who will win the next Australian Federal Election?',
+      shortDescription: 'Labor vs Coalition for the 2026 Federal Election',
+      description: 'This market resolves to the party that wins the next Australian Federal Election. Resolves based on which party forms government.',
+      status: 'published',
+      categoryId: politicsCategory?.id || categories[0].id,
+      marketType: 'multi_outcome',
+      icon: '🗳️',
+      isFeatured: true,
+      closesAt: new Date('2026-05-21T18:00:00+10:00'),
+      resolvesBy: new Date('2026-05-25T12:00:00+10:00'),
+      settlesBy: new Date('2026-05-30T12:00:00+10:00'),
+      initialYesPrice: 52,
+      currentYesPrice: 52,
+      currentNoPrice: 48,
+      volume: 2450000,
+      liquidity: 890000,
+      rulesText: 'Resolves to the party that forms government after the 2026 Federal Election.',
+      outcomes: [
+        { label: 'Labor', position: 0, initialPrice: 52, currentPrice: 52, color: '#DC2626' },
+        { label: 'Coalition', position: 1, initialPrice: 41, currentPrice: 41, color: '#2563EB' },
+        { label: 'Other', position: 2, initialPrice: 7, currentPrice: 7, color: '#6B7280' },
+      ],
+    },
+    {
+      slug: 'federal-election-before-september-2026',
+      title: 'Will a Federal Election be called before September 2026?',
+      shortDescription: 'Early election call prediction',
+      description: 'Resolves Yes if the Governor-General dissolves the House of Representatives and issues writs for a federal election before September 1, 2026.',
+      status: 'published',
+      categoryId: politicsCategory?.id || categories[0].id,
+      marketType: 'binary',
+      icon: '📅',
+      closesAt: new Date('2026-08-31T23:59:00+10:00'),
+      resolvesBy: new Date('2026-09-02T12:00:00+10:00'),
+      settlesBy: new Date('2026-09-07T12:00:00+10:00'),
+      initialYesPrice: 78,
+      currentYesPrice: 78,
+      currentNoPrice: 22,
+      volume: 485000,
+      liquidity: 178000,
+      rulesText: 'Resolves Yes if writs are issued before September 1, 2026 AEST.',
+    },
+    {
+      slug: 'rba-rate-raise-feb-2026',
+      title: 'Will the RBA raise the cash rate at the Feb 2026 meeting?',
+      shortDescription: 'RBA interest rate decision prediction',
+      description: 'Resolves Yes if the Reserve Bank of Australia announces a cash rate increase at the February 2026 monetary policy meeting.',
+      status: 'published',
+      categoryId: categories.find(c => c.slug === 'economics')?.id || categories[1].id,
+      marketType: 'binary',
+      icon: '🏦',
+      closesAt: new Date('2026-02-17T14:30:00+11:00'),
+      resolvesBy: new Date('2026-02-18T12:00:00+11:00'),
+      settlesBy: new Date('2026-02-23T12:00:00+11:00'),
+      initialYesPrice: 8,
+      currentYesPrice: 8,
+      currentNoPrice: 92,
+      volume: 485000,
+      liquidity: 178000,
+      rulesText: 'Resolves based on RBA official announcement.',
+    },
+    {
+      slug: 'australian-open-mens-winner-2026',
+      title: "Men's Australian Open Winner 2026",
+      shortDescription: 'Who will win the Australian Open 2026',
+      description: "Resolves based on the winner of the Men's Singles at the 2026 Australian Open.",
+      status: 'published',
+      categoryId: sportsCategory?.id || categories[2].id,
+      marketType: 'multi_outcome',
+      icon: '🎾',
+      isFeatured: true,
+      closesAt: new Date('2026-01-26T19:00:00+11:00'),
+      resolvesBy: new Date('2026-01-27T12:00:00+11:00'),
+      settlesBy: new Date('2026-02-01T12:00:00+11:00'),
+      initialYesPrice: 53,
+      currentYesPrice: 53,
+      currentNoPrice: 47,
+      volume: 890000,
+      liquidity: 345000,
+      rulesText: 'Resolves to the winner of the Australian Open 2026 Men\'s Singles Final.',
+      outcomes: [
+        { label: 'Jannik Sinner', position: 0, initialPrice: 53, currentPrice: 53, color: '#0EA5E9' },
+        { label: 'Novak Djokovic', position: 1, initialPrice: 42, currentPrice: 42, color: '#EF4444' },
+        { label: 'Carlos Alcaraz', position: 2, initialPrice: 5, currentPrice: 5, color: '#F59E0B' },
+      ],
+    },
+    {
+      slug: 'afl-premiership-2026',
+      title: 'Who will win the 2026 AFL Premiership?',
+      shortDescription: '2026 AFL Grand Final winner',
+      description: 'Resolves based on the winner of the 2026 AFL Grand Final.',
+      status: 'published',
+      categoryId: sportsCategory?.id || categories[2].id,
+      marketType: 'multi_outcome',
+      icon: '🏉',
+      isFeatured: true,
+      closesAt: new Date('2026-09-26T17:00:00+10:00'),
+      resolvesBy: new Date('2026-09-27T12:00:00+10:00'),
+      settlesBy: new Date('2026-10-02T12:00:00+10:00'),
+      initialYesPrice: 18,
+      currentYesPrice: 18,
+      currentNoPrice: 82,
+      volume: 1250000,
+      liquidity: 465000,
+      rulesText: 'Resolves to the winner of the 2026 AFL Grand Final.',
+      outcomes: [
+        { label: 'Collingwood', position: 0, initialPrice: 18, currentPrice: 18, color: '#000000' },
+        { label: 'Brisbane Lions', position: 1, initialPrice: 15, currentPrice: 15, color: '#A61F3D' },
+        { label: 'Carlton', position: 2, initialPrice: 12, currentPrice: 12, color: '#0E1E5B' },
+        { label: 'Sydney', position: 3, initialPrice: 10, currentPrice: 10, color: '#ED1B24' },
+      ],
+    },
+    {
+      slug: 'hottest-year-2026',
+      title: 'Will 2026 be the hottest year on record globally?',
+      shortDescription: 'Global temperature record prediction',
+      description: 'Resolves Yes if 2026 is confirmed as the hottest year on record by NASA or NOAA.',
+      status: 'published',
+      categoryId: categories.find(c => c.slug === 'climate')?.id || categories[3].id,
+      marketType: 'binary',
+      icon: '🌡️',
+      closesAt: new Date('2026-12-31T23:59:00+11:00'),
+      resolvesBy: new Date('2027-01-31T12:00:00+11:00'),
+      settlesBy: new Date('2027-02-07T12:00:00+11:00'),
+      initialYesPrice: 65,
+      currentYesPrice: 65,
+      currentNoPrice: 35,
+      volume: 320000,
+      liquidity: 118000,
+      rulesText: 'Resolves based on official NASA or NOAA annual temperature data.',
+    },
+    {
+      slug: 'oscars-best-picture-2026',
+      title: 'Best Picture Oscar Winner 2026',
+      shortDescription: 'Academy Awards Best Picture prediction',
+      description: 'Resolves based on the winner of Best Picture at the 2026 Academy Awards.',
+      status: 'published',
+      categoryId: categories.find(c => c.slug === 'culture')?.id || categories[4].id,
+      marketType: 'multi_outcome',
+      icon: '🎬',
+      closesAt: new Date('2026-03-01T17:00:00+11:00'),
+      resolvesBy: new Date('2026-03-02T12:00:00+11:00'),
+      settlesBy: new Date('2026-03-07T12:00:00+11:00'),
+      initialYesPrice: 25,
+      currentYesPrice: 25,
+      currentNoPrice: 75,
+      volume: 180000,
+      liquidity: 67000,
+      rulesText: 'Resolves to the winner of Best Picture at the 98th Academy Awards.',
+      outcomes: [
+        { label: 'The Brutalist', position: 0, initialPrice: 25, currentPrice: 25, color: '#6B7280' },
+        { label: 'Anora', position: 1, initialPrice: 22, currentPrice: 22, color: '#EC4899' },
+        { label: 'Emilia Pérez', position: 2, initialPrice: 18, currentPrice: 18, color: '#F59E0B' },
+      ],
+    },
+  ];
+
+  for (const marketData of sampleMarkets) {
+    const { outcomes, ...market } = marketData;
+
+    const existingMarket = await prisma.market.findUnique({
+      where: { slug: market.slug },
+    });
+
+    if (!existingMarket) {
+      const createdMarket = await prisma.market.create({
+        data: {
+          ...market,
+          constraints: JSON.stringify({}),
+          rulesStructured: JSON.stringify({}),
+          createdById: adminUserId,
+        },
+      });
+
+      // Create outcomes
+      if (outcomes && outcomes.length > 0) {
+        await prisma.marketOutcome.createMany({
+          data: outcomes.map((o) => ({
+            marketId: createdMarket.id,
+            label: o.label,
+            position: o.position,
+            initialPrice: o.initialPrice,
+            currentPrice: o.currentPrice,
+            color: o.color,
+          })),
+        });
+      } else {
+        // Binary market - create Yes/No outcomes
+        await prisma.marketOutcome.createMany({
+          data: [
+            {
+              marketId: createdMarket.id,
+              label: 'Yes',
+              position: 0,
+              initialPrice: market.initialYesPrice,
+              currentPrice: market.currentYesPrice,
+              color: '#22C55E',
+            },
+            {
+              marketId: createdMarket.id,
+              label: 'No',
+              position: 1,
+              initialPrice: market.currentNoPrice,
+              currentPrice: market.currentNoPrice,
+              color: '#EF4444',
+            },
+          ],
+        });
+      }
+
+      console.log('Created market:', market.title);
+    } else {
+      console.log('Market already exists:', market.slug);
+    }
+  }
+
   console.log('Database seed completed successfully!');
 }
 
