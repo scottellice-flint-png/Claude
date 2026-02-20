@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma db push --skip-generate --accept-data-loss && next build",
+    "build": "prisma generate && prisma db push --skip-generate --accept-data-loss && npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts && next build",
     "start": "next start",
     "lint": "next lint",
     "db:generate": "prisma generate",
