@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/store';
 import { Market, SportType, SportSubcategory } from '@/types';
@@ -35,6 +35,16 @@ export default function SportsPage() {
   const [isSportModalOpen, setIsSportModalOpen] = useState(false);
 
   const markets = useStore((state) => state.markets);
+  const marketsLoaded = useStore((state) => state.marketsLoaded);
+  const marketsLoading = useStore((state) => state.marketsLoading);
+  const fetchMarkets = useStore((state) => state.fetchMarkets);
+
+  // Ensure markets are loaded when component mounts
+  useEffect(() => {
+    if (!marketsLoaded && !marketsLoading) {
+      fetchMarkets();
+    }
+  }, [marketsLoaded, marketsLoading, fetchMarkets]);
 
   // Filter sports markets
   const filteredMarkets = useMemo(() => {
@@ -157,7 +167,25 @@ export default function SportsPage() {
           </div>
 
           {/* Markets List */}
-          {filteredMarkets.length > 0 ? (
+          {marketsLoading && !marketsLoaded ? (
+            <div className="space-y-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 animate-pulse">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="w-8 h-8 bg-gray-200 rounded"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 bg-gray-200 rounded w-24"></div>
+                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="h-10 bg-gray-200 rounded"></div>
+                    <div className="h-10 bg-gray-200 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredMarkets.length > 0 ? (
             <div className="space-y-4">
               {filteredMarkets.map((market) => (
                 <SportsMarketCard key={market.id} market={market} />
