@@ -12,13 +12,14 @@ export default function App({ Component, pageProps: { session, ...pageProps } }:
   const isAdminRoute = router.pathname.startsWith('/admin');
   const fetchMarkets = useStore((state) => state.fetchMarkets);
   const marketsLoaded = useStore((state) => state.marketsLoaded);
+  const marketsLoading = useStore((state) => state.marketsLoading);
 
   // Fetch markets from database on app load (for non-admin routes)
   useEffect(() => {
-    if (!isAdminRoute && !marketsLoaded) {
+    if (!isAdminRoute && !marketsLoaded && !marketsLoading) {
       fetchMarkets();
     }
-  }, [isAdminRoute, marketsLoaded, fetchMarkets]);
+  }, [isAdminRoute, marketsLoaded, marketsLoading, fetchMarkets]);
 
   return (
     <SessionProvider session={session}>

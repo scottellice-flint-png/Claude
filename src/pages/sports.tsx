@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/store';
 import { Market, SportType, SportSubcategory } from '@/types';
@@ -38,13 +38,16 @@ export default function SportsPage() {
   const marketsLoaded = useStore((state) => state.marketsLoaded);
   const marketsLoading = useStore((state) => state.marketsLoading);
   const fetchMarkets = useStore((state) => state.fetchMarkets);
+  const hasFetchedRef = useRef(false);
 
   // Ensure markets are loaded when component mounts
+  // Use ref to ensure we only attempt fetch once per mount
   useEffect(() => {
-    if (!marketsLoaded && !marketsLoading) {
+    if (!hasFetchedRef.current && !marketsLoading) {
+      hasFetchedRef.current = true;
       fetchMarkets();
     }
-  }, [marketsLoaded, marketsLoading, fetchMarkets]);
+  }, [marketsLoading, fetchMarkets]);
 
   // Filter sports markets
   const filteredMarkets = useMemo(() => {
