@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Head from 'next/head';
 import AdminLayout from '@/components/admin/AdminLayout';
 import type { Category, Subcategory } from '@/types/admin';
 
 export default function CategoriesPage() {
+  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -32,8 +34,10 @@ export default function CategoriesPage() {
   });
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    if (router.isReady) {
+      fetchCategories();
+    }
+  }, [router.isReady]);
 
   const fetchCategories = async () => {
     try {

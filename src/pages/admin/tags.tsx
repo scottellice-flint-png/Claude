@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Head from 'next/head';
 import AdminLayout from '@/components/admin/AdminLayout';
 import type { Tag } from '@/types/admin';
 
 export default function TagsPage() {
+  const router = useRouter();
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -18,8 +20,10 @@ export default function TagsPage() {
   });
 
   useEffect(() => {
-    fetchTags();
-  }, []);
+    if (router.isReady) {
+      fetchTags();
+    }
+  }, [router.isReady]);
 
   const fetchTags = async () => {
     try {

@@ -48,18 +48,22 @@ export default function MarketsListPage() {
   const [search, setSearch] = useState<string>('');
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    if (router.isReady) {
+      fetchCategories();
+    }
+  }, [router.isReady]);
 
   useEffect(() => {
-    if (router.query.status) {
+    if (router.isReady && router.query.status) {
       setStatus(router.query.status as MarketStatus);
     }
-  }, [router.query.status]);
+  }, [router.isReady, router.query.status]);
 
   useEffect(() => {
-    fetchMarkets();
-  }, [status, categoryId, search, pagination.page]);
+    if (router.isReady) {
+      fetchMarkets();
+    }
+  }, [router.isReady, status, categoryId, search, pagination.page]);
 
   const fetchCategories = async () => {
     try {

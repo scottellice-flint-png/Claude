@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import Head from 'next/head';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -19,6 +20,7 @@ const roleColors: Record<AdminRole, string> = {
 };
 
 export default function UsersPage() {
+  const router = useRouter();
   const { data: session } = useSession();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,8 +40,10 @@ export default function UsersPage() {
   const canManageUsers = ['super_admin', 'admin'].includes(currentUserRole);
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (router.isReady) {
+      fetchUsers();
+    }
+  }, [router.isReady]);
 
   const fetchUsers = async () => {
     try {

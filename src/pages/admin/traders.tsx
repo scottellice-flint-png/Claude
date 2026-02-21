@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Head from 'next/head';
 import AdminLayout from '@/components/admin/AdminLayout';
 
@@ -21,6 +22,7 @@ interface Trader {
 }
 
 export default function TradersPage() {
+  const router = useRouter();
   const [traders, setTraders] = useState<Trader[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -28,8 +30,10 @@ export default function TradersPage() {
   const [filterActive, setFilterActive] = useState<string>('all');
 
   useEffect(() => {
-    fetchTraders();
-  }, [filterActive]);
+    if (router.isReady) {
+      fetchTraders();
+    }
+  }, [router.isReady, filterActive]);
 
   const fetchTraders = async () => {
     try {

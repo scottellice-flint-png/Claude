@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import AdminLayout from '@/components/admin/AdminLayout';
 import type { MarketCollection } from '@/types/admin';
 
 export default function CollectionsPage() {
+  const router = useRouter();
   const [collections, setCollections] = useState<MarketCollection[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -22,8 +24,10 @@ export default function CollectionsPage() {
   });
 
   useEffect(() => {
-    fetchCollections();
-  }, []);
+    if (router.isReady) {
+      fetchCollections();
+    }
+  }, [router.isReady]);
 
   const fetchCollections = async () => {
     try {

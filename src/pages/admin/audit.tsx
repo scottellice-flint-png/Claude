@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Head from 'next/head';
 import AdminLayout from '@/components/admin/AdminLayout';
 import type { AuditLog, EntityType, AuditAction } from '@/types/admin';
@@ -50,6 +51,7 @@ const actionIcons: Record<AuditAction, string> = {
 };
 
 export default function AuditLogsPage() {
+  const router = useRouter();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
@@ -67,8 +69,10 @@ export default function AuditLogsPage() {
   const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
-    fetchLogs();
-  }, [pagination.page, entityType, action, startDate, endDate]);
+    if (router.isReady) {
+      fetchLogs();
+    }
+  }, [router.isReady, pagination.page, entityType, action, startDate, endDate]);
 
   const fetchLogs = async () => {
     setLoading(true);

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Head from 'next/head';
 import AdminLayout from '@/components/admin/AdminLayout';
 import type { ConstraintTemplate, MarketConstraints } from '@/types/admin';
@@ -15,6 +16,7 @@ const defaultConstraints: MarketConstraints = {
 };
 
 export default function ConstraintsPage() {
+  const router = useRouter();
   const [templates, setTemplates] = useState<ConstraintTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -29,8 +31,10 @@ export default function ConstraintsPage() {
   });
 
   useEffect(() => {
-    fetchTemplates();
-  }, []);
+    if (router.isReady) {
+      fetchTemplates();
+    }
+  }, [router.isReady]);
 
   const fetchTemplates = async () => {
     try {
