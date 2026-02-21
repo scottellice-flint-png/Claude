@@ -12,6 +12,23 @@ declare global {
 let prisma: PrismaClient | null = null;
 let prismaInitError: string | null = global.__prismaInitError || null;
 
+// Helper to ensure PgBouncer compatibility by adding required parameters
+function getPgBouncerCompatibleUrl(url: string): string {
+  const urlObj = new URL(url);
+
+  // Add pgbouncer=true to disable prepared statements (fixes "prepared statement already exists" errors)
+  if (!urlObj.searchParams.has('pgbouncer')) {
+    urlObj.searchParams.set('pgbouncer', 'true');
+  }
+
+  // Ensure connection limit is set for serverless
+  if (!urlObj.searchParams.has('connection_limit')) {
+    urlObj.searchParams.set('connection_limit', '1');
+  }
+
+  return urlObj.toString();
+}
+
 // Lazy initialization - only create client when first accessed
 function getPrismaClient(): PrismaClient | null {
   if (prisma) return prisma;
@@ -29,9 +46,17 @@ function getPrismaClient(): PrismaClient | null {
       throw new Error('DATABASE_URL environment variable is not set');
     }
 
-    // Create new client
+    // Ensure PgBouncer compatibility
+    const compatibleUrl = getPgBouncerCompatibleUrl(connectionString);
+
+    // Create new client with PgBouncer-compatible connection
     prisma = new PrismaClient({
       log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+      datasources: {
+        db: {
+          url: compatibleUrl,
+        },
+      },
     });
 
     // Store globally for reuse in serverless (avoid creating multiple connections)
