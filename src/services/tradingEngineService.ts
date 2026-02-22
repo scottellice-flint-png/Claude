@@ -970,7 +970,7 @@ async function detectRapidFire(
         severity: 'high',
         userId,
         detectionRule: `ORDERS_PER_${timeWindowSeconds}_SEC > ${threshold}`,
-        triggerData: { orderCount, timeWindowSeconds },
+        triggerData: JSON.stringify({ orderCount, timeWindowSeconds }),
         actionTaken: 'HALT_USER',
       },
     });
@@ -1009,9 +1009,9 @@ async function updateTradeVelocity(marketId: string): Promise<void> {
         severity: 'high',
         marketId,
         detectionRule: 'TRADES_PER_2_SEC >= 10',
-        triggerData: { tradesCount: tradesLast2Sec },
+        triggerData: JSON.stringify({ tradesCount: tradesLast2Sec }),
         actionTaken: 'SPREAD_WIDEN',
-        actionDetails: { multiplier: newMultiplier },
+        actionDetails: JSON.stringify({ multiplier: newMultiplier }),
       },
     });
   } else if (tradesLast2Sec >= 5) {
