@@ -116,10 +116,10 @@ export async function detectToxicFlow(marketId: string): Promise<RiskCheck> {
         severity: 'high',
         marketId,
         detectionRule: `TRADES_PER_${RISK_CONFIG.TOXIC_TIME_WINDOW_MS}MS >= ${RISK_CONFIG.TOXIC_TRADES_THRESHOLD}`,
-        triggerData: { tradesCount: recentTrades },
+        triggerData: JSON.stringify({ tradesCount: recentTrades }),
         tradesAffected: recentTrades,
         actionTaken: 'SPREAD_WIDEN',
-        actionDetails: { multiplier: RISK_CONFIG.TOXIC_SPREAD_MULTIPLIER },
+        actionDetails: JSON.stringify({ multiplier: RISK_CONFIG.TOXIC_SPREAD_MULTIPLIER }),
       },
     });
 
@@ -177,7 +177,7 @@ export async function detectRapidFire(userId: string): Promise<RiskCheck> {
         severity: 'high',
         userId,
         detectionRule: `ORDERS_PER_${RISK_CONFIG.RAPID_FIRE_TIME_WINDOW_SEC}_SEC > ${RISK_CONFIG.RAPID_FIRE_THRESHOLD}`,
-        triggerData: { orderCount: recentOrders },
+        triggerData: JSON.stringify({ orderCount: recentOrders }),
         actionTaken: 'HALT_USER',
       },
     });
@@ -236,11 +236,11 @@ export async function detectIPCluster(
         userId: currentUserId,
         ipAddress,
         detectionRule: 'MULTIPLE_USERS_SAME_IP',
-        triggerData: {
+        triggerData: JSON.stringify({
           uniqueUsers,
           totalOrders,
           timeWindowMin: RISK_CONFIG.IP_CLUSTER_TIME_WINDOW_MIN,
-        },
+        }),
         actionTaken: 'ALERT_ONLY',
       },
     });
@@ -324,12 +324,12 @@ export async function detectLatencyArbitrage(userId: string): Promise<RiskCheck>
         severity: 'critical',
         userId,
         detectionRule: 'HIGH_FILL_RATE_LOW_LATENCY',
-        triggerData: {
+        triggerData: JSON.stringify({
           fillRate,
           avgFillTimeMs: avgFillTime,
           totalOrders,
           filledOrders,
-        },
+        }),
         actionTaken: 'HALT_USER',
       },
     });
@@ -410,11 +410,11 @@ export async function detectWashTrading(userId: string): Promise<RiskCheck> {
         severity: 'critical',
         userId,
         detectionRule: 'CROSS_TRADES_SAME_IP',
-        triggerData: {
+        triggerData: JSON.stringify({
           crossTrades,
           relatedUsers: relatedUserIds.length,
           sharedIPs: userIPs,
-        },
+        }),
         actionTaken: 'HALT_USER',
       },
     });
@@ -472,11 +472,11 @@ export async function detectSpoofing(userId: string): Promise<RiskCheck> {
         severity: 'high',
         userId,
         detectionRule: 'HIGH_CANCEL_RATE',
-        triggerData: {
+        triggerData: JSON.stringify({
           totalOrders: orders.length,
           cancelledOrders,
           cancelRate,
-        },
+        }),
         actionTaken: 'HALT_USER',
       },
     });
