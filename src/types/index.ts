@@ -43,6 +43,7 @@ export interface MarketOutcome {
   probability: number; // 0-100
   yesPrice: number;
   noPrice: number;
+  imageUrl?: string;
 }
 
 export interface Market {
@@ -59,6 +60,8 @@ export interface Market {
   liquidity: number;
   createdAt: string;
   imageUrl?: string;
+  heroImageUrl?: string;
+  cardImageUrl?: string;
   icon?: string;
   resolution?: 'yes' | 'no' | null;
   outcomes?: MarketOutcome[];

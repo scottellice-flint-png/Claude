@@ -52,6 +52,7 @@ export const createOutcomeSchema = z.object({
   position: z.number().min(0).optional(),
   initialPrice: z.number().min(1).max(99).optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  imageUrl: z.string().url().optional().or(z.literal('')),
 });
 
 export const updateOutcomeSchema = createOutcomeSchema.partial().extend({

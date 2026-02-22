@@ -48,6 +48,8 @@ export default async function handler(
         liquidity: m.liquidity,
         createdAt: (m.createdAt as Date).toISOString(),
         icon: m.icon || undefined,
+        heroImageUrl: m.heroImageUrl || undefined,
+        cardImageUrl: m.cardImageUrl || undefined,
         isFeatured: m.isFeatured,
         outcomes: outcomes && outcomes.length > 0
           ? outcomes.map((o) => ({
@@ -56,6 +58,7 @@ export default async function handler(
               probability: o.currentPrice as number,
               yesPrice: o.currentPrice as number,
               noPrice: 100 - (o.currentPrice as number),
+              imageUrl: (o.imageUrl as string) || undefined,
             }))
           : undefined,
       };

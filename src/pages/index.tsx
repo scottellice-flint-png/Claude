@@ -235,10 +235,21 @@ export default function Home() {
                     </span>
                   </div>
 
-                  {/* Title */}
-                  <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-4 leading-tight">
-                    {currentFeaturedMarket.title}
-                  </h2>
+                  {/* Title with Image */}
+                  <div className="flex items-start gap-4 mb-4">
+                    {(currentFeaturedMarket.heroImageUrl || currentFeaturedMarket.cardImageUrl) && (
+                      <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                        <img
+                          src={currentFeaturedMarket.heroImageUrl || currentFeaturedMarket.cardImageUrl}
+                          alt={currentFeaturedMarket.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 leading-tight flex-1">
+                      {currentFeaturedMarket.title}
+                    </h2>
+                  </div>
 
                   {/* Outcomes */}
                   <div className="space-y-2 mb-4">
@@ -274,9 +285,11 @@ export default function Home() {
                   </div>
 
                   {/* Volume */}
-                  <div className="text-sm text-gray-500">
-                    {formatVolume(currentFeaturedMarket.volume)} volume
-                  </div>
+                  {currentFeaturedMarket.volume > 0 && (
+                    <div className="text-sm text-gray-500">
+                      {formatVolume(currentFeaturedMarket.volume)} vol
+                    </div>
+                  )}
                 </div>
 
                 {/* Right: Chart and Price */}
@@ -484,9 +497,19 @@ function MarketGridCard({ market }: { market: Market }) {
   return (
     <Link href={`/market/${market.id}`}>
       <div className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md hover:border-gray-300 transition-all h-full flex flex-col">
-        {/* Icon and Title */}
+        {/* Icon/Image and Title */}
         <div className="flex items-start gap-3 mb-3">
-          <div className="text-2xl">{market.icon || '📊'}</div>
+          {(market.heroImageUrl || market.cardImageUrl) ? (
+            <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+              <img
+                src={market.cardImageUrl || market.heroImageUrl}
+                alt={market.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className="text-2xl">{market.icon || '📊'}</div>
+          )}
           <h3 className="text-sm font-semibold text-gray-900 leading-tight flex-1">
             {market.title}
           </h3>
@@ -525,10 +548,12 @@ function MarketGridCard({ market }: { market: Market }) {
           )}
         </div>
 
-        {/* Volume */}
-        <div className="pt-2 border-t border-gray-100">
-          <span className="text-xs text-gray-400">{formatVolume(market.volume)}</span>
-        </div>
+        {/* Volume - only show if there are actual trades */}
+        {market.volume > 0 && (
+          <div className="pt-2 border-t border-gray-100">
+            <span className="text-xs text-gray-400">{formatVolume(market.volume)} vol</span>
+          </div>
+        )}
       </div>
     </Link>
   );

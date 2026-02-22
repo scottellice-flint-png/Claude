@@ -230,6 +230,7 @@ model MarketOutcome {
 
   // Color/styling
   color         String?  // Hex color for charts/display
+  imageUrl      String?  // Outcome image URL (e.g., movie poster, candidate photo)
 
   // Resolution
   isResolved    Boolean  @default(false)

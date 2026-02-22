@@ -96,6 +96,7 @@ export async function createMarket(
           initialPrice: outcome.initialPrice || Math.floor(100 / outcomes.length),
           currentPrice: outcome.initialPrice || Math.floor(100 / outcomes.length),
           color: outcome.color,
+          imageUrl: outcome.imageUrl || undefined,
         })),
       });
     }

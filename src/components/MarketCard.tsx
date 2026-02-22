@@ -41,10 +41,21 @@ export default function MarketCard({ market, showHotBadge = false }: MarketCardP
           </span>
         </div>
 
-        {/* Title */}
-        <h3 className="text-lg font-bold text-gray-900 mb-4 leading-tight">
-          {market.title}
-        </h3>
+        {/* Title with optional image */}
+        <div className="flex items-start gap-3 mb-4">
+          {(market.heroImageUrl || market.cardImageUrl) && (
+            <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+              <img
+                src={market.cardImageUrl || market.heroImageUrl}
+                alt={market.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+          <h3 className="text-lg font-bold text-gray-900 leading-tight flex-1">
+            {market.title}
+          </h3>
+        </div>
 
         {/* Price and Chance */}
         <div className="flex items-end justify-between mb-4">
@@ -64,12 +75,14 @@ export default function MarketCard({ market, showHotBadge = false }: MarketCardP
           </button>
         </div>
 
-        {/* Volume */}
-        <div className="mt-3 pt-3 border-t border-gray-100">
-          <span className="text-xs text-gray-500">
-            Volume: <span className="font-semibold text-gray-700">{formatVolume(market.volume)}</span>
-          </span>
-        </div>
+        {/* Volume - only show if there are actual trades */}
+        {market.volume > 0 && (
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <span className="text-xs text-gray-500">
+              Volume: <span className="font-semibold text-gray-700">{formatVolume(market.volume)}</span>
+            </span>
+          </div>
+        )}
       </div>
     </Link>
   );
