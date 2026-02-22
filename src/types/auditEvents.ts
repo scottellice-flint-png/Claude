@@ -65,6 +65,7 @@ export type MarketLifecycleEventType =
 // Trading / Bets / Orders Events
 export type TradingEventType =
   | 'ORDER_CREATED'
+  | 'ORDER_PLACED'
   | 'ORDER_MATCHED'
   | 'ORDER_CANCELLED'
   | 'ORDER_EXPIRED'
@@ -78,6 +79,16 @@ export type TradingEventType =
   | 'CASHOUT_EXECUTED'
   | 'CASHOUT_FAILED'
   | 'COMMISSION_APPLIED';
+
+// Risk / Defense Events
+export type RiskEventType =
+  | 'TOXIC_FLOW'
+  | 'RAPID_FIRE'
+  | 'IP_CLUSTER'
+  | 'LATENCY_ARB'
+  | 'WASH_TRADING'
+  | 'SPOOFING'
+  | 'COORDINATED_ATTACK';
 
 // Pricing / AMM Events
 export type PricingEventType =
@@ -143,6 +154,7 @@ export type AuditEventType =
   | WalletEventType
   | MarketLifecycleEventType
   | TradingEventType
+  | RiskEventType
   | PricingEventType
   | AdminEventType
   | SystemEventType
@@ -280,6 +292,7 @@ export const EVENT_TYPE_CONFIG: Record<AuditEventType, EventTypeConfig> = {
 
   // Trading events
   ORDER_CREATED: { requiresReasonCode: false, requiresMarketId: true, requiresBetId: true, requiresBeforeState: false, requiresAfterState: true, category: 'trading' },
+  ORDER_PLACED: { requiresReasonCode: false, requiresMarketId: true, requiresBetId: true, requiresBeforeState: false, requiresAfterState: true, category: 'trading' },
   ORDER_MATCHED: { requiresReasonCode: false, requiresMarketId: true, requiresBetId: true, requiresBeforeState: true, requiresAfterState: true, category: 'trading' },
   ORDER_CANCELLED: { requiresReasonCode: false, requiresMarketId: true, requiresBetId: true, requiresBeforeState: true, requiresAfterState: true, category: 'trading' },
   ORDER_EXPIRED: { requiresReasonCode: false, requiresMarketId: true, requiresBetId: true, requiresBeforeState: true, requiresAfterState: true, category: 'trading' },
@@ -302,6 +315,15 @@ export const EVENT_TYPE_CONFIG: Record<AuditEventType, EventTypeConfig> = {
   LP_REMOVED_LIQUIDITY: { requiresReasonCode: false, requiresMarketId: true, requiresBetId: false, requiresBeforeState: true, requiresAfterState: true, category: 'pricing' },
   LP_REBALANCED: { requiresReasonCode: false, requiresMarketId: true, requiresBetId: false, requiresBeforeState: true, requiresAfterState: true, category: 'pricing' },
   POOL_STATE_CHANGED: { requiresReasonCode: false, requiresMarketId: true, requiresBetId: false, requiresBeforeState: true, requiresAfterState: true, category: 'pricing' },
+
+  // Risk / Defense events
+  TOXIC_FLOW: { requiresReasonCode: false, requiresMarketId: true, requiresBetId: false, requiresBeforeState: false, requiresAfterState: true, category: 'risk' },
+  RAPID_FIRE: { requiresReasonCode: false, requiresMarketId: false, requiresBetId: false, requiresBeforeState: false, requiresAfterState: true, category: 'risk' },
+  IP_CLUSTER: { requiresReasonCode: false, requiresMarketId: false, requiresBetId: false, requiresBeforeState: false, requiresAfterState: true, category: 'risk' },
+  LATENCY_ARB: { requiresReasonCode: false, requiresMarketId: false, requiresBetId: false, requiresBeforeState: false, requiresAfterState: true, category: 'risk' },
+  WASH_TRADING: { requiresReasonCode: false, requiresMarketId: false, requiresBetId: false, requiresBeforeState: false, requiresAfterState: true, category: 'risk' },
+  SPOOFING: { requiresReasonCode: false, requiresMarketId: false, requiresBetId: false, requiresBeforeState: false, requiresAfterState: true, category: 'risk' },
+  COORDINATED_ATTACK: { requiresReasonCode: false, requiresMarketId: true, requiresBetId: false, requiresBeforeState: false, requiresAfterState: true, category: 'risk' },
 
   // Admin events
   ADMIN_LOGIN_SUCCESS: { requiresReasonCode: false, requiresMarketId: false, requiresBetId: false, requiresBeforeState: false, requiresAfterState: false, category: 'admin' },
