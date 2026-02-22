@@ -1,8 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Market } from '@/types';
 import { useStore } from '@/store';
+
+interface LiquidityState {
+  maxBetCents: number;
+  maxBetDisplay: string;
+  liquidityTier: string;
+  liquidityTierDisplay: string;
+  betCapReason: string;
+  isSpreadWidened: boolean;
+  spreadWarning: string | null;
+  spreadMultiplier: number;
+}
 
 interface TradePanelProps {
   market: Market;
@@ -28,9 +39,30 @@ export default function TradePanel({
   const [amount, setAmount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [liquidityState, setLiquidityState] = useState<LiquidityState | null>(null);
 
   const storeUser = useStore((state) => state.user);
   const placeOrder = useStore((state) => state.placeOrder);
+
+  // Fetch liquidity state for NT bet cap display
+  useEffect(() => {
+    const fetchLiquidityState = async () => {
+      try {
+        const response = await fetch(`/api/trading/liquidity?marketId=${market.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setLiquidityState(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch liquidity state:', error);
+      }
+    };
+
+    fetchLiquidityState();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchLiquidityState, 30000);
+    return () => clearInterval(interval);
+  }, [market.id]);
 
   // Use session user if authenticated
   const user = session?.user ? {
@@ -97,8 +129,51 @@ export default function TradePanel({
     return closeDate.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
   };
 
+  // Check if amount exceeds bet cap
+  const maxBetCents = liquidityState?.maxBetCents || 5000000;
+  const amountCents = amount * 100;
+  const exceedsBetCap = amountCents > maxBetCents;
+
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+      {/* NT Liquidity-Locked Bet Cap Warning */}
+      {liquidityState && liquidityState.liquidityTier === 'seed' && (
+        <div className="bg-amber-50 border-b border-amber-200 p-3">
+          <div className="flex items-start gap-2">
+            <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-amber-800">
+                Seed Phase - Maximum Bet: {liquidityState.maxBetDisplay}
+              </p>
+              <p className="text-xs text-amber-600 mt-0.5">
+                {liquidityState.betCapReason}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Spread Widened Warning */}
+      {liquidityState?.isSpreadWidened && (
+        <div className="bg-red-50 border-b border-red-200 p-3">
+          <div className="flex items-start gap-2">
+            <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-red-800">
+                Spread Widened
+              </p>
+              <p className="text-xs text-red-600 mt-0.5">
+                {liquidityState.spreadWarning}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header with Market Info */}
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-start gap-3">
@@ -224,11 +299,23 @@ export default function TradePanel({
           </div>
         )}
 
+        {/* Bet Cap Warning */}
+        {exceedsBetCap && liquidityState && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
+            <p className="text-sm font-medium text-red-700">
+              Exceeds maximum bet of {liquidityState.maxBetDisplay}
+            </p>
+            <p className="text-xs text-red-500 mt-1">
+              Reduce your bet amount to continue
+            </p>
+          </div>
+        )}
+
         {/* Submit Button - Show "Sign up to trade" for non-authenticated users */}
         {isAuthenticated ? (
           <button
             onClick={handleSubmit}
-            disabled={isSubmitting || amount <= 0 || amount * 100 > (user?.balance || 0)}
+            disabled={isSubmitting || amount <= 0 || amount * 100 > (user?.balance || 0) || exceedsBetCap}
             className="w-full py-4 rounded-full font-bold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-foremark-green text-white hover:bg-foremark-green-light"
           >
             {isSubmitting
@@ -244,6 +331,21 @@ export default function TradePanel({
           >
             Sign up to bet
           </Link>
+        )}
+
+        {/* Liquidity Tier Badge */}
+        {liquidityState && (
+          <div className="flex justify-center pt-2">
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              liquidityState.liquidityTier === 'seed'
+                ? 'bg-amber-100 text-amber-800'
+                : liquidityState.liquidityTier === 'growth'
+                ? 'bg-blue-100 text-blue-800'
+                : 'bg-green-100 text-green-800'
+            }`}>
+              {liquidityState.liquidityTierDisplay}
+            </span>
+          </div>
         )}
       </div>
     </div>

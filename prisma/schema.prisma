@@ -30,11 +30,22 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  // Trading stats
+  // Trading stats - ALL IN INTEGER CENTS for precision
+  balanceCents      BigInt    @default(0) // Balance in cents (100 = $1.00)
+  lockedBalanceCents BigInt   @default(0) // Balance locked in open orders
+  totalProfitCents  BigInt    @default(0) // Cumulative profit in cents
+  totalTrades       Int       @default(0)
+  totalVolumeCents  BigInt    @default(0) // Total volume in cents
+
+  // Legacy float fields (deprecated, kept for migration)
   balance       Float     @default(0)
   totalProfit   Float     @default(0)
-  totalTrades   Int       @default(0)
   totalVolume   Float     @default(0)
+
+  // Risk scoring
+  riskScore     Int       @default(0) // 0-100, higher = more risky
+  isFlagged     Boolean   @default(false)
+  flagReason    String?
 
   // Relations - Chats
   createdChats      GroupChat[]         @relation("ChatCreator")
@@ -45,6 +56,18 @@ model User {
   // Relations - Social
   followers         UserFollow[]        @relation("UserFollowing")
   following         UserFollow[]        @relation("UserFollowers")
+
+  // Relations - Trading (Fortress Engine)
+  orders            Order[]
+  positions         Position[]
+  buyTrades         Trade[]             @relation("BuyerTrades")
+  sellTrades        Trade[]             @relation("SellerTrades")
+  liquidityRewards  LiquidityReward[]
+  dmmMetrics        DMMMetrics[]
+  dmmRegistration   DMMRegistration?
+  riskEvents        RiskEvent[]
+  marketMakerBots   MarketMakerBot[]
+  settlementPayouts SettlementPayout[]
 
   @@map("users")
 }
@@ -72,6 +95,11 @@ model AdminUser {
   createdMarkets    Market[]          @relation("MarketCreator")
   assignedMarkets   Market[]          @relation("MarketAssignee")
   resolutions       MarketResolution[]
+
+  // Relations - Fortress Trading Engine
+  dmmApprovals      DMMRegistration[]
+  resolvedRiskEvents RiskEvent[]
+  processedSettlements SettlementRecord[]
 
   @@map("admin_users")
 }
@@ -158,6 +186,16 @@ model Market {
   resolutions       MarketResolution[]
   auditLogs         AuditLog[]
 
+  // Relations - Fortress Trading Engine
+  orders            Order[]
+  trades            Trade[]
+  positions         Position[]
+  liquidityRewards  LiquidityReward[]
+  dmmMetrics        DMMMetrics[]
+  riskEvents        RiskEvent[]
+  liquidityState    MarketLiquidityState?
+  settlementRecords SettlementRecord[]
+
   @@index([status])
   @@index([categoryId])
   @@index([closesAt])
@@ -182,7 +220,11 @@ model MarketOutcome {
   // For multi-outcome: order determines display position
   position      Int      @default(0)
 
-  // Pricing (probability 0-100)
+  // Pricing (probability 0-100) - CENTS for integer precision
+  currentPriceCents Int  @default(50) // Price in cents (1-99)
+  initialPriceCents Int  @default(50)
+
+  // Legacy float prices (deprecated)
   currentPrice  Float    @default(50)
   initialPrice  Float    @default(50)
 
@@ -198,6 +240,11 @@ model MarketOutcome {
 
   // Relations
   market        Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  // Relations - Fortress Trading Engine
+  orders        Order[]
+  trades        Trade[]
+  positions     Position[]
 
   @@unique([marketId, position])
   @@map("market_outcomes")
@@ -678,4 +725,589 @@ model UserFollow {
   @@index([followerId])
   @@index([followingId])
   @@map("user_follows")
+}
+
+// ============================================================================
+// FORTRESS TRADING ENGINE - NT 2024 Compliant CLOB
+// ============================================================================
+
+// ============================================================================
+// ORDERS - Central Limit Order Book (CLOB)
+// All prices in INTEGER CENTS (100 = $1.00) to avoid floating point errors
+// ============================================================================
+
+model Order {
+  id              String    @id @default(uuid())
+
+  // Market & Outcome
+  marketId        String
+  outcomeId       String    // Which outcome (Yes/No or multi-outcome)
+
+  // User
+  userId          String
+
+  // Order Details - ALL PRICES IN INTEGER CENTS
+  side            String    // 'buy' or 'sell'
+  orderType       String    // 'limit' or 'market'
+  priceCents      Int       // Price in cents (1-99 for binary, P_yes + P_no must = 100)
+  quantityCents   Int       // Total quantity in cents
+  filledCents     Int       @default(0) // Amount filled in cents
+  remainingCents  Int       // Amount remaining (quantityCents - filledCents)
+
+  // Order Status
+  status          String    @default("pending") // pending, open, partial, filled, cancelled, expired, rejected
+
+  // Timing - Price-Time Priority
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  expiresAt       DateTime? // Optional expiration
+  filledAt        DateTime? // When fully filled
+  cancelledAt     DateTime? // When cancelled
+
+  // Taker vs Maker designation
+  isTaker         Boolean   @default(false) // True if matched against existing liquidity
+
+  // NT Audit Requirements
+  reasonCode      String?   // CLOB_MATCH, USER_CANCEL, EXPIRED, ADMIN_CANCEL, etc.
+  ipAddress       String?
+  deviceFingerprint String?
+
+  // Risk flags
+  isFlagged       Boolean   @default(false)
+  flagReason      String?
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id])
+  market          Market    @relation(fields: [marketId], references: [id])
+  outcome         MarketOutcome @relation(fields: [outcomeId], references: [id])
+
+  // Trade relations
+  buyTrades       Trade[]   @relation("BuyerOrders")
+  sellTrades      Trade[]   @relation("SellerOrders")
+
+  @@index([marketId, outcomeId, status])
+  @@index([marketId, side, priceCents, createdAt]) // CLOB index for price-time priority
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@index([expiresAt])
+  @@map("orders")
+}
+
+// ============================================================================
+// TAKER QUEUE - 500ms Processing Delay for Fair Look
+// Implements mandatory delay for taker orders to prevent latency arbitrage
+// ============================================================================
+
+model TakerQueue {
+  id              String    @id @default(uuid())
+  orderId         String    @unique
+
+  // Timing
+  queuedAt        DateTime  @default(now())
+  releaseAt       DateTime  // queuedAt + 500ms
+  processedAt     DateTime?
+
+  // Status
+  status          String    @default("queued") // queued, processing, completed, cancelled
+
+  // Order snapshot (in case order is modified)
+  orderSnapshot   String    // JSON snapshot of order at queue time
+
+  // Processing result
+  matchResult     String?   // JSON result of matching attempt
+  errorMessage    String?
+
+  @@index([releaseAt, status])
+  @@index([status])
+  @@map("taker_queue")
+}
+
+// ============================================================================
+// TRADES - Executed Matches
+// ============================================================================
+
+model Trade {
+  id              String    @id @default(uuid())
+
+  // Market & Outcome
+  marketId        String
+  outcomeId       String
+
+  // Matched Orders
+  buyOrderId      String
+  sellOrderId     String
+  buyerId         String
+  sellerId        String
+
+  // Trade Details - ALL IN INTEGER CENTS
+  priceCents      Int       // Execution price in cents
+  quantityCents   Int       // Trade size in cents
+
+  // Fees (in cents)
+  buyerFeeCents   Int       @default(0)
+  sellerFeeCents  Int       @default(0)
+
+  // Execution timing
+  executedAt      DateTime  @default(now())
+
+  // NT Audit Trail
+  reasonCode      String    @default("CLOB_MATCH") // CLOB_MATCH, MM_FILL, AUCTION, etc.
+
+  // Relations
+  market          Market    @relation(fields: [marketId], references: [id])
+  outcome         MarketOutcome @relation(fields: [outcomeId], references: [id])
+  buyOrder        Order     @relation("BuyerOrders", fields: [buyOrderId], references: [id])
+  sellOrder       Order     @relation("SellerOrders", fields: [sellOrderId], references: [id])
+  buyer           User      @relation("BuyerTrades", fields: [buyerId], references: [id])
+  seller          User      @relation("SellerTrades", fields: [sellerId], references: [id])
+
+  @@index([marketId, executedAt])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([executedAt])
+  @@map("trades")
+}
+
+// ============================================================================
+// POSITIONS - User Holdings per Market/Outcome
+// ============================================================================
+
+model Position {
+  id              String    @id @default(uuid())
+
+  userId          String
+  marketId        String
+  outcomeId       String
+
+  // Position Details - ALL IN INTEGER CENTS
+  quantityCents   Int       @default(0) // Net position (positive = long, negative = short)
+  avgPriceCents   Int       @default(0) // Average entry price in cents
+  totalCostCents  Int       @default(0) // Total cost basis in cents
+
+  // Realized P&L tracking
+  realizedPnlCents Int      @default(0)
+
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id])
+  market          Market    @relation(fields: [marketId], references: [id])
+  outcome         MarketOutcome @relation(fields: [outcomeId], references: [id])
+
+  // Settlement
+  settlementPayouts SettlementPayout[]
+
+  @@unique([userId, marketId, outcomeId])
+  @@index([userId])
+  @@index([marketId])
+  @@map("positions")
+}
+
+// ============================================================================
+// LIQUIDITY REWARDS - LIP (Liquidity Incentive Program)
+// Tracks Time-Weighted Liquidity for rebate calculations
+// ============================================================================
+
+model LiquidityReward {
+  id              String    @id @default(uuid())
+
+  userId          String
+  marketId        String
+
+  // Time-Weighted Liquidity Metrics
+  twlPoints       BigInt    @default(0) // Total TWL points accumulated
+
+  // Tracking period
+  periodStart     DateTime
+  periodEnd       DateTime
+
+  // Snapshot data for verification
+  avgLiquidityCents BigInt  @default(0) // Average liquidity provided in cents
+  timeInSpreadMs  BigInt    @default(0) // Time with orders within 2% of mid
+  totalOrdersTracked Int    @default(0) // Number of orders tracked
+
+  // Rebate calculation
+  rebateEarnedCents Int     @default(0) // Rebate earned in cents
+  rebatePaidAt    DateTime?
+
+  // Status
+  status          String    @default("active") // active, calculated, paid
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id])
+  market          Market    @relation(fields: [marketId], references: [id])
+
+  @@index([userId, periodStart])
+  @@index([marketId, periodStart])
+  @@index([status])
+  @@map("liquidity_rewards")
+}
+
+// ============================================================================
+// DMM METRICS - Designated Market Maker Monitoring
+// ============================================================================
+
+model DMMMetrics {
+  id              String    @id @default(uuid())
+
+  userId          String    // DMM user ID
+  marketId        String
+
+  // Uptime tracking
+  periodStart     DateTime
+  periodEnd       DateTime
+  uptimeMs        BigInt    @default(0) // Total uptime in milliseconds
+  downtimeMs      BigInt    @default(0) // Total downtime
+  uptimePercent   Float     @default(0) // Calculated uptime percentage
+
+  // Spread consistency
+  avgSpreadCents  Int       @default(0) // Average spread in cents
+  maxSpreadCents  Int       @default(0) // Maximum spread observed
+  minSpreadCents  Int       @default(0) // Minimum spread observed
+  spreadViolations Int      @default(0) // Times spread exceeded threshold
+
+  // Volume metrics
+  volumeProvidedCents BigInt @default(0) // Total volume provided
+  tradesMatched   Int       @default(0)
+
+  // Performance flags
+  meetsRequirements Boolean @default(true)
+  warningCount    Int       @default(0)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id])
+  market          Market    @relation(fields: [marketId], references: [id])
+
+  @@index([userId, periodStart])
+  @@index([marketId])
+  @@map("dmm_metrics")
+}
+
+// ============================================================================
+// DMM REGISTRATION - Designated Market Maker Status
+// ============================================================================
+
+model DMMRegistration {
+  id              String    @id @default(uuid())
+
+  userId          String
+
+  // DMM Status
+  status          String    @default("pending") // pending, active, suspended, terminated
+  tier            String    @default("standard") // standard, premium, institutional
+
+  // Requirements
+  minUptimePercent Float    @default(95) // Minimum required uptime
+  maxSpreadCents  Int       @default(10) // Maximum allowed spread
+  minLiquidityCents BigInt  @default(100000) // Minimum liquidity requirement
+
+  // API Access
+  apiRateLimit    Int       @default(0) // 0 = no rate limit (prioritized access)
+  apiKeyHash      String?   // Hashed API key for DMM endpoints
+
+  // Approval
+  approvedAt      DateTime?
+  approvedById    String?
+
+  // Compliance
+  lastComplianceCheck DateTime?
+  complianceStatus String   @default("pending") // pending, compliant, warning, violation
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id])
+  approvedBy      AdminUser? @relation(fields: [approvedById], references: [id])
+
+  @@unique([userId])
+  @@index([status])
+  @@map("dmm_registrations")
+}
+
+// ============================================================================
+// MARKET MAKER BOT - Internal Seed Bot Configuration
+// Chinese Wall compliant - only accesses public data
+// ============================================================================
+
+model MarketMakerBot {
+  id              String    @id @default(uuid())
+
+  name            String
+  botType         String    @default("passive_quoter") // passive_quoter, spread_bot, seed_bot
+
+  // Configuration
+  isActive        Boolean   @default(false)
+
+  // Strategy parameters (JSON)
+  config          String    // JSON: { spreadCents, minQuantityCents, maxInventoryCents, etc. }
+
+  // Chinese Wall Compliance
+  // Bot can ONLY access these endpoints:
+  // - GET /api/markets (public)
+  // - GET /api/orderbook (public)
+  // - POST /api/orders (standard user endpoint)
+  accessLevel     String    @default("public_only") // public_only (enforced)
+
+  // Inventory tracking (for risk management)
+  currentInventoryYesCents BigInt @default(0)
+  currentInventoryNoCents  BigInt @default(0)
+  maxInventoryCents BigInt  @default(1000000) // $10,000 default max
+
+  // Performance
+  totalVolumeProvidedCents BigInt @default(0)
+  totalTradesExecuted Int   @default(0)
+  totalPnlCents    BigInt   @default(0)
+
+  // Risk state
+  isHalted         Boolean  @default(false)
+  haltReason       String?
+  lastActivityAt   DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Associated user account for the bot
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id])
+
+  @@map("market_maker_bots")
+}
+
+// ============================================================================
+// RISK EVENTS - Anti-Sharp & Toxic Flow Detection
+// ============================================================================
+
+model RiskEvent {
+  id              String    @id @default(uuid())
+
+  // Event classification
+  eventType       String    // TOXIC_FLOW, IP_CLUSTER, RAPID_FIRE, INVENTORY_SKEW, LATENCY_ARB
+  severity        String    @default("low") // low, medium, high, critical
+
+  // Target
+  userId          String?
+  marketId        String?
+  ipAddress       String?
+
+  // Detection details
+  detectionRule   String    // Rule that triggered this event
+  triggerData     String    // JSON: data that triggered detection
+
+  // Impact metrics
+  tradesAffected  Int       @default(0)
+  volumeAffectedCents BigInt @default(0)
+
+  // Response action
+  actionTaken     String?   // SPREAD_WIDEN, HALT_USER, HALT_MARKET, ALERT_ONLY
+  actionDetails   String?   // JSON: details of action taken
+
+  // Status
+  status          String    @default("active") // active, resolved, false_positive
+  resolvedAt      DateTime?
+  resolvedById    String?
+  resolutionNotes String?
+
+  createdAt       DateTime  @default(now())
+
+  // Relations
+  user            User?     @relation(fields: [userId], references: [id])
+  market          Market?   @relation(fields: [marketId], references: [id])
+  resolvedBy      AdminUser? @relation(fields: [resolvedById], references: [id])
+
+  @@index([eventType, createdAt])
+  @@index([userId])
+  @@index([marketId])
+  @@index([severity, status])
+  @@map("risk_events")
+}
+
+// ============================================================================
+// MARKET LIQUIDITY STATE - Real-time Liquidity Tracking
+// Used for NT bet caps and dynamic spread adjustments
+// ============================================================================
+
+model MarketLiquidityState {
+  id              String    @id @default(uuid())
+
+  marketId        String    @unique
+
+  // Current liquidity metrics - ALL IN CENTS
+  totalLiquidityCents BigInt @default(0) // Total liquidity available
+  bidLiquidityCents   BigInt @default(0) // Buy-side liquidity
+  askLiquidityCents   BigInt @default(0) // Sell-side liquidity
+
+  // Best bid/ask
+  bestBidCents    Int?      // Best bid price in cents
+  bestAskCents    Int?      // Best ask price in cents
+  midPriceCents   Int?      // Mid price in cents
+  spreadCents     Int?      // Current spread in cents
+
+  // NT Liquidity-Locked Bet Cap
+  // If totalLiquidityCents < 1000000 (=$10,000), maxBetCents = 50000 (=$500)
+  liquidityTier   String    @default("seed") // seed (<$10k), growth, mature
+  maxBetCents     Int       @default(50000) // Current max bet allowed
+
+  // Dynamic spread state (Anti-Sharp)
+  spreadMultiplier Float    @default(1.0) // 1.0 = normal, 3.0 = 300% widened
+  spreadReason    String?   // NORMAL, TOXIC_FLOW_HALT, HIGH_VOLATILITY
+
+  // Trade velocity tracking (for toxic flow detection)
+  tradesLast2Sec  Int       @default(0)
+  lastTradeAt     DateTime?
+
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  market          Market    @relation(fields: [marketId], references: [id])
+
+  @@index([liquidityTier])
+  @@map("market_liquidity_states")
+}
+
+// ============================================================================
+// ORDER BOOK SNAPSHOTS - Historical Order Book Data
+// ============================================================================
+
+model OrderBookSnapshot {
+  id              String    @id @default(uuid())
+
+  marketId        String
+  outcomeId       String
+
+  // Snapshot data
+  snapshotAt      DateTime  @default(now())
+
+  // Aggregated levels (JSON arrays)
+  bids            String    // JSON: [{ priceCents, quantityCents, orderCount }]
+  asks            String    // JSON: [{ priceCents, quantityCents, orderCount }]
+
+  // Summary stats
+  bestBidCents    Int?
+  bestAskCents    Int?
+  totalBidsCents  BigInt    @default(0)
+  totalAsksCents  BigInt    @default(0)
+
+  // Trigger reason
+  snapshotReason  String    @default("scheduled") // scheduled, trade, significant_change
+
+  @@index([marketId, snapshotAt])
+  @@index([outcomeId, snapshotAt])
+  @@map("order_book_snapshots")
+}
+
+// ============================================================================
+// SETTLEMENT RECORDS - NT 2024 Settlement & Refund Tracking
+// ============================================================================
+
+model SettlementRecord {
+  id              String    @id @default(uuid())
+
+  marketId        String
+
+  // Settlement type
+  settlementType  String    // NORMAL, VOID, REFUND
+
+  // Resolution data
+  winningOutcomeId String?
+  resolutionSource String?  // Source of official result
+  resolutionEvidence String? // JSON: evidence/proof data
+
+  // Financial totals - ALL IN CENTS
+  totalPayoutCents BigInt   @default(0)
+  totalRefundCents BigInt   @default(0)
+  platformFeeCents BigInt   @default(0)
+
+  // Status
+  status          String    @default("pending") // pending, processing, completed, failed
+
+  // Timing
+  initiatedAt     DateTime  @default(now())
+  completedAt     DateTime?
+
+  // NT Audit
+  reasonCode      String    // MARKET_RESOLVED, MARKET_CANCELLED, ORACLE_RESULT, etc.
+  processedById   String?
+
+  // Error handling
+  errorMessage    String?
+  retryCount      Int       @default(0)
+
+  // Relations
+  market          Market    @relation(fields: [marketId], references: [id])
+  processedBy     AdminUser? @relation(fields: [processedById], references: [id])
+  payouts         SettlementPayout[]
+
+  @@index([marketId])
+  @@index([status])
+  @@map("settlement_records")
+}
+
+// ============================================================================
+// SETTLEMENT PAYOUTS - Individual User Payouts
+// ============================================================================
+
+model SettlementPayout {
+  id              String    @id @default(uuid())
+
+  settlementId    String
+  userId          String
+  positionId      String
+
+  // Payout details - IN CENTS
+  payoutType      String    // WIN, REFUND
+  amountCents     Int
+
+  // Position at settlement
+  positionQuantityCents Int
+  positionAvgPriceCents Int
+
+  // Status
+  status          String    @default("pending") // pending, processed, failed
+  processedAt     DateTime?
+
+  // Relations
+  settlement      SettlementRecord @relation(fields: [settlementId], references: [id])
+  user            User      @relation(fields: [userId], references: [id])
+  position        Position  @relation(fields: [positionId], references: [id])
+
+  @@index([settlementId])
+  @@index([userId])
+  @@map("settlement_payouts")
+}
+
+// ============================================================================
+// PRICE HISTORY - OHLCV Data for Charts
+// ============================================================================
+
+model PriceHistory {
+  id              String    @id @default(uuid())
+
+  marketId        String
+  outcomeId       String
+
+  // Time bucket
+  bucketStart     DateTime
+  bucketEnd       DateTime
+  intervalMinutes Int       // 1, 5, 15, 60, 1440 (day)
+
+  // OHLCV in cents
+  openCents       Int
+  highCents       Int
+  lowCents        Int
+  closeCents      Int
+  volumeCents     BigInt    @default(0)
+  tradeCount      Int       @default(0)
+
+  @@unique([marketId, outcomeId, bucketStart, intervalMinutes])
+  @@index([marketId, bucketStart])
+  @@map("price_history")
 }
