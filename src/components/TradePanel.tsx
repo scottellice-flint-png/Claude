@@ -136,19 +136,60 @@ export default function TradePanel({
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-      {/* NT Liquidity-Locked Bet Cap Warning */}
+      {/* NT Liquidity-Locked Bet Cap - Seed Phase */}
       {liquidityState && liquidityState.liquidityTier === 'seed' && (
-        <div className="bg-amber-50 border-b border-amber-200 p-3">
-          <div className="flex items-start gap-2">
-            <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+        <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-emerald-200 p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-amber-800">
-                Seed Phase - Maximum Bet: {liquidityState.maxBetDisplay}
+              <div className="flex items-center gap-2 mb-1">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                  Seed Phase
+                </span>
+                <span className="text-xs text-gray-500">Early Market</span>
+              </div>
+              <p className="text-sm font-medium text-gray-800 mb-1.5">
+                Max Bet: {liquidityState.maxBetDisplay}
               </p>
-              <p className="text-xs text-amber-600 mt-0.5">
-                {liquidityState.betCapReason}
+              <p className="text-xs text-gray-600 leading-relaxed">
+                This market is newly launched and building liquidity. Bet limits help ensure fair pricing for all participants during the early phase.
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full" style={{ width: '8%' }}></div>
+                </div>
+                <span className="text-xs text-gray-500 whitespace-nowrap">$0 / $10K to unlock</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Growth Phase Indicator */}
+      {liquidityState && liquidityState.liquidityTier === 'growth' && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                  Growth Phase
+                </span>
+                <span className="text-xs text-gray-500">Active Market</span>
+              </div>
+              <p className="text-sm font-medium text-gray-800 mb-1.5">
+                Max Bet: {liquidityState.maxBetDisplay}
+              </p>
+              <p className="text-xs text-gray-600 leading-relaxed">
+                This market has growing liquidity. Higher bet limits are available as the market matures.
               </p>
             </div>
           </div>
@@ -336,13 +377,29 @@ export default function TradePanel({
         {/* Liquidity Tier Badge */}
         {liquidityState && (
           <div className="flex justify-center pt-2">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
               liquidityState.liquidityTier === 'seed'
-                ? 'bg-amber-100 text-amber-800'
+                ? 'bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700'
                 : liquidityState.liquidityTier === 'growth'
-                ? 'bg-blue-100 text-blue-800'
-                : 'bg-green-100 text-green-800'
+                ? 'bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700'
+                : 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-700'
             }`}>
+              {liquidityState.liquidityTier === 'seed' && (
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                  <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                </svg>
+              )}
+              {liquidityState.liquidityTier === 'growth' && (
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
+                </svg>
+              )}
+              {liquidityState.liquidityTier === 'mature' && (
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              )}
               {liquidityState.liquidityTierDisplay}
             </span>
           </div>

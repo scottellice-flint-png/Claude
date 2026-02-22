@@ -16,7 +16,9 @@ export default function MarketDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'details' | 'workflow' | 'versions' | 'resolution'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'trading' | 'workflow' | 'versions' | 'resolution'>('details');
+  const [liquidityState, setLiquidityState] = useState<any>(null);
+  const [orderBook, setOrderBook] = useState<any>(null);
 
   // Modal states
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -31,8 +33,34 @@ export default function MarketDetailPage() {
       fetchVersions();
       fetchCategories();
       fetchTags();
+      fetchLiquidityState();
+      fetchOrderBook();
     }
   }, [id]);
+
+  const fetchLiquidityState = async () => {
+    try {
+      const res = await fetch(`/api/trading/liquidity?marketId=${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setLiquidityState(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch liquidity state:', err);
+    }
+  };
+
+  const fetchOrderBook = async () => {
+    try {
+      const res = await fetch(`/api/trading/orderbook?marketId=${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setOrderBook(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch order book:', err);
+    }
+  };
 
   const fetchMarket = async () => {
     try {
@@ -307,6 +335,7 @@ export default function MarketDetailPage() {
             <nav className="flex -mb-px">
               {[
                 { id: 'details', label: 'Details' },
+                { id: 'trading', label: 'Trading' },
                 { id: 'workflow', label: 'Workflow' },
                 { id: 'versions', label: 'History' },
                 { id: 'resolution', label: 'Resolution' },
@@ -411,6 +440,207 @@ export default function MarketDetailPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Trading Tab */}
+            {activeTab === 'trading' && (
+              <div className="space-y-6">
+                {/* Liquidity Overview */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-6 rounded-xl border border-emerald-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-medium text-emerald-700">Liquidity Tier</h4>
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        liquidityState?.liquidityTier === 'seed'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : liquidityState?.liquidityTier === 'growth'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-green-100 text-green-700'
+                      }`}>
+                        {liquidityState?.liquidityTierDisplay || 'Loading...'}
+                      </span>
+                    </div>
+                    <div className="text-2xl font-bold text-emerald-800">
+                      {liquidityState?.totalLiquidityCents
+                        ? `$${(parseInt(liquidityState.totalLiquidityCents) / 100).toLocaleString()}`
+                        : '$0'}
+                    </div>
+                    <p className="text-xs text-emerald-600 mt-1">Total Liquidity</p>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-medium text-blue-700">Max Bet Allowed</h4>
+                    </div>
+                    <div className="text-2xl font-bold text-blue-800">
+                      {liquidityState?.maxBetDisplay || '$500.00'}
+                    </div>
+                    <p className="text-xs text-blue-600 mt-1">{liquidityState?.betCapReason || 'Based on liquidity tier'}</p>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-purple-50 to-violet-50 p-6 rounded-xl border border-purple-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-medium text-purple-700">Spread Status</h4>
+                      {liquidityState?.isSpreadWidened && (
+                        <span className="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                          Widened
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-2xl font-bold text-purple-800">
+                      {liquidityState?.spreadCents ? `${liquidityState.spreadCents}¢` : 'N/A'}
+                    </div>
+                    <p className="text-xs text-purple-600 mt-1">
+                      {liquidityState?.spreadWarning || 'Normal spread'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* CLOB Order Book Summary */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <h3 className="font-medium text-gray-900 mb-4">Central Limit Order Book (CLOB)</h3>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="text-sm font-medium text-green-700 mb-3 flex items-center gap-2">
+                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                        Bid Side (Buy Orders)
+                      </h4>
+                      <div className="space-y-2">
+                        {orderBook?.bids && orderBook.bids.length > 0 ? (
+                          orderBook.bids.slice(0, 5).map((bid: any, idx: number) => (
+                            <div key={idx} className="flex justify-between text-sm bg-green-50 px-3 py-2 rounded">
+                              <span className="font-medium text-green-700">{bid.priceCents}¢</span>
+                              <span className="text-green-600">${(bid.quantityCents / 100).toFixed(2)}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-sm text-gray-500 italic py-4 text-center bg-gray-50 rounded">
+                            No bids in order book
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        <p className="text-xs text-gray-500">
+                          Total Bid Liquidity: {liquidityState?.bidLiquidityCents
+                            ? `$${(parseInt(liquidityState.bidLiquidityCents) / 100).toLocaleString()}`
+                            : '$0'}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Best Bid: {liquidityState?.bestBidCents ? `${liquidityState.bestBidCents}¢` : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-sm font-medium text-red-700 mb-3 flex items-center gap-2">
+                        <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                        Ask Side (Sell Orders)
+                      </h4>
+                      <div className="space-y-2">
+                        {orderBook?.asks && orderBook.asks.length > 0 ? (
+                          orderBook.asks.slice(0, 5).map((ask: any, idx: number) => (
+                            <div key={idx} className="flex justify-between text-sm bg-red-50 px-3 py-2 rounded">
+                              <span className="font-medium text-red-700">{ask.priceCents}¢</span>
+                              <span className="text-red-600">${(ask.quantityCents / 100).toFixed(2)}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-sm text-gray-500 italic py-4 text-center bg-gray-50 rounded">
+                            No asks in order book
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        <p className="text-xs text-gray-500">
+                          Total Ask Liquidity: {liquidityState?.askLiquidityCents
+                            ? `$${(parseInt(liquidityState.askLiquidityCents) / 100).toLocaleString()}`
+                            : '$0'}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Best Ask: {liquidityState?.bestAskCents ? `${liquidityState.bestAskCents}¢` : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Market Maker / Seed Bot Info */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <h3 className="font-medium text-gray-900 mb-4">Market Maker Configuration</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-medium text-gray-700 mb-3">Seed Bot (Passive Quoter)</h4>
+                      <dl className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <dt className="text-gray-500">Strategy</dt>
+                          <dd className="font-medium">Avellaneda-Stoikov</dd>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <dt className="text-gray-500">Base Spread</dt>
+                          <dd className="font-medium">10¢</dd>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <dt className="text-gray-500">Max Inventory</dt>
+                          <dd className="font-medium">$10,000 per side</dd>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <dt className="text-gray-500">Chinese Wall</dt>
+                          <dd className="font-medium text-green-600">Enforced</dd>
+                        </div>
+                      </dl>
+                    </div>
+
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-medium text-gray-700 mb-3">NT 2024 Risk Controls</h4>
+                      <dl className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <dt className="text-gray-500">Taker Delay</dt>
+                          <dd className="font-medium">500ms</dd>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <dt className="text-gray-500">Toxic Flow Detection</dt>
+                          <dd className="font-medium">10+ trades/2s</dd>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <dt className="text-gray-500">Spread Widening</dt>
+                          <dd className="font-medium">3x on toxic flow</dd>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <dt className="text-gray-500">Price Precision</dt>
+                          <dd className="font-medium">Integer cents</dd>
+                        </div>
+                      </dl>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Trading Activity */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <h3 className="font-medium text-gray-900 mb-4">Trading Activity</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <div className="text-2xl font-bold text-gray-900">{market.tradeCount.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500 mt-1">Total Trades</div>
+                    </div>
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <div className="text-2xl font-bold text-gray-900">${market.volume.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500 mt-1">Volume Traded</div>
+                    </div>
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <div className="text-2xl font-bold text-gray-900">
+                        {liquidityState?.midPriceCents ? `${liquidityState.midPriceCents}¢` : '50¢'}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">Mid Price</div>
+                    </div>
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <div className="text-2xl font-bold text-gray-900">
+                        {liquidityState?.tradesLast2Sec || 0}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">Trades (last 2s)</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
