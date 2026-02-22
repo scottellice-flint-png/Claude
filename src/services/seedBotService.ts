@@ -233,7 +233,7 @@ export async function createSeedBot(
       name,
       botType: 'passive_quoter',
       isActive: false,
-      config: { ...SEED_BOT_CONFIG, ...config },
+      config: JSON.stringify({ ...SEED_BOT_CONFIG, ...config }),
       accessLevel: 'public_only', // CRITICAL: Chinese Wall compliance
       userId,
       maxInventoryCents: config?.maxInventoryCents || SEED_BOT_CONFIG.maxInventoryCents,
