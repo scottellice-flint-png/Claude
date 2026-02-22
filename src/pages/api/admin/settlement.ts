@@ -202,4 +202,4 @@ async function handleGetSettlement(
   }
 }
 
-export default withAdminAuth(handler, ['admin', 'super_admin']);
+export default withAdminAuth(handler, 'market:settle');
