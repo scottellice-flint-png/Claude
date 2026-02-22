@@ -177,6 +177,11 @@ export type ReasonCode =
   | 'POLICY_CHANGE'
   | 'MAINTENANCE'
   | 'SECURITY_CONCERN'
+  // DMM reasons
+  | 'DMM_REGISTRATION'
+  | 'DMM_APPROVED'
+  | 'DMM_SUSPENDED'
+  | 'DMM_AUTO_SUSPENDED'
   // Other
   | 'OTHER';
 
