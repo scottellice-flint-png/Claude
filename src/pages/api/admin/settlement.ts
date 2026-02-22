@@ -5,7 +5,7 @@
 // ============================================================================
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { withAdminAuth, getAdminContext } from '@/lib/adminAuth';
+import { withAdminAuth, type AdminSession, type AdminContext } from '@/lib/adminAuth';
 import {
   settleMarket,
   refundMarket,
@@ -17,17 +17,13 @@ import {
 
 async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
+  _session: AdminSession,
+  ctx: AdminContext
 ) {
-  const adminContext = getAdminContext(req);
-
-  if (!adminContext) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
   switch (req.method) {
     case 'POST':
-      return handleSettlement(req, res, adminContext.userId);
+      return handleSettlement(req, res, ctx.userId);
 
     case 'GET':
       return handleGetSettlement(req, res);
