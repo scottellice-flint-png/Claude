@@ -226,14 +226,30 @@ export type ReasonCode =
   | 'SEED_BOT_HALTED'
   // LIP reasons
   | 'LIP_REBATE'
-  // Sharp Shield V2 reasons
+  // Sharp Shield V2 - Oracle reasons
   | 'AUDIT_REPLAY'
   | 'ORACLE_LOCK'
   | 'ORACLE_UNLOCK'
+  | 'ORACLE_LOCK_ACTIVE'
+  | 'ORACLE_AUTH_FAILED'
+  | 'ORACLE_HANDLER_ERROR'
   | 'DEADMAN_SWITCH'
+  | 'FEED_STALE'
+  | 'LOCK_ERROR'
+  | 'MANUAL_UNLOCK'
+  // Sharp Shield V2 - Trading reasons
   | 'BATCH_PROCESSED'
-  | 'KILL_SWITCH_TRIGGERED'
+  | 'QUEUED_FOR_BATCH'
+  | 'MATCH_FAILED'
+  | 'EXCEEDS_TIER_LIMIT'
+  // Sharp Shield V2 - Fee reasons
+  | 'FEE_SCHEDULE_CREATED'
   | 'REBATE_ABUSE_DETECTED'
+  // Sharp Shield V2 - Seed bot reasons
+  | 'SEED_BOT_CREATED'
+  | 'SEED_BOT_QUOTED'
+  | 'SEED_BOT_KILL_SWITCH'
+  | 'KILL_SWITCH_TRIGGERED'
   // Cron/System reasons
   | 'CRON_ERRORS'
   | 'CRON_FATAL_ERROR'
