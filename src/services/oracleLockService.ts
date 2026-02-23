@@ -296,10 +296,8 @@ export async function handleOracleEvent(event: OracleEvent): Promise<OracleLockR
       marketId: event.marketId,
       eventType: event.eventType,
       eventSource: event.eventSource,
-      eventTsMs: BigInt(event.eventTsMs),
-      serverTsMs: BigInt(serverTsMs),
-      latencyMs,
-      payload: event.payload as object,
+      eventData: JSON.stringify({ ...event.payload, eventTsMs: event.eventTsMs }),
+      processingLatencyMs: latencyMs,
     },
   });
 
