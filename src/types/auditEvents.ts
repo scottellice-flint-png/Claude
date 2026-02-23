@@ -234,6 +234,10 @@ export type ReasonCode =
   | 'BATCH_PROCESSED'
   | 'KILL_SWITCH_TRIGGERED'
   | 'REBATE_ABUSE_DETECTED'
+  // Cron/System reasons
+  | 'CRON_ERRORS'
+  | 'CRON_FATAL_ERROR'
+  | 'CRON_SUCCESS'
   // Other
   | 'OTHER';
 
