@@ -221,7 +221,7 @@ export async function triggerKillSwitch(
     return { success: false };
   }
 
-  const config = bot.config as BotConfigV2;
+  const config = JSON.parse(bot.config) as BotConfigV2;
   const killSwitchCooldownUntil = new Date(Date.now() + (config.cooldownDurationMs || 60000));
 
   // Cancel all bot's open orders
@@ -502,7 +502,7 @@ export async function runSeedBotQuotingV2(
     return { success: false, error: 'Market has closed' };
   }
 
-  const config = bot.config as BotConfigV2;
+  const config = JSON.parse(bot.config) as BotConfigV2;
 
   // Check global exposure cap
   const globalExposure = Number(bot.globalExposureCents);
@@ -656,7 +656,7 @@ export async function updateBotInventoryV2(
 
   if (!bot) return;
 
-  const config = bot.config as BotConfigV2;
+  const config = JSON.parse(bot.config) as BotConfigV2;
 
   // P&L impact (buy = cost/negative, sell = revenue/positive)
   const pnlImpact = side === 'sell'
