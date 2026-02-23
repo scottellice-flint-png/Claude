@@ -578,38 +578,18 @@ export default function MarketPage() {
 
           {/* Comments Section */}
           <div id="comments-section" className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            {/* Tab Header */}
+            {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => setCommentTab('event')}
-                  className={`text-sm font-medium pb-1 ${
-                    commentTab === 'event'
-                      ? 'text-gray-900 border-b-2 border-foremark-green'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  Ideas
-                </button>
-                <button
-                  onClick={() => setCommentTab('all')}
-                  className={`text-sm font-medium pb-1 ${
-                    commentTab === 'all'
-                      ? 'text-gray-900 border-b-2 border-foremark-green'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  Activity
-                </button>
-              </div>
-              <div className="flex items-center gap-2">
-                <button className="px-3 py-1.5 text-xs font-medium bg-gray-900 text-white rounded-full">
-                  This event
-                </button>
-                <button className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-full">
-                  All
-                </button>
-              </div>
+              <h3 className="font-semibold text-gray-900">Comments</h3>
+              <Link
+                href="/community"
+                className="text-sm text-foremark-green hover:text-foremark-green-light font-medium flex items-center gap-1"
+              >
+                Join the conversation
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
             </div>
 
             {/* Comment Input */}
@@ -784,9 +764,14 @@ function CommentItem({ comment }: { comment: Comment }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
               </svg>
             </button>
-            <button className="text-gray-400 hover:text-gray-600">
+            <button className="text-gray-400 hover:text-gray-600" title="Share">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+            </button>
+            <button className="text-gray-400 hover:text-red-500" title="Report comment">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
               </svg>
             </button>
           </div>

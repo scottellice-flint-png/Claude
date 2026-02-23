@@ -51,6 +51,15 @@ interface UserDetail {
   lastIpAddress: string | null;
   lastDeviceFingerprint: string | null;
   lastUserAgent: string | null;
+  // Off-Mark Social Moderation
+  offMarkStatus: string;
+  offMarkUntil: string | null;
+  offMarkReason: string | null;
+  offMarkCount: number;
+  canComment: boolean;
+  canPost: boolean;
+  canChat: boolean;
+  reportsAgainst?: { id: string }[];
 }
 
 interface TradeRecord {
@@ -754,6 +763,88 @@ export default function TraderDetailPage() {
                       <p className="text-sm text-red-700"><strong>Flag Reason:</strong> {user.flagReason}</p>
                     </div>
                   )}
+                </div>
+
+                {/* Off-Mark Social Moderation */}
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">🛡️</span>
+                      <h3 className="font-medium text-gray-900">Off-Mark Status (Social Moderation)</h3>
+                    </div>
+                    <Link
+                      href="/admin/moderation"
+                      className="text-sm text-foremark-green hover:underline"
+                    >
+                      View all reports →
+                    </Link>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                      <dt className="text-sm text-gray-500">Status</dt>
+                      <dd className="font-medium text-gray-900">
+                        <span className={`px-2 py-1 rounded text-sm ${
+                          user.offMarkStatus === 'good_standing' ? 'bg-green-100 text-green-700' :
+                          user.offMarkStatus === 'warning' ? 'bg-yellow-100 text-yellow-700' :
+                          user.offMarkStatus === 'restricted' ? 'bg-orange-100 text-orange-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {user.offMarkStatus === 'good_standing' ? '✓ Good Standing' :
+                           user.offMarkStatus === 'warning' ? '⚠️ Warning' :
+                           user.offMarkStatus === 'restricted' ? '🚫 Restricted' : '🔴 Banned'}
+                        </span>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm text-gray-500">Off-Mark Count</dt>
+                      <dd className="font-medium text-gray-900">{user.offMarkCount || 0}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm text-gray-500">Reports Against</dt>
+                      <dd className="font-medium text-gray-900">{user.reportsAgainst?.length || 0}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm text-gray-500">Restriction Expires</dt>
+                      <dd className="font-medium text-gray-900">
+                        {user.offMarkUntil ? formatDate(user.offMarkUntil) : 'N/A'}
+                      </dd>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-3 h-3 rounded-full ${user.canComment ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                      <span className="text-sm text-gray-600">Can Comment</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`w-3 h-3 rounded-full ${user.canPost ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                      <span className="text-sm text-gray-600">Can Post</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`w-3 h-3 rounded-full ${user.canChat ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                      <span className="text-sm text-gray-600">Can Chat</span>
+                    </div>
+                  </div>
+                  {user.offMarkReason && (
+                    <div className="p-3 bg-white rounded-lg mb-4">
+                      <p className="text-sm text-gray-700"><strong>Reason:</strong> {user.offMarkReason}</p>
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <button className="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white rounded text-sm">
+                      Issue Warning
+                    </button>
+                    <button className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded text-sm">
+                      Restrict (Temp)
+                    </button>
+                    <button className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-sm">
+                      Ban from Social
+                    </button>
+                    {user.offMarkStatus !== 'good_standing' && (
+                      <button className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded text-sm">
+                        Restore Access
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

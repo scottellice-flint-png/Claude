@@ -24,6 +24,7 @@ const navItems: NavItem[] = [
   { label: 'Collections', href: '/admin/collections', icon: '📚' },
   { label: 'Constraints', href: '/admin/constraints', icon: '⚙️' },
   { label: 'Users', href: '/admin/traders', icon: '👤' },
+  { label: 'Moderation', href: '/admin/moderation', icon: '🛡️' },
   { label: 'Admin Users', href: '/admin/users', icon: '👥', permission: 'admin' },
   { label: 'Audit Logs', href: '/admin/audit', icon: '📋' },
 ];

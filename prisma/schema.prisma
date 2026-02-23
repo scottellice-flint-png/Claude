@@ -112,6 +112,23 @@ model User {
   balanceAdjustments BalanceAdjustment[]
   activityStatements ActivityStatement[]
 
+  // Relations - Social Content & Moderation
+  marketComments    MarketComment[]
+  communityPosts    CommunityPost[]
+  contentReports    ContentReport[]     @relation("ReportedBy")
+  reportsAgainst    ContentReport[]     @relation("ReportedUser")
+
+  // Off-Mark Social Moderation
+  offMarkStatus     String    @default("good_standing") // good_standing, warning, restricted, banned
+  offMarkUntil      DateTime? // null = permanent if banned, or end of restriction
+  offMarkReason     String?
+  offMarkCount      Int       @default(0) // Number of times marked Off-Mark
+  offMarkLastAt     DateTime?
+  offMarkByAdminId  String?   // AdminUser who applied the restriction
+  canComment        Boolean   @default(true)
+  canPost           Boolean   @default(true)
+  canChat           Boolean   @default(true)
+
   @@map("users")
 }
 
@@ -174,6 +191,88 @@ model ActivityStatement {
 
   @@index([userId])
   @@map("activity_statements")
+}
+
+// ============================================================================
+// SOCIAL CONTENT & MODERATION (Off-Mark System)
+// ============================================================================
+
+// Comments on market pages
+model MarketComment {
+  id            String    @id @default(uuid())
+  marketId      String
+  userId        String
+  content       String
+  isHidden      Boolean   @default(false) // Hidden by moderation
+  hiddenReason  String?
+  hiddenByAdminId String?
+  reportsCount  Int       @default(0)
+  likesCount    Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  market        Market    @relation(fields: [marketId], references: [id])
+  user          User      @relation(fields: [userId], references: [id])
+  reports       ContentReport[] @relation("CommentReports")
+
+  @@index([marketId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("market_comments")
+}
+
+// Community feed posts
+model CommunityPost {
+  id            String    @id @default(uuid())
+  userId        String
+  content       String
+  category      String?   // Politics, Economics, Sport, etc.
+  linkedMarketId String?  // Optional linked market
+  isHidden      Boolean   @default(false)
+  hiddenReason  String?
+  hiddenByAdminId String?
+  reportsCount  Int       @default(0)
+  likesCount    Int       @default(0)
+  commentsCount Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user          User      @relation(fields: [userId], references: [id])
+  linkedMarket  Market?   @relation(fields: [linkedMarketId], references: [id])
+  reports       ContentReport[] @relation("PostReports")
+
+  @@index([userId])
+  @@index([category])
+  @@index([createdAt])
+  @@map("community_posts")
+}
+
+// Content reports for moderation queue
+model ContentReport {
+  id              String    @id @default(uuid())
+  reporterId      String    // User who filed the report
+  reportedUserId  String    // User being reported
+  contentType     String    // market_comment, community_post, chat_message
+  contentId       String    // ID of the reported content
+  reason          String    // harassment, hate_speech, spam, inappropriate, other
+  description     String?   // Optional additional details
+  status          String    @default("pending") // pending, reviewed, actioned, dismissed
+  reviewedByAdminId String?
+  reviewedAt      DateTime?
+  actionTaken     String?   // warning, content_hidden, off_mark_temp, off_mark_perm
+  adminNotes      String?
+  createdAt       DateTime  @default(now())
+
+  reporter        User      @relation("ReportedBy", fields: [reporterId], references: [id])
+  reportedUser    User      @relation("ReportedUser", fields: [reportedUserId], references: [id])
+  comment         MarketComment? @relation("CommentReports", fields: [contentId], references: [id], map: "comment_reports")
+  post            CommunityPost? @relation("PostReports", fields: [contentId], references: [id], map: "post_reports")
+
+  @@index([reporterId])
+  @@index([reportedUserId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("content_reports")
 }
 
 // ============================================================================
@@ -309,6 +408,10 @@ model Market {
   oracleEvents      OracleEvent[]
   pendingOrders     PendingOrder[]
   batchExecutions   BatchExecution[]
+
+  // Relations - Social Content
+  comments          MarketComment[]
+  linkedPosts       CommunityPost[]
 
   @@index([status])
   @@index([isOracleLocked])

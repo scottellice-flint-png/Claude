@@ -70,6 +70,18 @@ export default async function handler(
           lastIpAddress: true,
           lastDeviceFingerprint: true,
           lastUserAgent: true,
+          // Off-Mark Social Moderation
+          offMarkStatus: true,
+          offMarkUntil: true,
+          offMarkReason: true,
+          offMarkCount: true,
+          canComment: true,
+          canPost: true,
+          canChat: true,
+          reportsAgainst: {
+            select: { id: true },
+            where: { status: 'pending' },
+          },
         },
       });
 

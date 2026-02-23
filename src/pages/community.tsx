@@ -335,11 +335,24 @@ export default function CommunityPage() {
             </div>
           </div>
         </div>
-        <button className="text-gray-400 hover:text-gray-600 p-1 flex-shrink-0">
-          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-          </svg>
-        </button>
+        <div className="relative group flex-shrink-0">
+          <button className="text-gray-400 hover:text-gray-600 p-1">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+            </svg>
+          </button>
+          <div className="absolute right-0 mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+            <button className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg">
+              Share post
+            </button>
+            <button className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 rounded-b-lg flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+              </svg>
+              Report
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Content */}
@@ -504,6 +517,24 @@ export default function CommunityPage() {
                   <span>👤</span>
                   <span>Profile Settings</span>
                 </Link>
+              </div>
+
+              {/* Off-Mark Community Guidelines */}
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <span className="text-amber-600 flex-shrink-0">⚠️</span>
+                    <div>
+                      <p className="text-xs font-semibold text-amber-800 mb-1">Off-Mark Policy</p>
+                      <p className="text-[10px] text-amber-700 leading-relaxed">
+                        We encourage good-natured banter, but keep it safe & inclusive. Rude, inappropriate, or harmful content can result in being marked &quot;Off-Mark&quot; with temporary or permanent restrictions from social features.
+                      </p>
+                      <button className="text-[10px] text-amber-800 font-medium mt-1.5 hover:underline">
+                        View guidelines →
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <button
