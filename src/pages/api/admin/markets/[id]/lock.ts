@@ -90,8 +90,9 @@ export default async function handler(
           actorType: 'admin',
           actorId: admin.id,
           marketId,
-          reasonCode: body.reason,
+          reasonCode: 'ORACLE_LOCK',
           ipAddress: (req.headers['x-forwarded-for'] as string)?.split(',')[0] || req.socket.remoteAddress,
+          metadata: { reason: body.reason },
         });
 
         return res.status(200).json({ success: result.success, result });
@@ -112,8 +113,9 @@ export default async function handler(
           actorType: 'admin',
           actorId: admin.id,
           marketId,
-          reasonCode: 'MANUAL_UNLOCK',
+          reasonCode: 'ORACLE_UNLOCK',
           ipAddress: (req.headers['x-forwarded-for'] as string)?.split(',')[0] || req.socket.remoteAddress,
+          metadata: { reason: body.reason || 'Admin unlock' },
         });
 
         return res.status(200).json({ success: result.success, result });
