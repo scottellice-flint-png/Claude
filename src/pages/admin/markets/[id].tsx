@@ -446,37 +446,51 @@ export default function MarketDetailPage() {
             {/* Trading Tab */}
             {activeTab === 'trading' && (
               <div className="space-y-6">
-                {/* Liquidity Overview */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Sharp Shield V2 Tier Overview */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-6 rounded-xl border border-emerald-200">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-sm font-medium text-emerald-700">Liquidity Tier</h4>
+                      <h4 className="text-sm font-medium text-emerald-700">Sharp Shield Tier</h4>
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        liquidityState?.liquidityTier === 'seed'
+                        liquidityState?.sharpShieldTier === 0
                           ? 'bg-emerald-100 text-emerald-700'
-                          : liquidityState?.liquidityTier === 'growth'
+                          : liquidityState?.sharpShieldTier === 1
                           ? 'bg-blue-100 text-blue-700'
+                          : liquidityState?.sharpShieldTier === 2
+                          ? 'bg-indigo-100 text-indigo-700'
                           : 'bg-green-100 text-green-700'
                       }`}>
-                        {liquidityState?.liquidityTierDisplay || 'Loading...'}
+                        Tier {liquidityState?.sharpShieldTier ?? 0}
                       </span>
                     </div>
                     <div className="text-2xl font-bold text-emerald-800">
-                      {liquidityState?.totalLiquidityCents
-                        ? `$${(parseInt(liquidityState.totalLiquidityCents) / 100).toLocaleString()}`
-                        : '$0'}
+                      {liquidityState?.liquidityTierDisplay || 'Seed Phase'}
                     </div>
-                    <p className="text-xs text-emerald-600 mt-1">Total Liquidity</p>
+                    <p className="text-xs text-emerald-600 mt-1">
+                      {liquidityState?.effectiveDepthCents
+                        ? `$${(liquidityState.effectiveDepthCents / 100).toLocaleString()} effective depth`
+                        : 'Building liquidity'}
+                    </p>
                   </div>
 
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-sm font-medium text-blue-700">Max Bet Allowed</h4>
+                      <h4 className="text-sm font-medium text-blue-700">Max Taker Bet</h4>
                     </div>
                     <div className="text-2xl font-bold text-blue-800">
-                      {liquidityState?.maxBetDisplay || '$500.00'}
+                      {liquidityState?.maxTakerDisplay || liquidityState?.maxBetDisplay || '$100'}
                     </div>
-                    <p className="text-xs text-blue-600 mt-1">{liquidityState?.betCapReason || 'Based on liquidity tier'}</p>
+                    <p className="text-xs text-blue-600 mt-1">For market orders / takers</p>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-xl border border-indigo-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-medium text-indigo-700">Max Maker Bet</h4>
+                    </div>
+                    <div className="text-2xl font-bold text-indigo-800">
+                      {liquidityState?.maxMakerDisplay || '$250'}
+                    </div>
+                    <p className="text-xs text-indigo-600 mt-1">For limit orders / makers</p>
                   </div>
 
                   <div className="bg-gradient-to-br from-purple-50 to-violet-50 p-6 rounded-xl border border-purple-200">
@@ -494,6 +508,33 @@ export default function MarketDetailPage() {
                     <p className="text-xs text-purple-600 mt-1">
                       {liquidityState?.spreadWarning || 'Normal spread'}
                     </p>
+                  </div>
+                </div>
+
+                {/* Tier Thresholds Reference */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Sharp Shield V2 Tier Thresholds</h4>
+                  <div className="grid grid-cols-4 gap-4 text-xs">
+                    <div className={`p-3 rounded-lg ${liquidityState?.sharpShieldTier === 0 ? 'bg-emerald-100 border-2 border-emerald-400' : 'bg-white border border-gray-200'}`}>
+                      <div className="font-semibold text-gray-900">Tier 0 (Seed)</div>
+                      <div className="text-gray-500">{'<'} $1,000 depth</div>
+                      <div className="mt-1 text-gray-700">Taker: $100 / Maker: $250</div>
+                    </div>
+                    <div className={`p-3 rounded-lg ${liquidityState?.sharpShieldTier === 1 ? 'bg-blue-100 border-2 border-blue-400' : 'bg-white border border-gray-200'}`}>
+                      <div className="font-semibold text-gray-900">Tier 1 (Growth)</div>
+                      <div className="text-gray-500">$1k - $10k depth</div>
+                      <div className="mt-1 text-gray-700">Taker: $500 / Maker: $1,000</div>
+                    </div>
+                    <div className={`p-3 rounded-lg ${liquidityState?.sharpShieldTier === 2 ? 'bg-indigo-100 border-2 border-indigo-400' : 'bg-white border border-gray-200'}`}>
+                      <div className="font-semibold text-gray-900">Tier 2 (Established)</div>
+                      <div className="text-gray-500">$10k - $100k depth</div>
+                      <div className="mt-1 text-gray-700">Taker: $2,000 / Maker: $5,000</div>
+                    </div>
+                    <div className={`p-3 rounded-lg ${liquidityState?.sharpShieldTier === 3 ? 'bg-green-100 border-2 border-green-400' : 'bg-white border border-gray-200'}`}>
+                      <div className="font-semibold text-gray-900">Tier 3 (Mature)</div>
+                      <div className="text-gray-500">{'>'} $100k depth</div>
+                      <div className="mt-1 text-gray-700">Taker: $5,000 / Maker: $10,000</div>
+                    </div>
                   </div>
                 </div>
 

@@ -150,20 +150,13 @@ export default function TradePanel({
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
                   Seed Phase
                 </span>
-                <span className="text-xs text-gray-500">Early Market</span>
               </div>
               <p className="text-sm font-medium text-gray-800 mb-1.5">
                 Max Bet: {liquidityState.maxBetDisplay}
               </p>
               <p className="text-xs text-gray-600 leading-relaxed">
-                This market is newly launched and building liquidity. Bet limits help ensure fair pricing for all participants during the early phase.
+                This market is building liquidity. Bet limits increase as the market matures.
               </p>
-              <div className="mt-2 flex items-center gap-2">
-                <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full" style={{ width: '8%' }}></div>
-                </div>
-                <span className="text-xs text-gray-500 whitespace-nowrap">$0 / $10K to unlock</span>
-              </div>
             </div>
           </div>
         </div>

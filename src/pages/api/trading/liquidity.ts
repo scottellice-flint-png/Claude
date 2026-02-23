@@ -1,10 +1,39 @@
 // ============================================================================
 // TRADING API - Liquidity State Endpoint
-// GET: Get market liquidity state for NT bet cap display
+// GET: Get market liquidity state for Sharp Shield V2 bet cap display
 // ============================================================================
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getMarketLiquidityState } from '@/services/tradingEngineService';
+
+// Sharp Shield V2 Tier Configuration
+const TIER_CONFIG = {
+  // Thresholds in cents
+  TIER_THRESHOLDS: [100000, 1000000, 10000000], // $1k, $10k, $100k
+  // Max bet for takers (in cents)
+  TIER_MAX_TAKER: [10000, 50000, 200000, 500000], // $100, $500, $2k, $5k
+  // Max bet for makers (in cents)
+  TIER_MAX_MAKER: [25000, 100000, 500000, 1000000], // $250, $1k, $5k, $10k
+};
+
+function getTierFromLiquidity(effectiveDepthCents: number): number {
+  const thresholds = TIER_CONFIG.TIER_THRESHOLDS;
+  if (effectiveDepthCents < thresholds[0]) return 0;
+  if (effectiveDepthCents < thresholds[1]) return 1;
+  if (effectiveDepthCents < thresholds[2]) return 2;
+  return 3;
+}
+
+function getTierName(tier: number): string {
+  const names = ['Seed', 'Growth', 'Established', 'Mature'];
+  return names[tier] || 'Unknown';
+}
+
+function getLiquidityTierName(tier: number): string {
+  if (tier === 0) return 'seed';
+  if (tier === 1) return 'growth';
+  return 'mature';
+}
 
 export default async function handler(
   req: NextApiRequest,
@@ -28,62 +57,79 @@ export default async function handler(
     const liquidityState = await getMarketLiquidityState(marketId as string);
 
     if (!liquidityState) {
-      // Return default state for markets without liquidity yet
+      // Return default state for markets without liquidity yet (Tier 0)
+      const tier = 0;
+      const maxTakerCents = TIER_CONFIG.TIER_MAX_TAKER[tier];
+      const maxMakerCents = TIER_CONFIG.TIER_MAX_MAKER[tier];
+
       return res.status(200).json({
         marketId,
         totalLiquidityCents: '0',
         bidLiquidityCents: '0',
         askLiquidityCents: '0',
+        effectiveDepthCents: 0,
         bestBidCents: null,
         bestAskCents: null,
         midPriceCents: 50,
         spreadCents: null,
         liquidityTier: 'seed',
-        maxBetCents: 50000, // $500 default cap
+        sharpShieldTier: tier,
+        maxBetCents: maxTakerCents,
+        maxTakerCents,
+        maxMakerCents,
         spreadMultiplier: 1.0,
         spreadReason: 'NORMAL',
         tradesLast2Sec: 0,
 
         // Human-readable info for UI
-        maxBetDisplay: '$500.00',
-        liquidityTierDisplay: 'Seed Phase',
-        betCapReason: 'Market liquidity is below $10,000. Maximum bet is capped at $500 to protect traders.',
+        maxBetDisplay: `$${(maxTakerCents / 100).toLocaleString()}`,
+        maxTakerDisplay: `$${(maxTakerCents / 100).toLocaleString()}`,
+        maxMakerDisplay: `$${(maxMakerCents / 100).toLocaleString()}`,
+        liquidityTierDisplay: `${getTierName(tier)} Phase`,
+        betCapReason: 'New market building liquidity. Bet limits increase as liquidity grows.',
+        isSpreadWidened: false,
+        spreadWarning: null,
       });
     }
 
-    // Format for response
-    const maxBetDisplay = `$${(liquidityState.maxBetCents / 100).toFixed(2)}`;
-    const tierDisplayMap: Record<string, string> = {
-      seed: 'Seed Phase',
-      growth: 'Growth Phase',
-      mature: 'Mature Market',
-    };
-
-    const betCapReasonMap: Record<string, string> = {
-      seed: 'Market liquidity is below $10,000. Maximum bet is capped at $500 to protect traders.',
-      growth: 'Market liquidity is between $10,000 and $100,000. Maximum bet is $5,000.',
-      mature: 'Market has sufficient liquidity. Maximum bet is $50,000.',
-    };
+    // Calculate tier from effective depth
+    const effectiveDepthCents = Number(liquidityState.totalLiquidityCents) || 0;
+    const tier = getTierFromLiquidity(effectiveDepthCents);
+    const maxTakerCents = TIER_CONFIG.TIER_MAX_TAKER[tier];
+    const maxMakerCents = TIER_CONFIG.TIER_MAX_MAKER[tier];
+    const liquidityTier = getLiquidityTierName(tier);
 
     return res.status(200).json({
       marketId: liquidityState.marketId,
       totalLiquidityCents: liquidityState.totalLiquidityCents.toString(),
       bidLiquidityCents: liquidityState.bidLiquidityCents.toString(),
       askLiquidityCents: liquidityState.askLiquidityCents.toString(),
+      effectiveDepthCents,
       bestBidCents: liquidityState.bestBidCents,
       bestAskCents: liquidityState.bestAskCents,
       midPriceCents: liquidityState.midPriceCents,
       spreadCents: liquidityState.spreadCents,
-      liquidityTier: liquidityState.liquidityTier,
-      maxBetCents: liquidityState.maxBetCents,
+      liquidityTier,
+      sharpShieldTier: tier,
+      maxBetCents: maxTakerCents,
+      maxTakerCents,
+      maxMakerCents,
       spreadMultiplier: liquidityState.spreadMultiplier,
       spreadReason: liquidityState.spreadReason,
       tradesLast2Sec: liquidityState.tradesLast2Sec,
 
       // Human-readable info for UI
-      maxBetDisplay,
-      liquidityTierDisplay: tierDisplayMap[liquidityState.liquidityTier] || 'Unknown',
-      betCapReason: betCapReasonMap[liquidityState.liquidityTier] || '',
+      maxBetDisplay: `$${(maxTakerCents / 100).toLocaleString()}`,
+      maxTakerDisplay: `$${(maxTakerCents / 100).toLocaleString()}`,
+      maxMakerDisplay: `$${(maxMakerCents / 100).toLocaleString()}`,
+      liquidityTierDisplay: `${getTierName(tier)} Phase`,
+      betCapReason: tier === 0
+        ? 'New market building liquidity. Bet limits increase as liquidity grows.'
+        : tier === 1
+        ? 'Growing market with moderate liquidity.'
+        : tier === 2
+        ? 'Established market with good liquidity.'
+        : 'Mature market with deep liquidity.',
 
       // Warning if spread is widened
       isSpreadWidened: liquidityState.spreadMultiplier > 1,
