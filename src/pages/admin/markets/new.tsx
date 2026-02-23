@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import AdminLayout from '@/components/admin/AdminLayout';
+import ImageUpload from '@/components/admin/ImageUpload';
 import type { Category, Tag, MarketConstraints, MarketRulesStructured, CreateOutcomeInput } from '@/types/admin';
 
 interface FormData {
@@ -409,27 +410,21 @@ export default function NewMarketPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Hero Image URL</label>
-                      <input
-                        type="url"
-                        value={formData.heroImageUrl}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, heroImageUrl: e.target.value }))}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-foremark-green focus:border-transparent"
-                        placeholder="https://..."
-                      />
-                    </div>
+                    <ImageUpload
+                      label="Hero Image"
+                      value={formData.heroImageUrl}
+                      onChange={(url) => setFormData((prev) => ({ ...prev, heroImageUrl: url }))}
+                      placeholder="Upload hero image"
+                      helpText="Displayed at the top of the market page"
+                    />
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Card Image URL</label>
-                      <input
-                        type="url"
-                        value={formData.cardImageUrl}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, cardImageUrl: e.target.value }))}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-foremark-green focus:border-transparent"
-                        placeholder="https://..."
-                      />
-                    </div>
+                    <ImageUpload
+                      label="Card Image"
+                      value={formData.cardImageUrl}
+                      onChange={(url) => setFormData((prev) => ({ ...prev, cardImageUrl: url }))}
+                      placeholder="Upload card image"
+                      helpText="Displayed on market cards in listings"
+                    />
                   </div>
                 </div>
               )}
@@ -820,7 +815,7 @@ export default function NewMarketPage() {
                               </div>
 
                               <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                                <div className="md:col-span-5">
+                                <div className="md:col-span-4">
                                   <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Name / Label <span className="text-red-500">*</span>
                                   </label>
@@ -837,7 +832,7 @@ export default function NewMarketPage() {
                                   />
                                 </div>
 
-                                <div className="md:col-span-3">
+                                <div className="md:col-span-2">
                                   <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Initial % <span className="text-red-500">*</span>
                                   </label>
@@ -856,18 +851,16 @@ export default function NewMarketPage() {
                                   />
                                 </div>
 
-                                <div className="md:col-span-4">
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-                                  <input
-                                    type="url"
+                                <div className="md:col-span-6">
+                                  <ImageUpload
+                                    label="Image"
                                     value={outcome.imageUrl || ''}
-                                    onChange={(e) => {
+                                    onChange={(url) => {
                                       const updated = [...formData.outcomes];
-                                      updated[index] = { ...updated[index], imageUrl: e.target.value };
+                                      updated[index] = { ...updated[index], imageUrl: url };
                                       setFormData((prev) => ({ ...prev, outcomes: updated }));
                                     }}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-foremark-green focus:border-transparent"
-                                    placeholder="https://..."
+                                    placeholder="Upload outcome image"
                                   />
                                 </div>
                               </div>

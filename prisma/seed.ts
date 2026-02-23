@@ -196,6 +196,94 @@ async function main() {
           displayOrder: 3,
         },
       }),
+      prisma.subcategory.upsert({
+        where: { categoryId_slug: { categoryId: sportsCategory.id, slug: 'horse-racing' } },
+        update: {},
+        create: {
+          categoryId: sportsCategory.id,
+          slug: 'horse-racing',
+          name: 'Horse Racing',
+          description: 'Horse racing events and cups',
+          displayOrder: 4,
+        },
+      }),
+      prisma.subcategory.upsert({
+        where: { categoryId_slug: { categoryId: sportsCategory.id, slug: 'soccer' } },
+        update: {},
+        create: {
+          categoryId: sportsCategory.id,
+          slug: 'soccer',
+          name: 'Soccer',
+          description: 'Football/Soccer matches and tournaments',
+          displayOrder: 5,
+        },
+      }),
+      prisma.subcategory.upsert({
+        where: { categoryId_slug: { categoryId: sportsCategory.id, slug: 'rugby-union' } },
+        update: {},
+        create: {
+          categoryId: sportsCategory.id,
+          slug: 'rugby-union',
+          name: 'Rugby Union',
+          description: 'Rugby Union matches and World Cup',
+          displayOrder: 6,
+        },
+      }),
+      prisma.subcategory.upsert({
+        where: { categoryId_slug: { categoryId: sportsCategory.id, slug: 'golf' } },
+        update: {},
+        create: {
+          categoryId: sportsCategory.id,
+          slug: 'golf',
+          name: 'Golf',
+          description: 'Golf tournaments and majors',
+          displayOrder: 7,
+        },
+      }),
+      prisma.subcategory.upsert({
+        where: { categoryId_slug: { categoryId: sportsCategory.id, slug: 'basketball' } },
+        update: {},
+        create: {
+          categoryId: sportsCategory.id,
+          slug: 'basketball',
+          name: 'Basketball',
+          description: 'NBA and basketball tournaments',
+          displayOrder: 8,
+        },
+      }),
+      prisma.subcategory.upsert({
+        where: { categoryId_slug: { categoryId: sportsCategory.id, slug: 'mma' } },
+        update: {},
+        create: {
+          categoryId: sportsCategory.id,
+          slug: 'mma',
+          name: 'MMA / UFC',
+          description: 'Mixed martial arts and UFC events',
+          displayOrder: 9,
+        },
+      }),
+      prisma.subcategory.upsert({
+        where: { categoryId_slug: { categoryId: sportsCategory.id, slug: 'motor-sports' } },
+        update: {},
+        create: {
+          categoryId: sportsCategory.id,
+          slug: 'motor-sports',
+          name: 'Motor Sports',
+          description: 'F1, V8 Supercars, MotoGP',
+          displayOrder: 10,
+        },
+      }),
+      prisma.subcategory.upsert({
+        where: { categoryId_slug: { categoryId: sportsCategory.id, slug: 'olympics' } },
+        update: {},
+        create: {
+          categoryId: sportsCategory.id,
+          slug: 'olympics',
+          name: 'Olympics',
+          description: 'Olympic Games events',
+          displayOrder: 11,
+        },
+      }),
     ]);
     console.log('Created sports subcategories');
   }
