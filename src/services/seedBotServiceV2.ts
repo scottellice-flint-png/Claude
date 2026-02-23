@@ -74,11 +74,11 @@ export interface BotStateV2 {
   killSwitchReason: string | null;
   currentInventoryYesCents: number;
   currentInventoryNoCents: number;
-  currentGlobalExposureCents: number;
-  rollingPnlCents: number;
+  globalExposureCents: number;
+  rollingLossCents: number;
   totalPnlCents: number;
   totalTradesExecuted: number;
-  cooldownUntil: Date | null;
+  killSwitchCooldownUntil: Date | null;
   lastActivityAt: Date | null;
 }
 
@@ -176,10 +176,10 @@ export async function activateSeedBotV2(botId: string): Promise<{ success: boole
   }
 
   // Check cooldown
-  if (bot.cooldownUntil && new Date(bot.cooldownUntil) > new Date()) {
+  if (bot.killSwitchCooldownUntil && new Date(bot.killSwitchCooldownUntil) > new Date()) {
     return {
       success: false,
-      error: `Bot is in cooldown until ${bot.cooldownUntil.toISOString()}`,
+      error: `Bot is in cooldown until ${bot.killSwitchCooldownUntil.toISOString()}`,
     };
   }
 
@@ -191,7 +191,7 @@ export async function activateSeedBotV2(botId: string): Promise<{ success: boole
       haltReason: null,
       killSwitchActive: false,
       killSwitchReason: null,
-      killSwitchActivatedAt: null,
+      killSwitchTriggeredAt: null,
       lastActivityAt: new Date(),
     },
   });
@@ -222,7 +222,7 @@ export async function triggerKillSwitch(
   }
 
   const config = bot.config as BotConfigV2;
-  const cooldownUntil = new Date(Date.now() + (config.cooldownDurationMs || 60000));
+  const killSwitchCooldownUntil = new Date(Date.now() + (config.cooldownDurationMs || 60000));
 
   // Cancel all bot's open orders
   const openOrders = await prisma.order.findMany({
@@ -246,8 +246,8 @@ export async function triggerKillSwitch(
       haltReason: reason,
       killSwitchActive: true,
       killSwitchReason: reason,
-      killSwitchActivatedAt: new Date(),
-      cooldownUntil,
+      killSwitchTriggeredAt: new Date(),
+      killSwitchCooldownUntil,
     },
   });
 
@@ -259,7 +259,7 @@ export async function triggerKillSwitch(
       botId,
       reason,
       ordersCancelled: openOrders.length,
-      cooldownUntil: cooldownUntil.toISOString(),
+      killSwitchCooldownUntil: killSwitchCooldownUntil.toISOString(),
     },
   });
 
@@ -472,7 +472,7 @@ export async function runSeedBotQuotingV2(
   }
 
   // Check cooldown
-  if (bot.cooldownUntil && new Date(bot.cooldownUntil) > new Date()) {
+  if (bot.killSwitchCooldownUntil && new Date(bot.killSwitchCooldownUntil) > new Date()) {
     return { success: false, error: 'Bot is in cooldown' };
   }
 
@@ -505,13 +505,13 @@ export async function runSeedBotQuotingV2(
   const config = bot.config as BotConfigV2;
 
   // Check global exposure cap
-  const globalExposure = Number(bot.currentGlobalExposureCents);
+  const globalExposure = Number(bot.globalExposureCents);
   if (globalExposure >= config.globalExposureCapCents) {
     return { success: false, error: 'Global exposure cap reached' };
   }
 
   // Check rolling P&L for kill switch
-  const rollingPnl = Number(bot.rollingPnlCents);
+  const rollingPnl = Number(bot.rollingLossCents);
   if (rollingPnl <= -config.maxRollingLossCents) {
     await triggerKillSwitch(botId, 'ROLLING_LOSS_EXCEEDED');
     return {
@@ -665,7 +665,7 @@ export async function updateBotInventoryV2(
 
   // Update rolling P&L (simplified: just add to current value)
   // In production, this should use a proper sliding window
-  const newRollingPnl = Number(bot.rollingPnlCents) + pnlImpact;
+  const newRollingPnl = Number(bot.rollingLossCents) + pnlImpact;
 
   // Update exposure (absolute value of inventory)
   const newYesInventory = side === 'buy'
@@ -685,8 +685,8 @@ export async function updateBotInventoryV2(
       currentInventoryNoCents: side === 'sell'
         ? { increment: quantityCents }
         : undefined,
-      currentGlobalExposureCents: BigInt(newExposure),
-      rollingPnlCents: BigInt(newRollingPnl),
+      globalExposureCents: BigInt(newExposure),
+      rollingLossCents: BigInt(newRollingPnl),
       totalPnlCents: { increment: pnlImpact },
       totalTradesExecuted: { increment: 1 },
       totalVolumeProvidedCents: { increment: quantityCents },
@@ -720,11 +720,11 @@ export async function getBotStateV2(botId: string): Promise<BotStateV2 | null> {
     killSwitchReason: bot.killSwitchReason,
     currentInventoryYesCents: Number(bot.currentInventoryYesCents),
     currentInventoryNoCents: Number(bot.currentInventoryNoCents),
-    currentGlobalExposureCents: Number(bot.currentGlobalExposureCents),
-    rollingPnlCents: Number(bot.rollingPnlCents),
+    globalExposureCents: Number(bot.globalExposureCents),
+    rollingLossCents: Number(bot.rollingLossCents),
     totalPnlCents: Number(bot.totalPnlCents),
     totalTradesExecuted: bot.totalTradesExecuted,
-    cooldownUntil: bot.cooldownUntil,
+    killSwitchCooldownUntil: bot.killSwitchCooldownUntil,
     lastActivityAt: bot.lastActivityAt,
   };
 }
@@ -736,8 +736,8 @@ export async function getActiveBotsV2() {
       isHalted: false,
       killSwitchActive: false,
       OR: [
-        { cooldownUntil: null },
-        { cooldownUntil: { lt: new Date() } },
+        { killSwitchCooldownUntil: null },
+        { killSwitchCooldownUntil: { lt: new Date() } },
       ],
     },
   });
