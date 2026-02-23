@@ -22,14 +22,13 @@ import { writeAuditEvent } from './auditEventService';
 
 export interface FeeSchedule {
   id: string;
-  name: string;
-  description: string | null;
+  liquidityTier: number;
   takerFeeBps: number;
   makerRebateBps: number;
-  venueFeeBps: number;
-  minFeeCents: number;
-  maxFeeCents: number | null;
-  isDefault: boolean;
+  venueFeeNetBps: number;
+  minEffectiveDepthCents: bigint;
+  maxEffectiveDepthCents: bigint | null;
+  maxOrderSizeCents: bigint | null;
   isActive: boolean;
 }
 
@@ -38,7 +37,7 @@ export interface FeeCalculation {
   takerFeeCents: number;
   makerRebateCents: number;
   venueFeeCents: number;
-  feeScheduleId: string;
+  liquidityTier: number;
   takerFeeBps: number;
   makerRebateBps: number;
 }
@@ -47,11 +46,12 @@ export interface FeeLedgerEntry {
   id: string;
   tradeId: string;
   marketId: string;
-  userId: string | null;
+  accountType: string;
+  accountId: string | null;
   entryType: 'TAKER_FEE' | 'MAKER_REBATE' | 'VENUE_FEE';
-  debitCents: number;
-  creditCents: number;
-  feeBps: number;
+  entryDirection: 'DEBIT' | 'CREDIT';
+  amountCents: number;
+  liquidityTier: number;
   createdAt: Date;
 }
 
@@ -68,27 +68,33 @@ export interface FeeSummary {
 // ============================================================================
 
 /**
- * Get the default fee schedule
+ * Get the fee schedule for a specific liquidity tier
  */
-export async function getDefaultFeeSchedule(): Promise<FeeSchedule | null> {
+export async function getFeeScheduleForTier(liquidityTier: number): Promise<FeeSchedule | null> {
   const schedule = await prisma.feeSchedule.findFirst({
-    where: { isDefault: true, isActive: true },
+    where: { liquidityTier, isActive: true },
   });
 
   if (!schedule) return null;
 
   return {
     id: schedule.id,
-    name: schedule.name,
-    description: schedule.description,
+    liquidityTier: schedule.liquidityTier,
     takerFeeBps: schedule.takerFeeBps,
     makerRebateBps: schedule.makerRebateBps,
-    venueFeeBps: schedule.venueFeeBps,
-    minFeeCents: schedule.minFeeCents,
-    maxFeeCents: schedule.maxFeeCents,
-    isDefault: schedule.isDefault,
+    venueFeeNetBps: schedule.venueFeeNetBps,
+    minEffectiveDepthCents: schedule.minEffectiveDepthCents,
+    maxEffectiveDepthCents: schedule.maxEffectiveDepthCents,
+    maxOrderSizeCents: schedule.maxOrderSizeCents,
     isActive: schedule.isActive,
   };
+}
+
+/**
+ * Get the default fee schedule (tier 0)
+ */
+export async function getDefaultFeeSchedule(): Promise<FeeSchedule | null> {
+  return getFeeScheduleForTier(0);
 }
 
 /**
@@ -97,62 +103,54 @@ export async function getDefaultFeeSchedule(): Promise<FeeSchedule | null> {
 export async function getAllFeeSchedules(): Promise<FeeSchedule[]> {
   const schedules = await prisma.feeSchedule.findMany({
     where: { isActive: true },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { liquidityTier: 'asc' },
   });
 
   return schedules.map(s => ({
     id: s.id,
-    name: s.name,
-    description: s.description,
+    liquidityTier: s.liquidityTier,
     takerFeeBps: s.takerFeeBps,
     makerRebateBps: s.makerRebateBps,
-    venueFeeBps: s.venueFeeBps,
-    minFeeCents: s.minFeeCents,
-    maxFeeCents: s.maxFeeCents,
-    isDefault: s.isDefault,
+    venueFeeNetBps: s.venueFeeNetBps,
+    minEffectiveDepthCents: s.minEffectiveDepthCents,
+    maxEffectiveDepthCents: s.maxEffectiveDepthCents,
+    maxOrderSizeCents: s.maxOrderSizeCents,
     isActive: s.isActive,
   }));
 }
 
 /**
- * Create a new fee schedule
+ * Create a new fee schedule for a liquidity tier
  */
 export async function createFeeSchedule(
   input: {
-    name: string;
-    description?: string;
+    liquidityTier: number;
     takerFeeBps: number;
     makerRebateBps: number;
-    isDefault?: boolean;
+    minEffectiveDepthCents?: bigint;
+    maxEffectiveDepthCents?: bigint;
+    maxOrderSizeCents?: bigint;
   },
   adminId: string
 ): Promise<FeeSchedule> {
   // Venue fee is the difference
-  const venueFeeBps = input.takerFeeBps - input.makerRebateBps;
+  const venueFeeNetBps = input.takerFeeBps - input.makerRebateBps;
 
-  if (venueFeeBps < 0) {
+  if (venueFeeNetBps < 0) {
     throw new Error('Maker rebate cannot exceed taker fee');
   }
 
-  const schedule = await prisma.$transaction(async (tx) => {
-    // If setting as default, unset other defaults
-    if (input.isDefault) {
-      await tx.feeSchedule.updateMany({
-        where: { isDefault: true },
-        data: { isDefault: false },
-      });
-    }
-
-    return tx.feeSchedule.create({
-      data: {
-        name: input.name,
-        description: input.description,
-        takerFeeBps: input.takerFeeBps,
-        makerRebateBps: input.makerRebateBps,
-        venueFeeBps,
-        isDefault: input.isDefault || false,
-      },
-    });
+  const schedule = await prisma.feeSchedule.create({
+    data: {
+      liquidityTier: input.liquidityTier,
+      takerFeeBps: input.takerFeeBps,
+      makerRebateBps: input.makerRebateBps,
+      venueFeeNetBps,
+      minEffectiveDepthCents: input.minEffectiveDepthCents ?? BigInt(0),
+      maxEffectiveDepthCents: input.maxEffectiveDepthCents ?? null,
+      maxOrderSizeCents: input.maxOrderSizeCents ?? null,
+      isActive: true,
+    },
   });
 
   await writeAuditEvent({
@@ -162,23 +160,22 @@ export async function createFeeSchedule(
     reasonCode: 'FEE_SCHEDULE_CREATED',
     metadata: {
       scheduleId: schedule.id,
-      name: schedule.name,
+      liquidityTier: schedule.liquidityTier,
       takerFeeBps: schedule.takerFeeBps,
       makerRebateBps: schedule.makerRebateBps,
-      venueFeeBps: schedule.venueFeeBps,
+      venueFeeNetBps: schedule.venueFeeNetBps,
     },
   });
 
   return {
     id: schedule.id,
-    name: schedule.name,
-    description: schedule.description,
+    liquidityTier: schedule.liquidityTier,
     takerFeeBps: schedule.takerFeeBps,
     makerRebateBps: schedule.makerRebateBps,
-    venueFeeBps: schedule.venueFeeBps,
-    minFeeCents: schedule.minFeeCents,
-    maxFeeCents: schedule.maxFeeCents,
-    isDefault: schedule.isDefault,
+    venueFeeNetBps: schedule.venueFeeNetBps,
+    minEffectiveDepthCents: schedule.minEffectiveDepthCents,
+    maxEffectiveDepthCents: schedule.maxEffectiveDepthCents,
+    maxOrderSizeCents: schedule.maxOrderSizeCents,
     isActive: schedule.isActive,
   };
 }
@@ -188,59 +185,33 @@ export async function createFeeSchedule(
 // ============================================================================
 
 /**
- * Calculate fees for a trade
+ * Calculate fees for a trade based on liquidity tier
  * Does NOT apply or record fees - just calculates
  */
 export async function calculateTradeFees(
   tradeValueCents: number,
-  feeScheduleId?: string
+  liquidityTier: number = 0
 ): Promise<FeeCalculation> {
-  // Get fee schedule
-  let schedule: FeeSchedule | null;
-
-  if (feeScheduleId) {
-    const raw = await prisma.feeSchedule.findUnique({
-      where: { id: feeScheduleId },
-    });
-    schedule = raw ? {
-      id: raw.id,
-      name: raw.name,
-      description: raw.description,
-      takerFeeBps: raw.takerFeeBps,
-      makerRebateBps: raw.makerRebateBps,
-      venueFeeBps: raw.venueFeeBps,
-      minFeeCents: raw.minFeeCents,
-      maxFeeCents: raw.maxFeeCents,
-      isDefault: raw.isDefault,
-      isActive: raw.isActive,
-    } : null;
-  } else {
-    schedule = await getDefaultFeeSchedule();
-  }
+  // Get fee schedule for the tier
+  const schedule = await getFeeScheduleForTier(liquidityTier);
 
   if (!schedule) {
-    // No fees if no schedule
+    // No fees if no schedule - use defaults
     return {
       tradeValueCents,
-      takerFeeCents: 0,
-      makerRebateCents: 0,
-      venueFeeCents: 0,
-      feeScheduleId: '',
-      takerFeeBps: 0,
-      makerRebateBps: 0,
+      takerFeeCents: Math.floor(tradeValueCents * 100 / 10000), // 1% default
+      makerRebateCents: Math.floor(tradeValueCents * 25 / 10000), // 0.25% default
+      venueFeeCents: Math.floor(tradeValueCents * 75 / 10000), // 0.75% default
+      liquidityTier,
+      takerFeeBps: 100,
+      makerRebateBps: 25,
     };
   }
 
   // Calculate fees
   // fee = tradeValue * bps / 10000
-  let takerFeeCents = Math.floor(tradeValueCents * schedule.takerFeeBps / 10000);
+  const takerFeeCents = Math.floor(tradeValueCents * schedule.takerFeeBps / 10000);
   const makerRebateCents = Math.floor(tradeValueCents * schedule.makerRebateBps / 10000);
-
-  // Apply min/max
-  takerFeeCents = Math.max(schedule.minFeeCents, takerFeeCents);
-  if (schedule.maxFeeCents !== null) {
-    takerFeeCents = Math.min(schedule.maxFeeCents, takerFeeCents);
-  }
 
   // Venue keeps difference
   const venueFeeCents = takerFeeCents - makerRebateCents;
@@ -250,7 +221,7 @@ export async function calculateTradeFees(
     takerFeeCents,
     makerRebateCents,
     venueFeeCents,
-    feeScheduleId: schedule.id,
+    liquidityTier: schedule.liquidityTier,
     takerFeeBps: schedule.takerFeeBps,
     makerRebateBps: schedule.makerRebateBps,
   };
@@ -272,7 +243,8 @@ export async function recordTradeFees(
   marketId: string,
   takerId: string,
   makerId: string,
-  fees: FeeCalculation
+  fees: FeeCalculation,
+  batchId?: string
 ): Promise<FeeLedgerEntry[]> {
   const entries: FeeLedgerEntry[] = [];
 
@@ -285,25 +257,38 @@ export async function recordTradeFees(
     const takerEntry = await tx.feeLedger.create({
       data: {
         tradeId,
+        batchId: batchId ?? null,
         marketId,
-        userId: takerId,
+        accountType: 'user',
+        accountId: takerId,
         entryType: 'TAKER_FEE',
-        debitCents: fees.takerFeeCents,
-        creditCents: 0,
-        feeBps: fees.takerFeeBps,
-        feeScheduleId: fees.feeScheduleId || null,
+        entryDirection: 'DEBIT',
+        amountCents: fees.takerFeeCents,
+        liquidityTier: fees.liquidityTier,
+        reasonCode: 'TRADE_EXECUTION',
       },
     });
     entries.push({
       id: takerEntry.id,
       tradeId: takerEntry.tradeId,
       marketId: takerEntry.marketId,
-      userId: takerEntry.userId,
+      accountType: takerEntry.accountType,
+      accountId: takerEntry.accountId,
       entryType: takerEntry.entryType as 'TAKER_FEE',
-      debitCents: takerEntry.debitCents,
-      creditCents: takerEntry.creditCents,
-      feeBps: takerEntry.feeBps,
+      entryDirection: takerEntry.entryDirection as 'DEBIT',
+      amountCents: takerEntry.amountCents,
+      liquidityTier: takerEntry.liquidityTier,
       createdAt: takerEntry.createdAt,
+    });
+
+    // Debit taker's balance
+    await tx.user.update({
+      where: { id: takerId },
+      data: {
+        balanceCents: { decrement: fees.takerFeeCents },
+        totalTakerFeesPaidCents: { increment: fees.takerFeeCents },
+        netFeesCents: { increment: fees.takerFeeCents },
+      },
     });
 
     // Maker receives rebate (CREDIT)
@@ -311,31 +296,38 @@ export async function recordTradeFees(
       const makerEntry = await tx.feeLedger.create({
         data: {
           tradeId,
+          batchId: batchId ?? null,
           marketId,
-          userId: makerId,
+          accountType: 'user',
+          accountId: makerId,
           entryType: 'MAKER_REBATE',
-          debitCents: 0,
-          creditCents: fees.makerRebateCents,
-          feeBps: fees.makerRebateBps,
-          feeScheduleId: fees.feeScheduleId || null,
+          entryDirection: 'CREDIT',
+          amountCents: fees.makerRebateCents,
+          liquidityTier: fees.liquidityTier,
+          reasonCode: 'TRADE_EXECUTION',
         },
       });
       entries.push({
         id: makerEntry.id,
         tradeId: makerEntry.tradeId,
         marketId: makerEntry.marketId,
-        userId: makerEntry.userId,
+        accountType: makerEntry.accountType,
+        accountId: makerEntry.accountId,
         entryType: makerEntry.entryType as 'MAKER_REBATE',
-        debitCents: makerEntry.debitCents,
-        creditCents: makerEntry.creditCents,
-        feeBps: makerEntry.feeBps,
+        entryDirection: makerEntry.entryDirection as 'CREDIT',
+        amountCents: makerEntry.amountCents,
+        liquidityTier: makerEntry.liquidityTier,
         createdAt: makerEntry.createdAt,
       });
 
       // Credit maker's balance
       await tx.user.update({
         where: { id: makerId },
-        data: { balanceCents: { increment: fees.makerRebateCents } },
+        data: {
+          balanceCents: { increment: fees.makerRebateCents },
+          totalMakerRebatesEarnedCents: { increment: fees.makerRebateCents },
+          netFeesCents: { decrement: fees.makerRebateCents },
+        },
       });
     }
 
@@ -344,24 +336,27 @@ export async function recordTradeFees(
       const venueEntry = await tx.feeLedger.create({
         data: {
           tradeId,
+          batchId: batchId ?? null,
           marketId,
-          userId: null, // Venue has no user ID
+          accountType: 'venue',
+          accountId: null, // Venue has no user ID
           entryType: 'VENUE_FEE',
-          debitCents: 0,
-          creditCents: fees.venueFeeCents,
-          feeBps: fees.takerFeeBps - fees.makerRebateBps,
-          feeScheduleId: fees.feeScheduleId || null,
+          entryDirection: 'CREDIT',
+          amountCents: fees.venueFeeCents,
+          liquidityTier: fees.liquidityTier,
+          reasonCode: 'TRADE_EXECUTION',
         },
       });
       entries.push({
         id: venueEntry.id,
         tradeId: venueEntry.tradeId,
         marketId: venueEntry.marketId,
-        userId: venueEntry.userId,
+        accountType: venueEntry.accountType,
+        accountId: venueEntry.accountId,
         entryType: venueEntry.entryType as 'VENUE_FEE',
-        debitCents: venueEntry.debitCents,
-        creditCents: venueEntry.creditCents,
-        feeBps: venueEntry.feeBps,
+        entryDirection: venueEntry.entryDirection as 'CREDIT',
+        amountCents: venueEntry.amountCents,
+        liquidityTier: venueEntry.liquidityTier,
         createdAt: venueEntry.createdAt,
       });
     }
@@ -379,7 +374,7 @@ export async function recordTradeFees(
       takerFeeCents: fees.takerFeeCents,
       makerRebateCents: fees.makerRebateCents,
       venueFeeCents: fees.venueFeeCents,
-      feeScheduleId: fees.feeScheduleId,
+      liquidityTier: fees.liquidityTier,
     },
   });
 
@@ -403,11 +398,12 @@ export async function getTradeFees(tradeId: string): Promise<FeeLedgerEntry[]> {
     id: e.id,
     tradeId: e.tradeId,
     marketId: e.marketId,
-    userId: e.userId,
+    accountType: e.accountType,
+    accountId: e.accountId,
     entryType: e.entryType as 'TAKER_FEE' | 'MAKER_REBATE' | 'VENUE_FEE',
-    debitCents: e.debitCents,
-    creditCents: e.creditCents,
-    feeBps: e.feeBps,
+    entryDirection: e.entryDirection as 'DEBIT' | 'CREDIT',
+    amountCents: e.amountCents,
+    liquidityTier: e.liquidityTier,
     createdAt: e.createdAt,
   }));
 }
@@ -425,7 +421,7 @@ export async function getUserFeeSummary(
   netFeeCents: number;
   tradeCount: number;
 }> {
-  const where: Record<string, unknown> = { userId };
+  const where: Record<string, unknown> = { accountId: userId };
   if (startDate || endDate) {
     where.createdAt = {};
     if (startDate) (where.createdAt as Record<string, Date>).gte = startDate;
@@ -435,17 +431,17 @@ export async function getUserFeeSummary(
   const [feesPaid, rebatesReceived] = await Promise.all([
     prisma.feeLedger.aggregate({
       where: { ...where, entryType: 'TAKER_FEE' },
-      _sum: { debitCents: true },
+      _sum: { amountCents: true },
       _count: { id: true },
     }),
     prisma.feeLedger.aggregate({
       where: { ...where, entryType: 'MAKER_REBATE' },
-      _sum: { creditCents: true },
+      _sum: { amountCents: true },
     }),
   ]);
 
-  const totalFeesPaidCents = feesPaid._sum.debitCents || 0;
-  const totalRebatesReceivedCents = rebatesReceived._sum.creditCents || 0;
+  const totalFeesPaidCents = feesPaid._sum.amountCents || 0;
+  const totalRebatesReceivedCents = rebatesReceived._sum.amountCents || 0;
 
   return {
     totalFeesPaidCents,
@@ -473,16 +469,16 @@ export async function getMarketFeeSummary(
   const [takerFees, makerRebates, venueFees] = await Promise.all([
     prisma.feeLedger.aggregate({
       where: { ...where, entryType: 'TAKER_FEE' },
-      _sum: { debitCents: true },
+      _sum: { amountCents: true },
       _count: { id: true },
     }),
     prisma.feeLedger.aggregate({
       where: { ...where, entryType: 'MAKER_REBATE' },
-      _sum: { creditCents: true },
+      _sum: { amountCents: true },
     }),
     prisma.feeLedger.aggregate({
       where: { ...where, entryType: 'VENUE_FEE' },
-      _sum: { creditCents: true },
+      _sum: { amountCents: true },
     }),
   ]);
 
@@ -493,9 +489,9 @@ export async function getMarketFeeSummary(
   });
 
   return {
-    totalTakerFeesCents: takerFees._sum.debitCents || 0,
-    totalMakerRebatesCents: makerRebates._sum.creditCents || 0,
-    totalVenueFeesCents: venueFees._sum.creditCents || 0,
+    totalTakerFeesCents: takerFees._sum.amountCents || 0,
+    totalMakerRebatesCents: makerRebates._sum.amountCents || 0,
+    totalVenueFeesCents: venueFees._sum.amountCents || 0,
     tradeCount: takerFees._count.id,
     volumeCents: trades._sum.quantityCents || 0,
   };
@@ -521,7 +517,7 @@ export async function getVenueFeeTotals(
       entryType: 'VENUE_FEE',
       createdAt: { gte: startDate, lte: endDate },
     },
-    _sum: { creditCents: true },
+    _sum: { amountCents: true },
     _count: { id: true },
   });
 
@@ -530,7 +526,7 @@ export async function getVenueFeeTotals(
       entryType: 'TAKER_FEE',
       createdAt: { gte: startDate, lte: endDate },
     },
-    _sum: { debitCents: true },
+    _sum: { amountCents: true },
   });
 
   const makerRebates = await prisma.feeLedger.aggregate({
@@ -538,14 +534,14 @@ export async function getVenueFeeTotals(
       entryType: 'MAKER_REBATE',
       createdAt: { gte: startDate, lte: endDate },
     },
-    _sum: { creditCents: true },
+    _sum: { amountCents: true },
   });
 
   return {
-    totalVenueFeesCents: venueFees._sum.creditCents || 0,
-    totalTakerFeesCents: takerFees._sum.debitCents || 0,
-    totalMakerRebatesCents: makerRebates._sum.creditCents || 0,
-    netRevenueCents: venueFees._sum.creditCents || 0,
+    totalVenueFeesCents: venueFees._sum.amountCents || 0,
+    totalTakerFeesCents: takerFees._sum.amountCents || 0,
+    totalMakerRebatesCents: makerRebates._sum.amountCents || 0,
+    netRevenueCents: venueFees._sum.amountCents || 0,
     tradeCount: venueFees._count.id,
     periodStart: startDate,
     periodEnd: endDate,
@@ -557,7 +553,7 @@ export async function getVenueFeeTotals(
 // ============================================================================
 
 /**
- * Verify ledger integrity - sum of all entries should be zero
+ * Verify ledger integrity - debits should equal credits
  */
 export async function verifyLedgerIntegrity(): Promise<{
   valid: boolean;
@@ -567,15 +563,17 @@ export async function verifyLedgerIntegrity(): Promise<{
 }> {
   const [debits, credits] = await Promise.all([
     prisma.feeLedger.aggregate({
-      _sum: { debitCents: true },
+      where: { entryDirection: 'DEBIT' },
+      _sum: { amountCents: true },
     }),
     prisma.feeLedger.aggregate({
-      _sum: { creditCents: true },
+      where: { entryDirection: 'CREDIT' },
+      _sum: { amountCents: true },
     }),
   ]);
 
-  const totalDebits = debits._sum.debitCents || 0;
-  const totalCredits = credits._sum.creditCents || 0;
+  const totalDebits = debits._sum.amountCents || 0;
+  const totalCredits = credits._sum.amountCents || 0;
   const imbalance = totalDebits - totalCredits;
 
   return {
@@ -597,8 +595,12 @@ export async function verifyTradeLedger(tradeId: string): Promise<{
 }> {
   const entries = await getTradeFees(tradeId);
 
-  const totalDebits = entries.reduce((sum, e) => sum + e.debitCents, 0);
-  const totalCredits = entries.reduce((sum, e) => sum + e.creditCents, 0);
+  const totalDebits = entries
+    .filter(e => e.entryDirection === 'DEBIT')
+    .reduce((sum, e) => sum + e.amountCents, 0);
+  const totalCredits = entries
+    .filter(e => e.entryDirection === 'CREDIT')
+    .reduce((sum, e) => sum + e.amountCents, 0);
 
   return {
     valid: totalDebits === totalCredits,
