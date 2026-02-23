@@ -37,6 +37,11 @@ model User {
   totalTrades       Int       @default(0)
   totalVolumeCents  BigInt    @default(0) // Total volume in cents
 
+  // Sharp Shield V2 - Fee Tracking
+  totalTakerFeesPaidCents BigInt @default(0)
+  totalMakerRebatesEarnedCents BigInt @default(0)
+  netFeesCents      BigInt    @default(0) // takerFees - makerRebates
+
   // Legacy float fields (deprecated, kept for migration)
   balance       Float     @default(0)
   totalProfit   Float     @default(0)
@@ -164,6 +169,12 @@ model Market {
   resolvedAt        DateTime?
   settledAt         DateTime?
 
+  // Sharp Shield V2 - Oracle Lock State
+  isOracleLocked    Boolean   @default(false)
+  oracleLockReason  String?   // MATCH_STARTED, OFFICIAL_RESULT, VOLATILITY, ADMIN_HALT, FEED_FAILURE, DEADMAN_SWITCH
+  oracleLockedAt    DateTime?
+  oracleExternalEventId String? // External event reference
+
   // Metadata
   createdById       String?
   assignedToId      String?
@@ -195,8 +206,13 @@ model Market {
   riskEvents        RiskEvent[]
   liquidityState    MarketLiquidityState?
   settlementRecords SettlementRecord[]
+  oracleLockState   OracleLockState?
+  oracleEvents      OracleEvent[]
+  pendingOrders     PendingOrder[]
+  batchExecutions   BatchExecution[]
 
   @@index([status])
+  @@index([isOracleLocked])
   @@index([categoryId])
   @@index([closesAt])
   @@index([isFeatured])
@@ -547,6 +563,10 @@ model AuditEvent {
   tradeId           String?  // Trade ID if applicable
   orderId           String?  // Order ID if applicable
 
+  // Sharp Shield V2 - Batch References
+  batchId           String?  // Batch execution ID
+  batchSequenceNumber BigInt? // Sequence number within batch
+
   // Versioning
   rulesVersion      Int?     // Market rules version at time of event
   pricingVersion    Int?     // Pricing/AMM formula version
@@ -578,6 +598,7 @@ model AuditEvent {
   @@index([occurredAt])
   @@index([seq])
   @@index([requestId])
+  @@index([batchId])
   @@map("audit_events")
 }
 
@@ -854,6 +875,16 @@ model Trade {
   // NT Audit Trail
   reasonCode      String    @default("CLOB_MATCH") // CLOB_MATCH, MM_FILL, AUCTION, etc.
 
+  // Sharp Shield V2 - Batch Reference
+  batchId         String?   // Reference to batch_executions
+  batchSequenceNumber BigInt? // Sequence within batch for replay
+
+  // Sharp Shield V2 - Fee Details
+  takerSide       String?   // BID or ASK - which side was taker
+  makerRebateCents Int      @default(0)
+  venueFeeNetCents Int      @default(0)
+  liquidityTierAtExecution Int @default(0)
+
   // Relations
   market          Market    @relation(fields: [marketId], references: [id])
   outcome         MarketOutcome @relation(fields: [outcomeId], references: [id])
@@ -866,6 +897,7 @@ model Trade {
   @@index([buyerId])
   @@index([sellerId])
   @@index([executedAt])
+  @@index([batchId])
   @@map("trades")
 }
 
@@ -1073,6 +1105,32 @@ model MarketMakerBot {
   haltReason       String?
   lastActivityAt   DateTime?
 
+  // Sharp Shield V2 - Hardening Features
+  orderTtlMs       Int       @default(3000) // Order TTL in milliseconds (3 seconds default)
+  maxOrdersPerCycle Int      @default(10)   // Max orders per quoting cycle
+
+  // Kill Switch
+  killSwitchActive Boolean   @default(false)
+  killSwitchTriggeredAt DateTime?
+  killSwitchReason String?
+  killSwitchCooldownUntil DateTime?
+
+  // Rolling Loss Tracking
+  rollingLossCents BigInt    @default(0)
+  rollingLossWindowStartAt DateTime?
+  rollingLossThresholdCents BigInt @default(100000) // $1,000 default
+
+  // Exposure Caps
+  globalExposureCents BigInt @default(0)
+  globalExposureCapCents BigInt @default(5000000) // $50,000 default
+  perMarketExposureCapCents BigInt @default(500000) // $5,000 default
+
+  // Quote Quality Tracking
+  lastQuoteAt      DateTime?
+  quoteSpreadCents Int?
+  quoteMidPriceCents Int?
+  quoteErrorCount  Int       @default(0)
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -1080,6 +1138,8 @@ model MarketMakerBot {
   userId          String?
   user            User?     @relation(fields: [userId], references: [id])
 
+  @@index([isActive])
+  @@index([killSwitchActive])
   @@map("market_maker_bots")
 }
 
@@ -1165,12 +1225,26 @@ model MarketLiquidityState {
   tradesLast2Sec  Int       @default(0)
   lastTradeAt     DateTime?
 
+  // Sharp Shield V2 - Effective Depth & Tier Calculation
+  effectiveDepthCents BigInt @default(0) // min(bidLiquidity, askLiquidity) within 10% of mid
+  sharpShieldTier Int       @default(0)  // 0: Seed (<$1k), 1: Growth ($1k-$10k), 2: Active ($10k-$100k), 3: Deep (>$100k)
+
+  // Tier Hysteresis - 5 minute stability requirement
+  tierChangePendingSince DateTime?
+  tierChangePendingTo Int?
+  tierStableSince DateTime?
+
+  // Fee schedule reference
+  currentTakerFeeBps Int    @default(100)
+  currentMakerRebateBps Int @default(25)
+
   updatedAt       DateTime  @updatedAt
 
   // Relations
   market          Market    @relation(fields: [marketId], references: [id])
 
   @@index([liquidityTier])
+  @@index([sharpShieldTier])
   @@map("market_liquidity_states")
 }
 
@@ -1311,4 +1385,316 @@ model PriceHistory {
   @@unique([marketId, outcomeId, bucketStart, intervalMinutes])
   @@index([marketId, bucketStart])
   @@map("price_history")
+}
+
+// ============================================================================
+// SHARP SHIELD V2 - Oracle Lock Service (Push-Based IGA Compliance)
+// ============================================================================
+
+model OracleLockState {
+  id              String    @id @default(uuid())
+
+  marketId        String    @unique
+
+  // Lock state
+  isLocked        Boolean   @default(false)
+  lockReason      String?   // MATCH_STARTED, OFFICIAL_RESULT, VOLATILITY, ADMIN_HALT, FEED_FAILURE, DEADMAN_SWITCH
+
+  // External event reference
+  externalEventId String?   // e.g., AFL match ID
+  externalEventType String? // afl, nrl, cricket, tennis, etc.
+
+  // Lock timing
+  lockedAt        DateTime?
+  lockedBy        String?   // "oracle", "admin", "deadman"
+  unlockedAt      DateTime?
+
+  // Deadman switch - feed health monitoring
+  lastHeartbeatAt DateTime?
+  heartbeatIntervalMs Int   @default(5000) // Expected heartbeat every 5s
+  deadmanTimeoutMs Int      @default(30000) // 30s timeout for feed failure
+
+  // Admin override
+  adminOverrideActive Boolean @default(false)
+  adminOverrideBy   String?
+  adminOverrideAt   DateTime?
+  adminOverrideReason String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  market          Market    @relation(fields: [marketId], references: [id])
+
+  @@index([isLocked])
+  @@index([externalEventId])
+  @@map("oracle_lock_states")
+}
+
+model OracleEvent {
+  id              String    @id @default(uuid())
+
+  marketId        String
+
+  // Event details
+  eventType       String    // HEARTBEAT, MATCH_STARTED, OFFICIAL_RESULT, VOLATILITY, ADMIN_HALT, FEED_FAILURE
+  eventSource     String    // afl_oracle, nrl_oracle, admin, system
+
+  // External reference
+  externalEventId String?
+  externalEventType String?
+
+  // Event data
+  eventData       String?   // JSON: event-specific data (match score, result, etc.)
+
+  // Action taken
+  lockActionTaken String?   // LOCK, UNLOCK, NONE
+  lockReason      String?
+
+  // Processing
+  processedAt     DateTime  @default(now())
+  processingLatencyMs Int?
+
+  // Audit
+  integrityHash   String?   // For audit chain
+
+  // Relations
+  market          Market    @relation(fields: [marketId], references: [id])
+
+  @@index([marketId, processedAt])
+  @@index([eventType])
+  @@index([externalEventId])
+  @@map("oracle_events")
+}
+
+// ============================================================================
+// SHARP SHIELD V2 - Fee Accounting (Double-Entry Ledger)
+// ============================================================================
+
+model FeeSchedule {
+  id              String    @id @default(uuid())
+
+  // Tier identification
+  liquidityTier   Int       // 0, 1, 2, 3 (Sharp Shield tiers)
+  effectiveFrom   DateTime  @default(now())
+  effectiveUntil  DateTime?
+
+  // Fee rates in basis points (100bp = 1%)
+  takerFeeBps     Int       @default(100) // 100bp = 1% taker fee
+  makerRebateBps  Int       @default(25)  // 25bp = 0.25% maker rebate
+  venueFeeNetBps  Int       @default(75)  // 75bp = 0.75% venue keeps
+
+  // Tier thresholds in cents
+  minEffectiveDepthCents BigInt @default(0)
+  maxEffectiveDepthCents BigInt?
+
+  // Max order size for tier in cents
+  maxOrderSizeCents BigInt?
+
+  // Status
+  isActive        Boolean   @default(true)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([liquidityTier, isActive])
+  @@map("fee_schedules")
+}
+
+model FeeLedger {
+  id              String    @id @default(uuid())
+
+  // Transaction reference
+  tradeId         String
+  batchId         String?
+
+  // Entry type
+  entryType       String    // TAKER_FEE, MAKER_REBATE, VENUE_FEE
+  entryDirection  String    // DEBIT, CREDIT
+
+  // Account (user or venue)
+  accountType     String    // user, venue
+  accountId       String?   // userId or null for venue
+
+  // Amount in cents
+  amountCents     Int
+
+  // Market context
+  marketId        String
+  liquidityTier   Int       @default(0)
+
+  // Balance snapshot (running total)
+  runningBalanceCents BigInt @default(0)
+
+  // Audit
+  reasonCode      String    // TRADE_EXECUTION, REBATE_PAYOUT, ADJUSTMENT
+  metadata        String?   // JSON: additional context
+
+  createdAt       DateTime  @default(now())
+
+  @@index([tradeId])
+  @@index([accountType, accountId])
+  @@index([marketId, createdAt])
+  @@index([batchId])
+  @@map("fee_ledger")
+}
+
+model VenueFeeTotals {
+  id              String    @id @default(uuid())
+
+  // Period
+  periodDate      DateTime  @db.Date
+
+  // Totals in cents
+  totalTakerFeesCents BigInt @default(0)
+  totalMakerRebatesCents BigInt @default(0)
+  totalVenueNetCents BigInt @default(0)
+
+  // Trade counts
+  totalTrades     Int       @default(0)
+  totalVolumeCents BigInt   @default(0)
+
+  // By tier breakdown (JSON)
+  tierBreakdown   String?   // JSON: { tier0: {...}, tier1: {...}, ... }
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([periodDate])
+  @@map("venue_fee_totals")
+}
+
+// ============================================================================
+// SHARP SHIELD V2 - Deterministic Micro-Batch Processing
+// ============================================================================
+
+model PendingOrder {
+  id              String    @id @default(uuid())
+
+  // Original order reference
+  orderId         String    @unique
+
+  // Market
+  marketId        String
+  outcomeId       String
+
+  // Order details snapshot
+  userId          String
+  side            String    // BID (buy YES) or ASK (sell YES)
+  priceCents      Int
+  quantityCents   Int
+
+  // Batch assignment
+  batchId         String?
+  batchSequenceNumber BigInt?
+
+  // Queue timing
+  queuedAt        DateTime  @default(now())
+  batchWindowMs   Int       @default(200) // 200ms batch window
+
+  // Processing state
+  status          String    @default("pending") // pending, assigned, processing, completed, cancelled
+  processedAt     DateTime?
+
+  // Match result
+  matchResult     String?   // JSON: match result
+  errorMessage    String?
+
+  // Relations
+  market          Market    @relation(fields: [marketId], references: [id])
+
+  @@index([marketId, status, queuedAt])
+  @@index([batchId])
+  @@index([status, queuedAt])
+  @@map("pending_orders")
+}
+
+model BatchExecution {
+  id              String    @id @default(uuid())
+
+  marketId        String
+  batchSequenceNumber BigInt
+
+  // Timing
+  batchStartAt    DateTime
+  batchEndAt      DateTime
+  processingStartAt DateTime?
+  processingEndAt DateTime?
+
+  // Batch contents
+  ordersInBatch   Int       @default(0)
+
+  // Results
+  ordersMatched   Int       @default(0)
+  tradesCreated   Int       @default(0)
+  volumeTradedCents BigInt  @default(0)
+
+  // Audit
+  status          String    @default("pending") // pending, processing, completed, failed
+  errorMessage    String?
+  integrityHash   String?   // Hash of batch contents for replay
+
+  // State snapshot for replay
+  prebatchStateHash String?  // Hash of order book state before batch
+  postbatchStateHash String? // Hash of order book state after batch
+
+  createdAt       DateTime  @default(now())
+
+  // Relations
+  market          Market    @relation(fields: [marketId], references: [id])
+
+  @@unique([marketId, batchSequenceNumber])
+  @@index([marketId, batchStartAt])
+  @@index([status])
+  @@map("batch_executions")
+}
+
+// ============================================================================
+// SHARP SHIELD V2 - Rebate Abuse Detection
+// ============================================================================
+
+model RebateAbuseFlag {
+  id              String    @id @default(uuid())
+
+  userId          String
+  marketId        String?
+
+  // Detection
+  detectionType   String    // SELF_TRADE, WASH_TRADE, CIRCULAR_FLOW, EXCESSIVE_CANCEL_RATIO
+
+  // Evidence
+  tradeIds        String?   // JSON: array of trade IDs involved
+  orderIds        String?   // JSON: array of order IDs involved
+
+  // Metrics
+  suspiciousVolumeCents BigInt @default(0)
+  rebatesClaimedCents Int   @default(0)
+  cancelRatio     Float?    // For cancel/fill ratio abuse
+
+  // Time window
+  windowStartAt   DateTime
+  windowEndAt     DateTime
+
+  // Severity
+  severity        String    @default("warning") // warning, moderate, severe
+
+  // Action
+  actionTaken     String?   // REBATE_CLAWBACK, ACCOUNT_FLAG, ACCOUNT_SUSPEND
+  actionAmountCents Int?
+  actionAt        DateTime?
+  actionBy        String?
+
+  // Status
+  status          String    @default("active") // active, reviewed, resolved, false_positive
+  reviewedAt      DateTime?
+  reviewedBy      String?
+  reviewNotes     String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId, status])
+  @@index([marketId, createdAt])
+  @@index([detectionType, status])
+  @@map("rebate_abuse_flags")
 }
