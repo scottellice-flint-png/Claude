@@ -226,6 +226,14 @@ export type ReasonCode =
   | 'SEED_BOT_HALTED'
   // LIP reasons
   | 'LIP_REBATE'
+  // Sharp Shield V2 reasons
+  | 'AUDIT_REPLAY'
+  | 'ORACLE_LOCK'
+  | 'ORACLE_UNLOCK'
+  | 'DEADMAN_SWITCH'
+  | 'BATCH_PROCESSED'
+  | 'KILL_SWITCH_TRIGGERED'
+  | 'REBATE_ABUSE_DETECTED'
   // Other
   | 'OTHER';
 
