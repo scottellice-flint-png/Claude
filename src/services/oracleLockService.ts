@@ -54,12 +54,13 @@ export interface OracleLockState {
   marketId: string;
   lockStatus: OracleLockStatus;
   lockReason: OracleLockReason;
-  lockTriggerSource: string | null;
-  lockTsMs: number | null;
+  lockedBy: string | null;
   lockedAt: Date | null;
+  unlockedAt: Date | null;
   lastHeartbeatAt: Date | null;
+  heartbeatIntervalMs: number;
   deadmanTimeoutMs: number;
-  autoUnlock: boolean;
+  adminOverrideActive: boolean;
 }
 
 // ============================================================================
@@ -252,16 +253,20 @@ export async function getOracleLockState(marketId: string): Promise<OracleLockSt
 
   if (!state) return null;
 
+  // Derive lockStatus from isLocked boolean
+  const lockStatus: OracleLockStatus = state.isLocked ? 'LOCKED' : 'OPEN';
+
   return {
     marketId: state.marketId,
-    lockStatus: state.lockStatus as OracleLockStatus,
-    lockReason: state.lockReason as OracleLockReason,
-    lockTriggerSource: state.lockTriggerSource,
-    lockTsMs: state.lockTsMs ? Number(state.lockTsMs) : null,
+    lockStatus,
+    lockReason: (state.lockReason as OracleLockReason) || 'NONE',
+    lockedBy: state.lockedBy,
     lockedAt: state.lockedAt,
+    unlockedAt: state.unlockedAt,
     lastHeartbeatAt: state.lastHeartbeatAt,
+    heartbeatIntervalMs: state.heartbeatIntervalMs,
     deadmanTimeoutMs: state.deadmanTimeoutMs,
-    autoUnlock: state.autoUnlock,
+    adminOverrideActive: state.adminOverrideActive,
   };
 }
 
