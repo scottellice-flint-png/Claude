@@ -26,6 +26,8 @@ export default function MarketPage() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [selectedOutcome, setSelectedOutcome] = useState<{ id: string; name: string; yesPrice: number; noPrice: number } | null>(null);
   const [showMobileBetModal, setShowMobileBetModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportingComment, setReportingComment] = useState<Comment | null>(null);
 
   const market = useStore((state) => state.getMarket(id as string));
   const updateMarketPrice = useStore((state) => state.updateMarketPrice);
@@ -99,9 +101,15 @@ export default function MarketPage() {
 
   const handleAddComment = () => {
     if (!session?.user || !commentText.trim() || !market) return;
-    const username = session.user.username || session.user.email?.split('@')[0] || 'User';
-    addComment(market.id, commentText, username);
+    // Use name (which includes firstName/lastName for better display) or fallback to username
+    const displayName = session.user.name || session.user.username || session.user.email?.split('@')[0] || 'User';
+    addComment(market.id, commentText, displayName);
     setCommentText('');
+  };
+
+  const handleReportComment = (comment: Comment) => {
+    setReportingComment(comment);
+    setShowReportModal(true);
   };
 
   if (!market) {
@@ -649,7 +657,7 @@ export default function MarketPage() {
                 </div>
               ) : (
                 comments.map((comment) => (
-                  <CommentItem key={comment.id} comment={comment} />
+                  <CommentItem key={comment.id} comment={comment} onReport={handleReportComment} />
                 ))
               )}
             </div>
@@ -707,6 +715,17 @@ export default function MarketPage() {
         </div>
       )}
 
+      {/* Report Comment Modal */}
+      {showReportModal && reportingComment && (
+        <ReportCommentModal
+          comment={reportingComment}
+          onClose={() => {
+            setShowReportModal(false);
+            setReportingComment(null);
+          }}
+        />
+      )}
+
       <style jsx>{`
         @keyframes slide-up {
           from {
@@ -724,7 +743,7 @@ export default function MarketPage() {
   );
 }
 
-function CommentItem({ comment }: { comment: Comment }) {
+function CommentItem({ comment, onReport }: { comment: Comment; onReport: (comment: Comment) => void }) {
   const [showReplies, setShowReplies] = useState(false);
 
   const timeAgo = (dateString: string) => {
@@ -785,7 +804,11 @@ function CommentItem({ comment }: { comment: Comment }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
             </button>
-            <button className="text-gray-400 hover:text-red-500" title="Report comment">
+            <button
+              onClick={() => onReport(comment)}
+              className="text-gray-400 hover:text-red-500"
+              title="Report comment"
+            >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
               </svg>
@@ -831,6 +854,186 @@ function CommentItem({ comment }: { comment: Comment }) {
               )}
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Report Comment Modal Component
+function ReportCommentModal({ comment, onClose }: { comment: Comment; onClose: () => void }) {
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const reportReasons = [
+    { id: 'harassment', label: 'Harassment or bullying', description: 'Targeting or intimidating other users' },
+    { id: 'hate_speech', label: 'Hate speech or discrimination', description: 'Attacks based on identity or protected characteristics' },
+    { id: 'misinformation', label: 'Misinformation', description: 'Deliberately spreading false information' },
+    { id: 'spam', label: 'Spam or self-promotion', description: 'Irrelevant or promotional content' },
+    { id: 'inappropriate', label: 'Inappropriate content', description: 'Offensive, violent, or explicit material' },
+    { id: 'threats', label: 'Threats or incitement', description: 'Threatening violence or encouraging harmful behavior' },
+    { id: 'other', label: 'Other', description: 'Something else not listed above' },
+  ];
+
+  const handleSubmit = async () => {
+    if (!reportReason || !reportDetails.trim() || reportDetails.length < 20) return;
+
+    setIsSubmitting(true);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsSubmitting(false);
+    setSubmitted(true);
+  };
+
+  const canSubmit = reportReason && reportDetails.trim().length >= 20;
+
+  if (submitted) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+        <div className="relative bg-white rounded-2xl p-6 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">Report Submitted</h3>
+          <p className="text-gray-600 mb-6">
+            Thank you for helping keep our community safe. Our MarketOps team will review this report and take appropriate action.
+          </p>
+          <button
+            onClick={onClose}
+            className="w-full py-3 bg-foremark-green text-white rounded-lg font-semibold hover:bg-foremark-green-light transition-colors"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+          <h3 className="text-lg font-bold text-gray-900">Report Comment</h3>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-4 overflow-y-auto flex-1">
+          {/* Comment being reported */}
+          <div className="bg-gray-50 rounded-lg p-3 mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs font-bold text-gray-600">
+                {comment.username.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-sm font-medium text-gray-900">{comment.username}</span>
+            </div>
+            <p className="text-sm text-gray-700">{comment.content}</p>
+          </div>
+
+          {/* Off-Mark Guidelines Notice */}
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+            <div className="flex items-start gap-2">
+              <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <p className="text-sm font-medium text-amber-800">Off-Mark Policy</p>
+                <p className="text-xs text-amber-700 mt-1">
+                  False reports may result in your own account being marked Off-Mark. Please only report genuine violations.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Reason Selection */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
+              Why are you reporting this comment? <span className="text-red-500">*</span>
+            </label>
+            <div className="space-y-2">
+              {reportReasons.map((reason) => (
+                <label
+                  key={reason.id}
+                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    reportReason === reason.id
+                      ? 'border-foremark-green bg-foremark-lime/10'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="reportReason"
+                    value={reason.id}
+                    checked={reportReason === reason.id}
+                    onChange={() => setReportReason(reason.id)}
+                    className="mt-0.5 w-4 h-4 text-foremark-green focus:ring-foremark-green"
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{reason.label}</p>
+                    <p className="text-xs text-gray-500">{reason.description}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Details */}
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-2">
+              Please provide details <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={reportDetails}
+              onChange={(e) => setReportDetails(e.target.value)}
+              placeholder="Explain why this comment violates our community guidelines. Please be specific about what makes this content inappropriate (minimum 20 characters)..."
+              rows={4}
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-foremark-green/20 focus:border-foremark-green text-sm resize-none"
+            />
+            <div className="flex justify-between mt-1">
+              <p className={`text-xs ${reportDetails.length < 20 ? 'text-amber-600' : 'text-gray-400'}`}>
+                {reportDetails.length < 20 ? `${20 - reportDetails.length} more characters required` : 'Minimum met'}
+              </p>
+              <p className="text-xs text-gray-400">{reportDetails.length}/500</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-100 flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!canSubmit || isSubmitting}
+            className="flex-1 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isSubmitting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              'Submit Report'
+            )}
+          </button>
         </div>
       </div>
     </div>
