@@ -61,11 +61,11 @@ interface MarketSuggestion {
 
 // Mock users
 const mockUsers: User[] = [
-  { id: '1', username: 'MarketMaster', avatar: '📊', bio: 'Full-time trader. Politics & economics specialist.', isVerified: true, isPublic: true, followers: 12450, following: 156, predictions: 2341, winRate: 62, isFollowing: true },
+  { id: '1', username: 'MarketMaster', avatar: '📊', bio: 'Full-time punter. Politics & economics specialist.', isVerified: true, isPublic: true, followers: 12450, following: 156, predictions: 2341, winRate: 62, isFollowing: true },
   { id: '2', username: 'AussiePunter', avatar: '🦘', bio: 'Sports betting enthusiast from Melbourne', isVerified: true, isPublic: true, followers: 8920, following: 89, predictions: 1567, winRate: 58, isFollowing: true },
   { id: '3', username: 'PredictorPro', avatar: '🎯', bio: 'Data-driven predictions. Climate & world events.', isVerified: false, isPublic: true, followers: 3421, following: 234, predictions: 892, winRate: 55, isFollowing: false },
-  { id: '4', username: 'SydneyTrader', avatar: '🌊', bio: 'Economics nerd. RBA watcher.', isVerified: false, isPublic: false, followers: 1205, following: 67, predictions: 456, winRate: 51, isFollowing: false, isPending: true },
-  { id: '5', username: 'TradingKangaroo', avatar: '💰', bio: 'Hopping through the markets', isVerified: true, isPublic: true, followers: 15670, following: 45, predictions: 3421, winRate: 64, isFollowing: false },
+  { id: '4', username: 'SydneyPunter', avatar: '🌊', bio: 'Economics nerd. RBA watcher.', isVerified: false, isPublic: false, followers: 1205, following: 67, predictions: 456, winRate: 51, isFollowing: false, isPending: true },
+  { id: '5', username: 'BettingKangaroo', avatar: '💰', bio: 'Hopping through the markets', isVerified: true, isPublic: true, followers: 15670, following: 45, predictions: 3421, winRate: 64, isFollowing: false },
 ];
 
 // Mock feed with both posts and predictions
@@ -452,7 +452,7 @@ export default function CommunityPage() {
               {/* Desktop Explainer */}
               <div className="bg-[#C8E64C]/20 border border-[#C8E64C] rounded-lg p-3 mb-4">
                 <p className="text-xs text-[#0F4C4C] leading-relaxed">
-                  <strong>Connect with predictors</strong> - Follow top traders, share your views, and discover predictions. Invite friends via link, even if they&apos;re not on Foremark!
+                  <strong>Connect with predictors</strong> - Follow top bettors, share your views, and discover predictions. Invite friends via link, even if they&apos;re not on Foremark!
                 </p>
               </div>
 

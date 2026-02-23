@@ -243,7 +243,7 @@ export default function LoginPage() {
               Australia&apos;s Premier<br />Prediction Market
             </h1>
             <p className="text-white/80 text-lg">
-              Trade on the outcomes that matter. Politics, sport, economics, and more.
+              Bet on the outcomes that matter. Politics, sport, economics, and more.
             </p>
 
             {/* Features */}
@@ -254,7 +254,7 @@ export default function LoginPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <span className="text-white">Secure & transparent trading</span>
+                <span className="text-white">Secure & transparent betting</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-[#C8E64C] rounded-full flex items-center justify-center flex-shrink-0">

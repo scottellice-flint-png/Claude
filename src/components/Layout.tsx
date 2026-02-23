@@ -28,7 +28,7 @@ export default function Layout({ children }: LayoutProps) {
 
   // Mock profiles for search
   const profiles = [
-    { id: '1', username: 'MelbourneTrader', avatar: '🦘', winRate: 68, followers: 1240 },
+    { id: '1', username: 'MelbournePunter', avatar: '🦘', winRate: 68, followers: 1240 },
     { id: '2', username: 'SydneyPredictor', avatar: '🌉', winRate: 72, followers: 890 },
     { id: '3', username: 'BrisbaneBets', avatar: '☀️', winRate: 65, followers: 567 },
     { id: '4', username: 'PerthPunter', avatar: '🌅', winRate: 71, followers: 432 },

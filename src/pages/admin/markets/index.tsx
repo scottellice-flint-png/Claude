@@ -22,7 +22,7 @@ const statusOptions: { value: MarketStatus | ''; label: string }[] = [
   { value: 'review', label: 'Under Review' },
   { value: 'approved', label: 'Approved' },
   { value: 'published', label: 'Published' },
-  { value: 'trading_halted', label: 'Trading Halted' },
+  { value: 'trading_halted', label: 'Betting Halted' },
   { value: 'resolved', label: 'Resolved' },
   { value: 'settled', label: 'Settled' },
   { value: 'archived', label: 'Archived' },

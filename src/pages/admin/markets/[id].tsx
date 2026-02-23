@@ -335,7 +335,7 @@ export default function MarketDetailPage() {
             <nav className="flex -mb-px">
               {[
                 { id: 'details', label: 'Details' },
-                { id: 'trading', label: 'Trading' },
+                { id: 'trading', label: 'Betting' },
                 { id: 'workflow', label: 'Workflow' },
                 { id: 'versions', label: 'History' },
                 { id: 'resolution', label: 'Resolution' },
@@ -379,7 +379,7 @@ export default function MarketDetailPage() {
                       <dd className="text-gray-900">${market.volume.toLocaleString()}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm text-gray-500">Trade Count</dt>
+                      <dt className="text-sm text-gray-500">Bet Count</dt>
                       <dd className="text-gray-900">{market.tradeCount.toLocaleString()}</dd>
                     </div>
                   </dl>
@@ -656,17 +656,17 @@ export default function MarketDetailPage() {
                   </div>
                 </div>
 
-                {/* Trading Activity */}
+                {/* Betting Activity */}
                 <div className="bg-white rounded-xl border border-gray-200 p-6">
-                  <h3 className="font-medium text-gray-900 mb-4">Trading Activity</h3>
+                  <h3 className="font-medium text-gray-900 mb-4">Betting Activity</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="text-center p-4 bg-gray-50 rounded-lg">
                       <div className="text-2xl font-bold text-gray-900">{market.tradeCount.toLocaleString()}</div>
-                      <div className="text-xs text-gray-500 mt-1">Total Trades</div>
+                      <div className="text-xs text-gray-500 mt-1">Total Bets</div>
                     </div>
                     <div className="text-center p-4 bg-gray-50 rounded-lg">
                       <div className="text-2xl font-bold text-gray-900">${market.volume.toLocaleString()}</div>
-                      <div className="text-xs text-gray-500 mt-1">Volume Traded</div>
+                      <div className="text-xs text-gray-500 mt-1">Volume Wagered</div>
                     </div>
                     <div className="text-center p-4 bg-gray-50 rounded-lg">
                       <div className="text-2xl font-bold text-gray-900">
@@ -678,7 +678,7 @@ export default function MarketDetailPage() {
                       <div className="text-2xl font-bold text-gray-900">
                         {liquidityState?.tradesLast2Sec || 0}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">Trades (last 2s)</div>
+                      <div className="text-xs text-gray-500 mt-1">Bets (last 2s)</div>
                     </div>
                   </div>
                 </div>

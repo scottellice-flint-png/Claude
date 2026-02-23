@@ -143,7 +143,7 @@ export default function ConstraintsPage() {
         <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
           <p className="font-medium">What are Constraint Templates?</p>
           <p className="text-sm mt-1">
-            Constraint templates define trading limits, KYC requirements, and jurisdiction rules that can be
+            Constraint templates define betting limits, KYC requirements, and jurisdiction rules that can be
             applied to markets. Create templates for different market types (e.g., &quot;Standard&quot;, &quot;High Value&quot;,
             &quot;Novelty&quot;) to streamline market creation.
           </p>
@@ -203,11 +203,11 @@ export default function ConstraintsPage() {
 
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="bg-gray-50 p-2 rounded">
-                      <span className="text-gray-500">Min Trade:</span>{' '}
+                      <span className="text-gray-500">Min Bet:</span>{' '}
                       <span className="font-medium">${(template.constraints.minTradeAmount || 0) / 100}</span>
                     </div>
                     <div className="bg-gray-50 p-2 rounded">
-                      <span className="text-gray-500">Max Trade:</span>{' '}
+                      <span className="text-gray-500">Max Bet:</span>{' '}
                       <span className="font-medium">${(template.constraints.maxTradeAmount || 0) / 100}</span>
                     </div>
                     <div className="bg-gray-50 p-2 rounded">
@@ -275,10 +275,10 @@ export default function ConstraintsPage() {
                 </div>
 
                 <div className="border-t pt-4">
-                  <h4 className="font-medium text-gray-900 mb-4">Trading Limits</h4>
+                  <h4 className="font-medium text-gray-900 mb-4">Betting Limits</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Min Trade (cents)</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Min Bet (cents)</label>
                       <input
                         type="number"
                         value={formData.constraints.minTradeAmount || ''}
@@ -287,7 +287,7 @@ export default function ConstraintsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Max Trade (cents)</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Max Bet (cents)</label>
                       <input
                         type="number"
                         value={formData.constraints.maxTradeAmount || ''}

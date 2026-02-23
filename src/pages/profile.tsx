@@ -428,7 +428,7 @@ export default function ProfilePage() {
             ) : (
               <div className="space-y-4">
                 <p className="text-gray-600 text-sm">
-                  To comply with Australian financial regulations, we need to verify your identity before you can trade.
+                  To comply with Australian financial regulations, we need to verify your identity before you can bet.
                 </p>
                 <button className="px-5 py-2.5 bg-foremark-green text-white font-semibold rounded-lg hover:bg-foremark-green-light transition-colors">
                   Verify identity
@@ -636,7 +636,7 @@ export default function ProfilePage() {
                 />
                 <div>
                   <p className="text-gray-900 font-medium">Research & Insights</p>
-                  <p className="text-sm text-gray-500">Receive market analysis and trading insights from our research team.</p>
+                  <p className="text-sm text-gray-500">Receive market analysis and betting insights from our research team.</p>
                 </div>
               </label>
             </div>

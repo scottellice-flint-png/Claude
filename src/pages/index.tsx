@@ -180,7 +180,7 @@ export default function Home() {
 
       {/* Explainer */}
       <p className="text-sm text-gray-500 -mt-2">
-        Trade on outcomes that shape Australia and the world. From elections and interest rates to sport and culture.
+        Bet on outcomes that shape Australia and the world. From elections and interest rates to sport and culture.
       </p>
 
       {/* Subcategory Pills */}
@@ -344,7 +344,7 @@ export default function Home() {
             </div>
             <div>
               <p className="font-semibold text-gray-900 text-sm">Secure & Transparent</p>
-              <p className="text-xs text-gray-500">Trade with confidence</p>
+              <p className="text-xs text-gray-500">Bet with confidence</p>
             </div>
           </div>
 
@@ -356,7 +356,7 @@ export default function Home() {
             </div>
             <div>
               <p className="font-semibold text-gray-900 text-sm">Manage your positions</p>
-              <p className="text-xs text-gray-500">Trade on your predictions</p>
+              <p className="text-xs text-gray-500">Bet on your predictions</p>
             </div>
           </div>
 

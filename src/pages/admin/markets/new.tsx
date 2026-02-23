@@ -585,7 +585,7 @@ export default function NewMarketPage() {
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Min Trade Amount (cents)</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Min Bet Amount (cents)</label>
                       <input
                         type="number"
                         value={formData.constraints.minTradeAmount || ''}
@@ -601,7 +601,7 @@ export default function NewMarketPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Max Trade Amount (cents)</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Max Bet Amount (cents)</label>
                       <input
                         type="number"
                         value={formData.constraints.maxTradeAmount || ''}

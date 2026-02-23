@@ -271,7 +271,7 @@ export default function TraderDetailPage() {
         <div className="text-center py-12">
           <p className="text-gray-500">User not found</p>
           <Link href="/admin/traders" className="text-foremark-green hover:underline mt-4 inline-block">
-            Back to Traders
+            Back to Users
           </Link>
         </div>
       </AdminLayout>
@@ -367,7 +367,7 @@ export default function TraderDetailPage() {
             </p>
           </div>
           <div className="bg-white rounded-xl shadow-sm p-4">
-            <p className="text-sm text-gray-500">Total Trades</p>
+            <p className="text-sm text-gray-500">Total Bets</p>
             <p className="text-xl font-bold text-gray-900">{user.totalTrades.toLocaleString()}</p>
           </div>
           <div className="bg-white rounded-xl shadow-sm p-4">
@@ -386,7 +386,7 @@ export default function TraderDetailPage() {
             <nav className="flex -mb-px">
               {[
                 { id: 'overview', label: 'Overview' },
-                { id: 'trading', label: 'Trading Ledger' },
+                { id: 'trading', label: 'Betting History' },
                 { id: 'compliance', label: 'Compliance Hub' },
                 { id: 'risk', label: 'Risk Switchboard' },
               ].map((tab) => (
@@ -491,9 +491,9 @@ export default function TraderDetailPage() {
             {/* Trading Ledger Tab */}
             {activeTab === 'trading' && (
               <div>
-                <h3 className="font-medium text-gray-900 mb-4">Trading History</h3>
+                <h3 className="font-medium text-gray-900 mb-4">Betting History</h3>
                 {trades.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8 bg-gray-50 rounded-lg">No trades yet</p>
+                  <p className="text-gray-500 text-center py-8 bg-gray-50 rounded-lg">No bets yet</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full">

@@ -168,7 +168,7 @@ export default function AdminDashboard({ stats }: DashboardProps) {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Market Lifecycle</h2>
           <div className="flex items-center gap-2 flex-wrap">
-            {['Draft', 'Review', 'Approved', 'Published', 'Trading Halted', 'Resolved', 'Settled', 'Archived'].map(
+            {['Draft', 'Review', 'Approved', 'Published', 'Betting Halted', 'Resolved', 'Settled', 'Archived'].map(
               (status, index, arr) => (
                 <div key={status} className="flex items-center gap-2">
                   <span
@@ -177,7 +177,7 @@ export default function AdminDashboard({ stats }: DashboardProps) {
                       status === 'Review' ? 'bg-yellow-100 text-yellow-700' :
                       status === 'Approved' ? 'bg-blue-100 text-blue-700' :
                       status === 'Published' ? 'bg-green-100 text-green-700' :
-                      status === 'Trading Halted' ? 'bg-orange-100 text-orange-700' :
+                      status === 'Betting Halted' ? 'bg-orange-100 text-orange-700' :
                       status === 'Resolved' ? 'bg-purple-100 text-purple-700' :
                       status === 'Settled' ? 'bg-teal-100 text-teal-700' :
                       'bg-gray-100 text-gray-500'

@@ -362,7 +362,7 @@ export default function AuditToolsPage() {
                     <p className="font-medium">${reconstructResult.volume.toLocaleString()}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Trade Count</p>
+                    <p className="text-xs text-gray-500">Bet Count</p>
                     <p className="font-medium">{reconstructResult.tradeCount}</p>
                   </div>
                 </div>

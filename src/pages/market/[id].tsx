@@ -490,7 +490,7 @@ export default function MarketPage() {
               <div className="px-4 pb-4 border-t border-gray-100">
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-medium">Trading Closes</p>
+                    <p className="text-xs text-gray-500 uppercase font-medium">Betting Closes</p>
                     <p className="text-sm text-gray-900 mt-1">{rules.timeline.tradingCloses}</p>
                   </div>
                   <div>
@@ -517,7 +517,7 @@ export default function MarketPage() {
                 <svg className="w-5 h-5 text-foremark-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                <span className="font-semibold text-gray-900">Trading prohibitions</span>
+                <span className="font-semibold text-gray-900">Betting prohibitions</span>
               </div>
               <svg
                 className={`w-5 h-5 text-gray-400 transition-transform ${expandedSections.prohibitions ? 'rotate-180' : ''}`}
@@ -531,7 +531,7 @@ export default function MarketPage() {
             {expandedSections.prohibitions && rules && (
               <div className="px-4 pb-4 border-t border-gray-100">
                 <p className="text-sm text-gray-700 mt-4 mb-3">
-                  The following persons are prohibited from trading in this market:
+                  The following persons are prohibited from betting in this market:
                 </p>
                 <ul className="space-y-2">
                   {rules.prohibitions.map((prohibition, index) => (

@@ -133,10 +133,10 @@ export default function TradersPage() {
   return (
     <>
       <Head>
-        <title>Traders | MarketOps Admin</title>
+        <title>Users | MarketOps Admin</title>
       </Head>
 
-      <AdminLayout title="Traders">
+      <AdminLayout title="Users">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
             {error}
@@ -203,7 +203,7 @@ export default function TradersPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
           <div className="bg-white rounded-xl shadow-sm p-4">
-            <p className="text-sm text-gray-500">Total Traders</p>
+            <p className="text-sm text-gray-500">Total Users</p>
             <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
           </div>
           <div className="bg-white rounded-xl shadow-sm p-4">
@@ -223,7 +223,7 @@ export default function TradersPage() {
             <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalVolume)}</p>
           </div>
           <div className="bg-white rounded-xl shadow-sm p-4">
-            <p className="text-sm text-gray-500">Total Trades</p>
+            <p className="text-sm text-gray-500">Total Bets</p>
             <p className="text-2xl font-bold text-gray-900">{stats.totalTrades.toLocaleString()}</p>
           </div>
         </div>
@@ -245,7 +245,7 @@ export default function TradersPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">KYC</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Balance</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total P/L</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Trades</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Bets</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Market</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Login</th>
                   </tr>
@@ -255,8 +255,8 @@ export default function TradersPage() {
                     <tr>
                       <td colSpan={9} className="px-4 py-12 text-center">
                         <div className="text-gray-500">
-                          <p className="text-lg font-medium">No traders found</p>
-                          <p className="text-sm mt-1">Traders will appear here when users sign up on the platform.</p>
+                          <p className="text-lg font-medium">No users found</p>
+                          <p className="text-sm mt-1">Users will appear here when they sign up on the platform.</p>
                         </div>
                       </td>
                     </tr>

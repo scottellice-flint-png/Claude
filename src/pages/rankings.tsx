@@ -21,10 +21,10 @@ const avatarColors = ['bg-red-400', 'bg-blue-400', 'bg-green-400', 'bg-yellow-40
 // Mock leaderboard data (fallback when no users in DB)
 const generateMockData = (count: number, type: 'profit' | 'volume' | 'predictions'): LeaderboardEntry[] => {
   const usernames = [
-    'AussiePunter', 'MarketMaster', 'PredictorPro', 'TradingKangaroo', 'SydneyTrader',
+    'AussiePunter', 'MarketMaster', 'PredictorPro', 'BettingKangaroo', 'SydneyPunter',
     'MelbourneMarkets', 'BrisbanePredictor', 'PerthPundit', 'AdelaideAnalyst', 'HobartHunch',
     'DarwinDealer', 'CanberraCall', 'GoldCoastGuru', 'SunshineState', 'VicVenture',
-    'NSWNumbers', 'QLDQuant', 'WAPredictions', 'SASpeculator', 'TasTrader',
+    'NSWNumbers', 'QLDQuant', 'WAPredictions', 'SASpeculator', 'TasPunter',
     'OutbackOracle', 'CoralCoaster', 'ReefReader', 'DesertDuke', 'BushBanker'
   ];
 
@@ -426,7 +426,7 @@ export default function RankingsPage() {
                     <h4 className="font-medium text-gray-900">Profit</h4>
                   </div>
                   <p className="text-sm text-gray-500">
-                    Ranked by net profit from resolved predictions. Shows trading skill and market insight.
+                    Ranked by net profit from resolved predictions. Shows betting skill and market insight.
                   </p>
                 </div>
                 <div>
@@ -458,16 +458,16 @@ export default function RankingsPage() {
               </div>
             </div>
 
-            {/* Responsible Trading Notice */}
+            {/* Responsible Gambling Notice */}
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
               <div className="flex items-start gap-3">
                 <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
                 <div>
-                  <h4 className="font-medium text-amber-800 mb-1">Trade Responsibly</h4>
+                  <h4 className="font-medium text-amber-800 mb-1">Bet Responsibly</h4>
                   <p className="text-sm text-amber-700">
-                    Past performance is not indicative of future results. Only trade with funds you can afford to lose.
+                    Past performance is not indicative of future results. Only bet with funds you can afford to lose.
                     If you need support, contact Gambling Help on <strong>1800 858 858</strong>.
                   </p>
                 </div>
@@ -482,7 +482,7 @@ export default function RankingsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <h3 className="text-lg font-medium text-gray-900 mb-2">Activity Feed Coming Soon</h3>
-            <p className="text-gray-500 mb-4">See recent trades and predictions from top traders.</p>
+            <p className="text-gray-500 mb-4">See recent bets and predictions from top players.</p>
             <Link href="/" className="text-foremark-green hover:text-teal-800 font-medium">
               Browse Markets →
             </Link>

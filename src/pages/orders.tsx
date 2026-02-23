@@ -199,7 +199,7 @@ export default function OrdersPage() {
               href="/"
               className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
             >
-              Start Trading
+              Start Betting
             </Link>
           </div>
         )}

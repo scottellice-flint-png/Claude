@@ -82,7 +82,7 @@ export default function TradePanel({
 
   const handleSubmit = async () => {
     if (!user) {
-      setMessage({ type: 'error', text: 'Please log in to trade' });
+      setMessage({ type: 'error', text: 'Please log in to bet' });
       return;
     }
 

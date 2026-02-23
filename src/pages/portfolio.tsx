@@ -336,7 +336,7 @@ export default function PortfolioPage() {
           <h3 className="text-lg font-semibold text-gray-900 mb-1">No activity with these filters</h3>
           <p className="text-gray-500 text-sm">
             {activeFilter === 'all'
-              ? 'Your activity will appear here once you start trading.'
+              ? 'Your activity will appear here once you start betting.'
               : `No ${activeFilter} found. Try a different filter.`
             }
           </p>
