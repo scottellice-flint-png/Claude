@@ -51,6 +51,10 @@ export default function ProfilePage() {
   const [profileUsername, setProfileUsername] = useState(user?.username || '');
   const [profileBio, setProfileBio] = useState('Prediction market enthusiast from Sydney');
   const [isPublicProfile, setIsPublicProfile] = useState(true);
+  const [selectedAvatar, setSelectedAvatar] = useState('koala');
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileSaved, setProfileSaved] = useState(false);
   const [followRequests] = useState([
     { id: '1', username: 'MarketMaster', avatar: 'bg-blue-400' },
     { id: '2', username: 'AussiePunter', avatar: 'bg-green-400' },
@@ -221,12 +225,42 @@ export default function ProfilePage() {
 
             {/* Profile Info */}
             <div className="space-y-4 pb-5 border-b border-gray-100">
+              {/* Avatar */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Profile Picture</label>
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <AvatarDisplay avatar={selectedAvatar} size="lg" />
+                    <button
+                      onClick={() => setShowAvatarPicker(true)}
+                      className="absolute -bottom-1 -right-1 w-7 h-7 bg-foremark-green text-white rounded-full flex items-center justify-center shadow-lg hover:bg-foremark-green-light transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div>
+                    <button
+                      onClick={() => setShowAvatarPicker(true)}
+                      className="text-sm font-medium text-foremark-green hover:text-foremark-green-light"
+                    >
+                      Change avatar
+                    </button>
+                    <p className="text-xs text-gray-500 mt-1">Choose from our collection of illustrated avatars</p>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
                 <input
                   type="text"
                   value={profileUsername}
-                  onChange={(e) => setProfileUsername(e.target.value)}
+                  onChange={(e) => {
+                    setProfileUsername(e.target.value);
+                    setProfileSaved(false);
+                  }}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-foremark-green/20 focus:border-foremark-green"
                   placeholder="Enter your username"
                 />
@@ -237,7 +271,10 @@ export default function ProfilePage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
                 <textarea
                   value={profileBio}
-                  onChange={(e) => setProfileBio(e.target.value)}
+                  onChange={(e) => {
+                    setProfileBio(e.target.value);
+                    setProfileSaved(false);
+                  }}
                   rows={3}
                   maxLength={160}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-foremark-green/20 focus:border-foremark-green resize-none"
@@ -246,9 +283,36 @@ export default function ProfilePage() {
                 <p className="text-xs text-gray-500 mt-1">{profileBio.length}/160 characters</p>
               </div>
 
-              <button className="text-sm font-medium text-foremark-green hover:text-foremark-green-light">
-                Update Profile
-              </button>
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={async () => {
+                    setIsSavingProfile(true);
+                    // Simulate API call
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    setIsSavingProfile(false);
+                    setProfileSaved(true);
+                  }}
+                  disabled={isSavingProfile || !profileUsername.trim()}
+                  className="px-5 py-2.5 bg-foremark-green text-white font-semibold rounded-lg hover:bg-foremark-green-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isSavingProfile ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Profile'
+                  )}
+                </button>
+                {profileSaved && (
+                  <span className="text-sm text-green-600 flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Profile saved
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Profile Visibility */}
@@ -944,6 +1008,232 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      {/* Avatar Picker Modal */}
+      {showAvatarPicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowAvatarPicker(false)} />
+          <div className="relative bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900">Choose Your Avatar</h3>
+              <button
+                onClick={() => setShowAvatarPicker(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Avatar Grid */}
+            <div className="p-4 overflow-y-auto flex-1">
+              <p className="text-sm text-gray-500 mb-4">
+                Select an illustrated avatar for your profile. No real photos allowed - keep it fun and anonymous!
+              </p>
+
+              {/* Animals Category */}
+              <div className="mb-6">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Animals</h4>
+                <div className="grid grid-cols-5 sm:grid-cols-7 gap-3">
+                  {AVATAR_OPTIONS.animals.map((avatar) => (
+                    <button
+                      key={avatar.id}
+                      onClick={() => setSelectedAvatar(avatar.id)}
+                      className={`relative p-2 rounded-xl transition-all ${
+                        selectedAvatar === avatar.id
+                          ? 'ring-2 ring-foremark-green bg-foremark-lime/20 scale-105'
+                          : 'hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className="w-12 h-12 mx-auto text-4xl flex items-center justify-center">
+                        {avatar.emoji}
+                      </div>
+                      <p className="text-[10px] text-gray-500 text-center mt-1 truncate">{avatar.label}</p>
+                      {selectedAvatar === avatar.id && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-foremark-green rounded-full flex items-center justify-center">
+                          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Characters Category */}
+              <div className="mb-6">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Characters</h4>
+                <div className="grid grid-cols-5 sm:grid-cols-7 gap-3">
+                  {AVATAR_OPTIONS.characters.map((avatar) => (
+                    <button
+                      key={avatar.id}
+                      onClick={() => setSelectedAvatar(avatar.id)}
+                      className={`relative p-2 rounded-xl transition-all ${
+                        selectedAvatar === avatar.id
+                          ? 'ring-2 ring-foremark-green bg-foremark-lime/20 scale-105'
+                          : 'hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className="w-12 h-12 mx-auto text-4xl flex items-center justify-center">
+                        {avatar.emoji}
+                      </div>
+                      <p className="text-[10px] text-gray-500 text-center mt-1 truncate">{avatar.label}</p>
+                      {selectedAvatar === avatar.id && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-foremark-green rounded-full flex items-center justify-center">
+                          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Objects Category */}
+              <div className="mb-6">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Objects & Nature</h4>
+                <div className="grid grid-cols-5 sm:grid-cols-7 gap-3">
+                  {AVATAR_OPTIONS.objects.map((avatar) => (
+                    <button
+                      key={avatar.id}
+                      onClick={() => setSelectedAvatar(avatar.id)}
+                      className={`relative p-2 rounded-xl transition-all ${
+                        selectedAvatar === avatar.id
+                          ? 'ring-2 ring-foremark-green bg-foremark-lime/20 scale-105'
+                          : 'hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className="w-12 h-12 mx-auto text-4xl flex items-center justify-center">
+                        {avatar.emoji}
+                      </div>
+                      <p className="text-[10px] text-gray-500 text-center mt-1 truncate">{avatar.label}</p>
+                      {selectedAvatar === avatar.id && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-foremark-green rounded-full flex items-center justify-center">
+                          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-500">Selected:</span>
+                <AvatarDisplay avatar={selectedAvatar} size="sm" />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowAvatarPicker(false)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setProfileSaved(false);
+                    setShowAvatarPicker(false);
+                  }}
+                  className="px-4 py-2 bg-foremark-green text-white rounded-lg font-medium hover:bg-foremark-green-light transition-colors"
+                >
+                  Save Avatar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Avatar options data
+const AVATAR_OPTIONS = {
+  animals: [
+    { id: 'koala', emoji: '🐨', label: 'Koala' },
+    { id: 'kangaroo', emoji: '🦘', label: 'Kangaroo' },
+    { id: 'fox', emoji: '🦊', label: 'Fox' },
+    { id: 'owl', emoji: '🦉', label: 'Owl' },
+    { id: 'eagle', emoji: '🦅', label: 'Eagle' },
+    { id: 'wolf', emoji: '🐺', label: 'Wolf' },
+    { id: 'lion', emoji: '🦁', label: 'Lion' },
+    { id: 'tiger', emoji: '🐯', label: 'Tiger' },
+    { id: 'bear', emoji: '🐻', label: 'Bear' },
+    { id: 'panda', emoji: '🐼', label: 'Panda' },
+    { id: 'monkey', emoji: '🐵', label: 'Monkey' },
+    { id: 'gorilla', emoji: '🦍', label: 'Gorilla' },
+    { id: 'unicorn', emoji: '🦄', label: 'Unicorn' },
+    { id: 'dragon', emoji: '🐉', label: 'Dragon' },
+    { id: 'shark', emoji: '🦈', label: 'Shark' },
+    { id: 'octopus', emoji: '🐙', label: 'Octopus' },
+    { id: 'dolphin', emoji: '🐬', label: 'Dolphin' },
+    { id: 'whale', emoji: '🐳', label: 'Whale' },
+    { id: 'butterfly', emoji: '🦋', label: 'Butterfly' },
+    { id: 'bee', emoji: '🐝', label: 'Bee' },
+    { id: 'parrot', emoji: '🦜', label: 'Parrot' },
+  ],
+  characters: [
+    { id: 'ninja', emoji: '🥷', label: 'Ninja' },
+    { id: 'astronaut', emoji: '🧑‍🚀', label: 'Astronaut' },
+    { id: 'robot', emoji: '🤖', label: 'Robot' },
+    { id: 'alien', emoji: '👽', label: 'Alien' },
+    { id: 'ghost', emoji: '👻', label: 'Ghost' },
+    { id: 'wizard', emoji: '🧙', label: 'Wizard' },
+    { id: 'superhero', emoji: '🦸', label: 'Hero' },
+    { id: 'detective', emoji: '🕵️', label: 'Detective' },
+    { id: 'pirate', emoji: '🏴‍☠️', label: 'Pirate' },
+    { id: 'cowboy', emoji: '🤠', label: 'Cowboy' },
+    { id: 'clown', emoji: '🤡', label: 'Clown' },
+    { id: 'zombie', emoji: '🧟', label: 'Zombie' },
+    { id: 'vampire', emoji: '🧛', label: 'Vampire' },
+    { id: 'elf', emoji: '🧝', label: 'Elf' },
+  ],
+  objects: [
+    { id: 'rocket', emoji: '🚀', label: 'Rocket' },
+    { id: 'crystal', emoji: '💎', label: 'Crystal' },
+    { id: 'fire', emoji: '🔥', label: 'Fire' },
+    { id: 'lightning', emoji: '⚡', label: 'Lightning' },
+    { id: 'star', emoji: '⭐', label: 'Star' },
+    { id: 'moon', emoji: '🌙', label: 'Moon' },
+    { id: 'sun', emoji: '☀️', label: 'Sun' },
+    { id: 'rainbow', emoji: '🌈', label: 'Rainbow' },
+    { id: 'volcano', emoji: '🌋', label: 'Volcano' },
+    { id: 'mountain', emoji: '🏔️', label: 'Mountain' },
+    { id: 'cactus', emoji: '🌵', label: 'Cactus' },
+    { id: 'tree', emoji: '🌳', label: 'Tree' },
+    { id: 'mushroom', emoji: '🍄', label: 'Mushroom' },
+    { id: 'four_leaf', emoji: '🍀', label: 'Clover' },
+  ],
+};
+
+// Helper to get avatar emoji by ID
+function getAvatarEmoji(avatarId: string): string {
+  for (const category of Object.values(AVATAR_OPTIONS)) {
+    const avatar = category.find(a => a.id === avatarId);
+    if (avatar) return avatar.emoji;
+  }
+  return '🐨'; // Default
+}
+
+// Avatar display component
+function AvatarDisplay({ avatar, size = 'md' }: { avatar: string; size?: 'sm' | 'md' | 'lg' }) {
+  const sizeClasses = {
+    sm: 'w-8 h-8 text-lg',
+    md: 'w-10 h-10 text-xl',
+    lg: 'w-16 h-16 text-3xl',
+  };
+
+  return (
+    <div className={`${sizeClasses[size]} bg-gradient-to-br from-foremark-lime to-foremark-green/20 rounded-full flex items-center justify-center`}>
+      {getAvatarEmoji(avatar)}
     </div>
   );
 }
