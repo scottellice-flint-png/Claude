@@ -435,7 +435,7 @@ export async function matchOrders(orderId: string): Promise<MatchResult> {
         await tx.market.update({
           where: { id: order.marketId },
           data: {
-            volume: { increment: fillQty / 100 },
+            volume: { increment: buyerCost / 100 },
             tradeCount: { increment: 1 },
             currentYesPrice: order.outcomeId === (await getYesOutcomeId(order.marketId))
               ? fillPrice
