@@ -131,6 +131,13 @@ export type SystemEventType =
   | 'DATABASE_MIGRATION'
   | 'SCHEDULED_JOB_RUN';
 
+// Oracle Events (Sharp Shield V2)
+export type OracleEventType =
+  | 'ORACLE_LOCK_TRIGGERED'
+  | 'ORACLE_LOCK_FAILED'
+  | 'ORACLE_LOCK_RELEASED'
+  | 'ORACLE_DEADMAN_SWITCH';
+
 // Category / Tag / Collection Admin Events
 export type CatalogEventType =
   | 'CATEGORY_CREATED'
@@ -158,7 +165,8 @@ export type AuditEventType =
   | PricingEventType
   | AdminEventType
   | SystemEventType
-  | CatalogEventType;
+  | CatalogEventType
+  | OracleEventType;
 
 // ============================================================================
 // REASON CODES (Required for admin actions)
@@ -237,6 +245,15 @@ export type ReasonCode =
   | 'FEED_STALE'
   | 'LOCK_ERROR'
   | 'MANUAL_UNLOCK'
+  // Oracle lock reasons (from OracleLockReason type)
+  | 'NONE'
+  | 'MATCH_STARTED'
+  | 'OFFICIAL_RESULT'
+  | 'HIGH_VOLATILITY'
+  | 'NEWS_SPIKE'
+  | 'MANUAL_LOCK'
+  | 'PRE_SETTLEMENT'
+  | 'REGULATORY_HALT'
   // Sharp Shield V2 - Trading reasons
   | 'BATCH_PROCESSED'
   | 'QUEUED_FOR_BATCH'
@@ -250,10 +267,16 @@ export type ReasonCode =
   | 'SEED_BOT_QUOTED'
   | 'SEED_BOT_KILL_SWITCH'
   | 'KILL_SWITCH_TRIGGERED'
+  | 'KILL_SWITCH'
+  | 'BOT_REQUOTE'
   // Cron/System reasons
   | 'CRON_ERRORS'
   | 'CRON_FATAL_ERROR'
   | 'CRON_SUCCESS'
+  // Order cancellation reasons
+  | 'USER_CANCEL'
+  | 'SYSTEM_CANCEL'
+  | 'EXPIRED'
   // Other
   | 'OTHER';
 
@@ -397,6 +420,12 @@ export const EVENT_TYPE_CONFIG: Record<AuditEventType, EventTypeConfig> = {
   COLLECTION_DELETED: { requiresReasonCode: false, requiresMarketId: false, requiresBetId: false, requiresBeforeState: true, requiresAfterState: false, category: 'catalog' },
   MARKET_TAGS_UPDATED: { requiresReasonCode: false, requiresMarketId: true, requiresBetId: false, requiresBeforeState: true, requiresAfterState: true, category: 'catalog' },
   MARKET_RELATIONS_UPDATED: { requiresReasonCode: false, requiresMarketId: true, requiresBetId: false, requiresBeforeState: true, requiresAfterState: true, category: 'catalog' },
+
+  // Oracle events (Sharp Shield V2)
+  ORACLE_LOCK_TRIGGERED: { requiresReasonCode: true, requiresMarketId: true, requiresBetId: false, requiresBeforeState: false, requiresAfterState: true, category: 'oracle' },
+  ORACLE_LOCK_FAILED: { requiresReasonCode: true, requiresMarketId: true, requiresBetId: false, requiresBeforeState: false, requiresAfterState: false, category: 'oracle' },
+  ORACLE_LOCK_RELEASED: { requiresReasonCode: true, requiresMarketId: true, requiresBetId: false, requiresBeforeState: true, requiresAfterState: true, category: 'oracle' },
+  ORACLE_DEADMAN_SWITCH: { requiresReasonCode: false, requiresMarketId: true, requiresBetId: false, requiresBeforeState: false, requiresAfterState: true, category: 'oracle' },
 };
 
 // ============================================================================

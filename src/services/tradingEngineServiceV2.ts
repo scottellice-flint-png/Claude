@@ -7,6 +7,7 @@ import prisma from '@/lib/prisma';
 import { writeAuditEvent, createAuditContext } from './auditEventService';
 import { isMarketLocked } from './oracleLockService';
 import type { AuditContext } from './auditEventService';
+import type { ReasonCode } from '@/types/auditEvents';
 
 // ============================================================================
 // TYPES
@@ -515,7 +516,7 @@ export async function matchOrderV6(
 export async function cancelOrderV2(
   orderId: string,
   userId: string,
-  reason: string = 'USER_CANCEL'
+  reason: ReasonCode = 'USER_CANCEL'
 ): Promise<OrderResult> {
   try {
     // Check oracle lock first
