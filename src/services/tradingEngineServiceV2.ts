@@ -189,9 +189,10 @@ export async function createOrderV2(
 
     // Get liquidity state for Sharp Shield tier limits
     const liquidityState = await getSharpShieldLiquidityState(input.marketId);
+    const tier = liquidityState?.sharpShieldTier || 0;
     const maxBet = isTaker
-      ? liquidityState?.maxTakerCents || TRADING_CONFIG.TIER_MAX_TAKER[0]
-      : liquidityState?.maxMakerCents || TRADING_CONFIG.TIER_MAX_MAKER[0];
+      ? TRADING_CONFIG.TIER_MAX_TAKER[tier] || TRADING_CONFIG.TIER_MAX_TAKER[0]
+      : TRADING_CONFIG.TIER_MAX_MAKER[tier] || TRADING_CONFIG.TIER_MAX_MAKER[0];
 
     // Sharp Shield: Enforce tier-based limits
     if (input.quantityCents > maxBet) {
@@ -600,16 +601,14 @@ interface SharpShieldState {
   marketId: string;
   totalLiquidityCents: number;
   effectiveDepthCents: number;
-  bidDepthNearMidCents: number;
-  askDepthNearMidCents: number;
   bestBidCents: number | null;
   bestAskCents: number | null;
   midPriceCents: number | null;
   spreadCents: number | null;
   sharpShieldTier: number;
-  maxTakerCents: number;
-  maxMakerCents: number;
   liquidityTier: string;
+  currentTakerFeeBps: number;
+  currentMakerRebateBps: number;
 }
 
 export async function getSharpShieldLiquidityState(marketId: string): Promise<SharpShieldState | null> {
@@ -623,16 +622,14 @@ export async function getSharpShieldLiquidityState(marketId: string): Promise<Sh
     marketId: state.marketId,
     totalLiquidityCents: Number(state.totalLiquidityCents),
     effectiveDepthCents: Number(state.effectiveDepthCents || 0),
-    bidDepthNearMidCents: Number(state.bidDepthNearMidCents || 0),
-    askDepthNearMidCents: Number(state.askDepthNearMidCents || 0),
     bestBidCents: state.bestBidCents,
     bestAskCents: state.bestAskCents,
     midPriceCents: state.midPriceCents,
     spreadCents: state.spreadCents,
     sharpShieldTier: state.sharpShieldTier || 0,
-    maxTakerCents: state.maxTakerCents || TRADING_CONFIG.TIER_MAX_TAKER[0],
-    maxMakerCents: state.maxMakerCents || TRADING_CONFIG.TIER_MAX_MAKER[0],
     liquidityTier: state.liquidityTier,
+    currentTakerFeeBps: state.currentTakerFeeBps,
+    currentMakerRebateBps: state.currentMakerRebateBps,
   };
 }
 
