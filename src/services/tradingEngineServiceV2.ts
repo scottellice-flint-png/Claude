@@ -699,7 +699,7 @@ async function detectRapidFire(
         severity: 'high',
         userId,
         detectionRule: `ORDERS_PER_${TRADING_CONFIG.RAPID_FIRE_WINDOW_SEC}_SEC > ${TRADING_CONFIG.RAPID_FIRE_THRESHOLD}`,
-        triggerData: { orderCount, timeWindowSeconds: TRADING_CONFIG.RAPID_FIRE_WINDOW_SEC },
+        triggerData: JSON.stringify({ orderCount, timeWindowSeconds: TRADING_CONFIG.RAPID_FIRE_WINDOW_SEC }),
         actionTaken: 'HALT_USER',
       },
     });
