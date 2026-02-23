@@ -85,9 +85,9 @@ export default async function handler(
                   slug: true,
                 },
               },
-              createdAt: true,
+              executedAt: true,
             },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { executedAt: 'desc' },
             take: 1,
           },
           sellTrades: {
@@ -99,9 +99,9 @@ export default async function handler(
                   slug: true,
                 },
               },
-              createdAt: true,
+              executedAt: true,
             },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { executedAt: 'desc' },
             take: 1,
           },
         },
@@ -116,7 +116,7 @@ export default async function handler(
         let lastMarket = null;
 
         if (lastBuy && lastSell) {
-          lastMarket = new Date(lastBuy.createdAt) > new Date(lastSell.createdAt)
+          lastMarket = new Date(lastBuy.executedAt) > new Date(lastSell.executedAt)
             ? lastBuy.market
             : lastSell.market;
         } else if (lastBuy) {
