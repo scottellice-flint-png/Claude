@@ -51,7 +51,6 @@ export default function ProfilePage() {
   const [profileUsername, setProfileUsername] = useState(user?.username || '');
   const [profileBio, setProfileBio] = useState('Prediction market enthusiast from Sydney');
   const [isPublicProfile, setIsPublicProfile] = useState(true);
-  const [defaultBetVisibility, setDefaultBetVisibility] = useState<'visible' | 'hidden'>('visible');
   const [followRequests] = useState([
     { id: '1', username: 'MarketMaster', avatar: 'bg-blue-400' },
     { id: '2', username: 'AussiePunter', avatar: 'bg-green-400' },
@@ -252,12 +251,12 @@ export default function ProfilePage() {
               </button>
             </div>
 
-            {/* Public vs Private Profile */}
+            {/* Profile Visibility */}
             <div className="py-5 border-b border-gray-100">
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <h3 className="font-medium text-gray-900">Profile Visibility</h3>
-                  <p className="text-sm text-gray-500">Control who can see your activity</p>
+                  <p className="text-sm text-gray-500">Control who can see your profile and activity</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`text-sm ${!isPublicProfile ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>Private</span>
@@ -286,10 +285,9 @@ export default function ProfilePage() {
                     <div>
                       <p className="font-medium text-green-800">Public Profile</p>
                       <ul className="text-sm text-green-700 mt-1 space-y-1">
-                        <li>• Any user can follow your account</li>
-                        <li>• Follow requests are automatically accepted</li>
-                        <li>• Your visible predictions can be seen by followers</li>
-                        <li>• Eligible for Verified Predictor status</li>
+                        <li>• Anyone can follow you and see your predictions</li>
+                        <li>• You can comment on markets and participate in community</li>
+                        <li>• Eligible for Verified Predictor status and leaderboards</li>
                       </ul>
                     </div>
                   </div>
@@ -301,10 +299,9 @@ export default function ProfilePage() {
                     <div>
                       <p className="font-medium text-gray-800">Private Profile</p>
                       <ul className="text-sm text-gray-600 mt-1 space-y-1">
-                        <li>• Users must request to follow you</li>
-                        <li>• You can accept or decline follow requests</li>
-                        <li>• Only approved followers see your predictions</li>
-                        <li>• Not eligible for Verified Predictor status</li>
+                        <li>• Your predictions and activity are hidden from others</li>
+                        <li>• You can still bet on markets and use all features</li>
+                        <li>• Not visible on leaderboards or in community</li>
                       </ul>
                     </div>
                   </div>
@@ -337,51 +334,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Default Bet Visibility */}
-            <div className="py-5 border-b border-gray-100">
-              <h3 className="font-medium text-gray-900 mb-2">Default Prediction Visibility</h3>
-              <p className="text-sm text-gray-500 mb-3">
-                Choose whether your predictions are visible or hidden by default. You can always change visibility for individual predictions.
-              </p>
-
-              <div className="space-y-2">
-                <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer border border-gray-200">
-                  <input
-                    type="radio"
-                    name="betVisibility"
-                    checked={defaultBetVisibility === 'visible'}
-                    onChange={() => setDefaultBetVisibility('visible')}
-                    className="w-4 h-4 text-foremark-green focus:ring-foremark-green"
-                  />
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">Visible</p>
-                    <p className="text-sm text-gray-500">Predictions appear on your profile and in followers&apos; feeds</p>
-                  </div>
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                </label>
-
-                <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer border border-gray-200">
-                  <input
-                    type="radio"
-                    name="betVisibility"
-                    checked={defaultBetVisibility === 'hidden'}
-                    onChange={() => setDefaultBetVisibility('hidden')}
-                    className="w-4 h-4 text-foremark-green focus:ring-foremark-green"
-                  />
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">Hidden</p>
-                    <p className="text-sm text-gray-500">Predictions are private and will not appear anywhere on the app</p>
-                  </div>
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                  </svg>
-                </label>
-              </div>
             </div>
 
             {/* Verified Predictor Info */}

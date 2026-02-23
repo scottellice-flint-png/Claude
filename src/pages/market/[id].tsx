@@ -98,8 +98,9 @@ export default function MarketPage() {
   };
 
   const handleAddComment = () => {
-    if (!commentText.trim() || !market) return;
-    addComment(market.id, commentText);
+    if (!session?.user || !commentText.trim() || !market) return;
+    const username = session.user.username || session.user.email?.split('@')[0] || 'User';
+    addComment(market.id, commentText, username);
     setCommentText('');
   };
 
@@ -594,35 +595,50 @@ export default function MarketPage() {
 
             {/* Comment Input */}
             <div className="p-4 border-b border-gray-100">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-foremark-lime rounded-full flex items-center justify-center text-sm font-bold text-foremark-green">
-                  T
-                </div>
-                <div className="flex-1">
-                  <textarea
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    placeholder="What's your prediction?"
-                    className="w-full p-3 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-foremark-green/20 focus:border-foremark-green text-sm"
-                    rows={2}
-                  />
-                  <div className="flex items-center justify-between mt-2">
-                    <button className="text-sm text-gray-400 hover:text-gray-600">
-                      GIF
-                    </button>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">{300 - commentText.length}</span>
-                      <button
-                        onClick={handleAddComment}
-                        disabled={!commentText.trim()}
-                        className="px-4 py-1.5 bg-foremark-green text-white text-sm font-medium rounded-full hover:bg-foremark-green-light disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Post
+              {session?.user ? (
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-foremark-lime rounded-full flex items-center justify-center text-sm font-bold text-foremark-green">
+                    {session.user.username?.charAt(0).toUpperCase() || session.user.email?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                  <div className="flex-1">
+                    <textarea
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      placeholder="What's your prediction?"
+                      className="w-full p-3 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-foremark-green/20 focus:border-foremark-green text-sm"
+                      rows={2}
+                    />
+                    <div className="flex items-center justify-between mt-2">
+                      <button className="text-sm text-gray-400 hover:text-gray-600">
+                        GIF
                       </button>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-400">{300 - commentText.length}</span>
+                        <button
+                          onClick={handleAddComment}
+                          disabled={!commentText.trim()}
+                          className="px-4 py-1.5 bg-foremark-green text-white text-sm font-medium rounded-full hover:bg-foremark-green-light disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Post
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-sm text-gray-500 mb-3">Sign in to join the conversation</p>
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-foremark-green text-white text-sm font-medium rounded-lg hover:bg-foremark-green-light"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                    </svg>
+                    Sign In
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* Comments List */}

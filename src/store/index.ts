@@ -1775,7 +1775,7 @@ interface AppState {
   getUserOrders: () => Order[];
   getMarketComments: (marketId: string) => Comment[];
   getMarketRules: (marketId: string) => MarketRules | undefined;
-  addComment: (marketId: string, content: string) => Comment;
+  addComment: (marketId: string, content: string, username?: string) => Comment;
 
   // Trading actions
   placeOrder: (
@@ -1866,7 +1866,7 @@ export const useStore = create<AppState>((set, get) => ({
     };
   },
 
-  addComment: (marketId: string, content: string) => {
+  addComment: (marketId: string, content: string, username?: string) => {
     const user = get().user;
     const position = get().positions.find(p => p.marketId === marketId && p.userId === user?.id);
     const market = get().getMarket(marketId);
@@ -1874,7 +1874,7 @@ export const useStore = create<AppState>((set, get) => ({
     const newComment: Comment = {
       id: uuidv4(),
       userId: user?.id || 'anonymous',
-      username: user?.username || 'Anonymous',
+      username: username || user?.username || 'Anonymous',
       marketId,
       content,
       position: position ? { side: position.side, marketTitle: market?.title } : undefined,
