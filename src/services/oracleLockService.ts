@@ -460,13 +460,11 @@ export async function initializeOracleLockState(
   options: {
     heartbeatIntervalMs?: number;
     deadmanTimeoutMs?: number;
-    oracleSource?: string;
   } = {}
 ): Promise<{ success: boolean }> {
   const {
     heartbeatIntervalMs = ORACLE_CONFIG.DEFAULT_HEARTBEAT_INTERVAL_MS,
     deadmanTimeoutMs = ORACLE_CONFIG.DEFAULT_DEADMAN_TIMEOUT_MS,
-    oracleSource,
   } = options;
 
   try {
@@ -474,8 +472,8 @@ export async function initializeOracleLockState(
       where: { marketId },
       create: {
         marketId,
-        lockStatus: 'OPEN',
-        lockReason: 'NONE',
+        isLocked: false,
+        lockReason: null,
         heartbeatIntervalMs,
         deadmanTimeoutMs,
         lastHeartbeatAt: new Date(),
@@ -487,12 +485,7 @@ export async function initializeOracleLockState(
       },
     });
 
-    if (oracleSource) {
-      await prisma.market.update({
-        where: { id: marketId },
-        data: { oracleSource },
-      });
-    }
+    // Note: oracleSource is stored in OracleLockState.lockedBy or metadata if needed
 
     return { success: true };
   } catch (error) {
