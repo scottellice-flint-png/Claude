@@ -47,10 +47,43 @@ model User {
   totalProfit   Float     @default(0)
   totalVolume   Float     @default(0)
 
-  // Risk scoring
+  // Risk scoring & Sharp Shield
   riskScore     Int       @default(0) // 0-100, higher = more risky
   isFlagged     Boolean   @default(false)
   flagReason    String?
+  riskLevel     String    @default("low") // low, medium, high, toxic
+  toxicFlowCount Int      @default(0)     // Count of toxic flow incidents
+
+  // Account Status & Risk Controls
+  accountStatus String    @default("active") // active, frozen, suspended, banned
+  statusReason  String?
+  statusChangedAt DateTime?
+  statusChangedBy String?  // AdminUser ID who changed status
+  customMaxBetCents BigInt?  // Manual limit override (null = use tier default)
+  sharpShieldTierOverride Int?  // Force specific tier (null = auto)
+
+  // KYC / Compliance (NT Regulatory)
+  kycStatus     String    @default("pending") // pending, submitted, verified, failed, expired
+  kycProvider   String?   // e.g., "greenid", "jumio"
+  kycVerifiedAt DateTime?
+  kycReferenceId String?
+  kycDocumentType String? // passport, drivers_license, etc.
+  kycExpiresAt  DateTime?
+
+  // Responsible Gambling (NT Requirements)
+  depositLimitCents    BigInt?   // Self-imposed deposit limit
+  depositLimitPeriod   String?   // daily, weekly, monthly
+  depositLimitResetAt  DateTime?
+  currentPeriodDepositsCents BigInt @default(0)
+  selfExclusionUntil   DateTime? // Voluntary self-exclusion
+  coolingOffUntil      DateTime? // Cooling off period
+  activityStatementOptIn Boolean @default(true)
+  lastActivityStatementAt DateTime?
+
+  // Session / Device Tracking
+  lastIpAddress     String?
+  lastDeviceFingerprint String?
+  lastUserAgent     String?
 
   // Relations - Chats
   createdChats      GroupChat[]         @relation("ChatCreator")
@@ -74,7 +107,73 @@ model User {
   marketMakerBots   MarketMakerBot[]
   settlementPayouts SettlementPayout[]
 
+  // Relations - Compliance & Admin
+  sessions          UserSession[]
+  balanceAdjustments BalanceAdjustment[]
+  activityStatements ActivityStatement[]
+
   @@map("users")
+}
+
+// User Session Tracking (IP & Device Fingerprinting)
+model UserSession {
+  id              String    @id @default(uuid())
+  userId          String
+  ipAddress       String
+  deviceFingerprint String?
+  userAgent       String?
+  country         String?
+  city            String?
+  createdAt       DateTime  @default(now())
+  lastActiveAt    DateTime  @default(now())
+  isActive        Boolean   @default(true)
+
+  user            User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([ipAddress])
+  @@index([deviceFingerprint])
+  @@map("user_sessions")
+}
+
+// Balance Adjustments (for manual credits/debits with audit trail)
+model BalanceAdjustment {
+  id              String    @id @default(uuid())
+  userId          String
+  adminUserId     String
+  amountCents     BigInt    // Positive = credit, Negative = debit
+  type            String    // credit, debit, refund, bonus, correction
+  reason          String    // Required note for audit
+  balanceBeforeCents BigInt
+  balanceAfterCents BigInt
+  createdAt       DateTime  @default(now())
+
+  user            User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([adminUserId])
+  @@map("balance_adjustments")
+}
+
+// Activity Statements (NT Regulatory monthly reports)
+model ActivityStatement {
+  id              String    @id @default(uuid())
+  userId          String
+  periodStart     DateTime
+  periodEnd       DateTime
+  totalDepositsCents BigInt
+  totalWithdrawalsCents BigInt
+  totalWinsCents  BigInt
+  totalLossesCents BigInt
+  netResultCents  BigInt
+  totalTradeCount Int
+  generatedAt     DateTime  @default(now())
+  pdfUrl          String?
+
+  user            User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("activity_statements")
 }
 
 // ============================================================================

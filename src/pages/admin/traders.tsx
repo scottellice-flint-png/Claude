@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import Link from 'next/link';
 import AdminLayout from '@/components/admin/AdminLayout';
 
 interface Trader {
@@ -16,10 +17,43 @@ interface Trader {
   lastLoginAt: string | null;
   createdAt: string;
   balance: number;
+  balanceCents: string;
   totalProfit: number;
+  totalProfitCents: string;
   totalTrades: number;
   totalVolume: number;
+  totalVolumeCents: string;
+  // New fields
+  riskLevel: string;
+  riskScore: number;
+  kycStatus: string;
+  accountStatus: string;
+  toxicFlowCount: number;
+  lastMarketTitle?: string;
+  lastMarketSlug?: string;
 }
+
+const riskIcons: Record<string, { icon: string; color: string; label: string }> = {
+  low: { icon: '🟢', color: 'text-green-600', label: 'Low Risk' },
+  medium: { icon: '🟡', color: 'text-yellow-600', label: 'Medium Risk' },
+  high: { icon: '🟠', color: 'text-orange-600', label: 'High Risk' },
+  toxic: { icon: '🔴', color: 'text-red-600', label: 'Toxic' },
+};
+
+const kycStatusBadge: Record<string, { bg: string; text: string; label: string }> = {
+  pending: { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Pending' },
+  submitted: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Submitted' },
+  verified: { bg: 'bg-green-100', text: 'text-green-700', label: 'Verified' },
+  failed: { bg: 'bg-red-100', text: 'text-red-700', label: 'Failed' },
+  expired: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Expired' },
+};
+
+const accountStatusBadge: Record<string, { bg: string; text: string; label: string }> = {
+  active: { bg: 'bg-green-100', text: 'text-green-700', label: 'Active' },
+  frozen: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Frozen' },
+  suspended: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Suspended' },
+  banned: { bg: 'bg-red-100', text: 'text-red-700', label: 'Banned' },
+};
 
 export default function TradersPage() {
   const router = useRouter();
@@ -27,20 +61,24 @@ export default function TradersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [filterActive, setFilterActive] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterRisk, setFilterRisk] = useState<string>('all');
 
   useEffect(() => {
     if (router.isReady) {
       fetchTraders();
     }
-  }, [router.isReady, filterActive]);
+  }, [router.isReady, filterStatus, filterRisk]);
 
   const fetchTraders = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      if (filterActive !== 'all') {
-        params.append('isActive', filterActive);
+      if (filterStatus !== 'all') {
+        params.append('accountStatus', filterStatus);
+      }
+      if (filterRisk !== 'all') {
+        params.append('riskLevel', filterRisk);
       }
       if (search) {
         params.append('search', search);
@@ -83,6 +121,15 @@ export default function TradersPage() {
     });
   };
 
+  const stats = {
+    total: traders.length,
+    active: traders.filter(t => t.accountStatus === 'active').length,
+    verified: traders.filter(t => t.kycStatus === 'verified').length,
+    flagged: traders.filter(t => t.riskLevel === 'high' || t.riskLevel === 'toxic').length,
+    totalVolume: traders.reduce((sum, t) => sum + t.totalVolume, 0),
+    totalTrades: traders.reduce((sum, t) => sum + t.totalTrades, 0),
+  };
+
   return (
     <>
       <Head>
@@ -121,13 +168,27 @@ export default function TradersPage() {
             </form>
 
             <select
-              value={filterActive}
-              onChange={(e) => setFilterActive(e.target.value)}
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-foremark-green focus:border-transparent"
             >
               <option value="all">All Status</option>
-              <option value="true">Active Only</option>
-              <option value="false">Inactive Only</option>
+              <option value="active">Active</option>
+              <option value="frozen">Frozen</option>
+              <option value="suspended">Suspended</option>
+              <option value="banned">Banned</option>
+            </select>
+
+            <select
+              value={filterRisk}
+              onChange={(e) => setFilterRisk(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-foremark-green focus:border-transparent"
+            >
+              <option value="all">All Risk Levels</option>
+              <option value="low">🟢 Low</option>
+              <option value="medium">🟡 Medium</option>
+              <option value="high">🟠 High</option>
+              <option value="toxic">🔴 Toxic</option>
             </select>
 
             <button
@@ -140,28 +201,30 @@ export default function TradersPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
           <div className="bg-white rounded-xl shadow-sm p-4">
             <p className="text-sm text-gray-500">Total Traders</p>
-            <p className="text-2xl font-bold text-gray-900">{traders.length}</p>
+            <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
           </div>
           <div className="bg-white rounded-xl shadow-sm p-4">
-            <p className="text-sm text-gray-500">Active Traders</p>
-            <p className="text-2xl font-bold text-green-600">
-              {traders.filter(t => t.isActive).length}
-            </p>
+            <p className="text-sm text-gray-500">Active</p>
+            <p className="text-2xl font-bold text-green-600">{stats.active}</p>
+          </div>
+          <div className="bg-white rounded-xl shadow-sm p-4">
+            <p className="text-sm text-gray-500">KYC Verified</p>
+            <p className="text-2xl font-bold text-blue-600">{stats.verified}</p>
+          </div>
+          <div className="bg-white rounded-xl shadow-sm p-4">
+            <p className="text-sm text-gray-500">Flagged/Toxic</p>
+            <p className="text-2xl font-bold text-red-600">{stats.flagged}</p>
           </div>
           <div className="bg-white rounded-xl shadow-sm p-4">
             <p className="text-sm text-gray-500">Total Volume</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {formatCurrency(traders.reduce((sum, t) => sum + t.totalVolume, 0))}
-            </p>
+            <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalVolume)}</p>
           </div>
           <div className="bg-white rounded-xl shadow-sm p-4">
             <p className="text-sm text-gray-500">Total Trades</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {traders.reduce((sum, t) => sum + t.totalTrades, 0).toLocaleString()}
-            </p>
+            <p className="text-2xl font-bold text-gray-900">{stats.totalTrades.toLocaleString()}</p>
           </div>
         </div>
 
@@ -176,20 +239,21 @@ export default function TradersPage() {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">KYC</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Balance</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total P/L</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Trades</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Volume</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Market</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Login</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {traders.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-4 py-12 text-center">
+                      <td colSpan={9} className="px-4 py-12 text-center">
                         <div className="text-gray-500">
                           <p className="text-lg font-medium">No traders found</p>
                           <p className="text-sm mt-1">Traders will appear here when users sign up on the platform.</p>
@@ -197,74 +261,122 @@ export default function TradersPage() {
                       </td>
                     </tr>
                   ) : (
-                    traders.map((trader) => (
-                      <tr key={trader.id} className={!trader.isActive ? 'bg-gray-50' : ''}>
-                        <td className="px-4 py-4">
-                          <div className="flex items-center gap-3">
-                            {trader.avatarUrl ? (
-                              <img
-                                src={trader.avatarUrl}
-                                alt=""
-                                className="w-10 h-10 rounded-full"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-foremark-green/10 flex items-center justify-center">
-                                <span className="text-foremark-green font-medium">
-                                  {(trader.displayName || trader.username || trader.email).charAt(0).toUpperCase()}
+                    traders.map((trader) => {
+                      const risk = riskIcons[trader.riskLevel] || riskIcons.low;
+                      const kyc = kycStatusBadge[trader.kycStatus] || kycStatusBadge.pending;
+                      const status = accountStatusBadge[trader.accountStatus] || accountStatusBadge.active;
+
+                      return (
+                        <tr
+                          key={trader.id}
+                          className={`hover:bg-gray-50 cursor-pointer transition-colors ${
+                            trader.accountStatus !== 'active' ? 'bg-gray-50/50' : ''
+                          }`}
+                          onClick={() => router.push(`/admin/traders/${trader.id}`)}
+                        >
+                          {/* Risk Flag */}
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2" title={risk.label}>
+                              <span className="text-lg">{risk.icon}</span>
+                              {trader.toxicFlowCount > 0 && (
+                                <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">
+                                  {trader.toxicFlowCount}x
                                 </span>
-                              </div>
-                            )}
-                            <div>
-                              <p className="font-medium text-gray-900">
-                                {trader.displayName || `${trader.firstName || ''} ${trader.lastName || ''}`.trim() || trader.username}
-                              </p>
-                              <p className="text-sm text-gray-500">@{trader.username}</p>
-                              <p className="text-xs text-gray-400">{trader.email}</p>
+                              )}
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex flex-col gap-1">
-                            <span
-                              className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                                trader.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                              }`}
-                            >
-                              {trader.isActive ? 'Active' : 'Inactive'}
+                          </td>
+
+                          {/* User */}
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-3">
+                              {trader.avatarUrl ? (
+                                <img src={trader.avatarUrl} alt="" className="w-10 h-10 rounded-full" />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-foremark-green/10 flex items-center justify-center">
+                                  <span className="text-foremark-green font-medium">
+                                    {(trader.displayName || trader.username || trader.email).charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
+                              )}
+                              <div>
+                                <p className="font-medium text-gray-900">
+                                  {trader.displayName || `${trader.firstName || ''} ${trader.lastName || ''}`.trim() || trader.username}
+                                </p>
+                                <p className="text-sm text-gray-500">@{trader.username}</p>
+                                <p className="text-xs text-gray-400">{trader.email}</p>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Account Status */}
+                          <td className="px-4 py-4">
+                            <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${status.bg} ${status.text}`}>
+                              {status.label}
                             </span>
-                            {trader.isVerified && (
-                              <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                                Verified
-                              </span>
+                          </td>
+
+                          {/* KYC Status */}
+                          <td className="px-4 py-4">
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${kyc.bg} ${kyc.text}`}>
+                              {trader.kycStatus === 'verified' && '✓'}
+                              {kyc.label}
+                            </span>
+                          </td>
+
+                          {/* Balance */}
+                          <td className="px-4 py-4 text-right font-medium text-gray-900">
+                            {formatCurrency(trader.balance)}
+                          </td>
+
+                          {/* P/L */}
+                          <td className={`px-4 py-4 text-right font-medium ${trader.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {trader.totalProfit >= 0 ? '+' : ''}{formatCurrency(trader.totalProfit)}
+                          </td>
+
+                          {/* Trades */}
+                          <td className="px-4 py-4 text-right text-gray-900">
+                            {trader.totalTrades.toLocaleString()}
+                          </td>
+
+                          {/* Last Market */}
+                          <td className="px-4 py-4">
+                            {trader.lastMarketTitle ? (
+                              <Link
+                                href={`/admin/markets/${trader.lastMarketSlug || ''}`}
+                                className="text-sm text-foremark-green hover:underline"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {trader.lastMarketTitle.length > 25
+                                  ? trader.lastMarketTitle.substring(0, 25) + '...'
+                                  : trader.lastMarketTitle}
+                              </Link>
+                            ) : (
+                              <span className="text-sm text-gray-400">-</span>
                             )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 text-right font-medium text-gray-900">
-                          {formatCurrency(trader.balance)}
-                        </td>
-                        <td className={`px-4 py-4 text-right font-medium ${trader.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {trader.totalProfit >= 0 ? '+' : ''}{formatCurrency(trader.totalProfit)}
-                        </td>
-                        <td className="px-4 py-4 text-right text-gray-900">
-                          {trader.totalTrades.toLocaleString()}
-                        </td>
-                        <td className="px-4 py-4 text-right text-gray-900">
-                          {formatCurrency(trader.totalVolume)}
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-500">
-                          {formatDate(trader.lastLoginAt)}
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-500">
-                          {formatDate(trader.createdAt)}
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+
+                          {/* Last Login */}
+                          <td className="px-4 py-4 text-sm text-gray-500">
+                            {formatDate(trader.lastLoginAt)}
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
             </div>
           </div>
         )}
+
+        {/* Legend */}
+        <div className="mt-4 flex items-center gap-6 text-sm text-gray-500">
+          <span className="font-medium">Risk Levels:</span>
+          <span>🟢 Low</span>
+          <span>🟡 Medium</span>
+          <span>🟠 High</span>
+          <span>🔴 Toxic</span>
+        </div>
       </AdminLayout>
     </>
   );
