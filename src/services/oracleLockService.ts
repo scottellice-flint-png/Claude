@@ -512,8 +512,7 @@ export async function checkSportsEventTiming(marketId: string): Promise<{
     select: {
       id: true,
       closesAt: true,
-      category: true,
-      metadata: true,
+      category: { select: { name: true, slug: true } },
     },
   });
 
@@ -521,9 +520,9 @@ export async function checkSportsEventTiming(marketId: string): Promise<{
     return { shouldLock: false };
   }
 
-  // Check if this is a sports market
-  const isSports = market.category?.toLowerCase().includes('sport') ||
-    (market.metadata as Record<string, unknown>)?.isSportsEvent === true;
+  // Check if this is a sports market based on category
+  const isSports = market.category?.name?.toLowerCase().includes('sport') ||
+    market.category?.slug?.toLowerCase().includes('sport');
 
   if (!isSports) {
     return { shouldLock: false };
