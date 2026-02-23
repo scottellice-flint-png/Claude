@@ -268,20 +268,19 @@ export async function createOrderV2(
         data: {
           orderId,
           marketId: input.marketId,
-          serverTsMs: BigInt(serverTsMs),
-          clientTsMs: BigInt(clientTsMs),
+          outcomeId: input.outcomeId,
+          userId: input.userId,
+          side: input.side === 'buy' ? 'BID' : 'ASK',
+          priceCents: input.priceCents,
+          quantityCents: input.quantityCents,
           status: 'pending',
-          orderSnapshot: {
-            orderId,
-            userId: input.userId,
-            marketId: input.marketId,
-            outcomeId: input.outcomeId,
-            side: input.side,
+          // Store order details in matchResult as JSON for now
+          matchResult: JSON.stringify({
             orderType: input.orderType,
-            priceCents: input.priceCents,
-            quantityCents: input.quantityCents,
             isTaker,
-          },
+            serverTsMs,
+            clientTsMs,
+          }),
         },
       });
     });
