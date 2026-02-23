@@ -56,7 +56,7 @@ export default async function handler(
       }
 
       // Use transaction to ensure consistency
-      const result = await prisma.$transaction(async (tx: typeof prisma) => {
+      const result = await prisma.$transaction(async (tx) => {
         // Create balance adjustment record
         const adjustment = await tx.balanceAdjustment.create({
           data: {
