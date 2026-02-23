@@ -138,7 +138,7 @@ export async function createSeedBotV2(
       name,
       botType: 'passive_quoter_v2',
       isActive: false,
-      config: mergedConfig as object,
+      config: JSON.stringify(mergedConfig),
       accessLevel: 'public_only',
       userId,
       maxInventoryCents: BigInt(mergedConfig.maxInventoryCents),
