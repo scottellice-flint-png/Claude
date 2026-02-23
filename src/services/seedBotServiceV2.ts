@@ -141,14 +141,10 @@ export async function createSeedBotV2(
       config: JSON.stringify(mergedConfig),
       accessLevel: 'public_only',
       userId,
-      maxInventoryCents: BigInt(mergedConfig.maxInventoryCents),
       orderTtlMs: mergedConfig.orderTtlMs,
-      maxRollingLossCents: BigInt(mergedConfig.maxRollingLossCents),
-      rollingPnlWindowMs: mergedConfig.rollingPnlWindowMs,
+      rollingLossThresholdCents: BigInt(mergedConfig.maxRollingLossCents),
       globalExposureCapCents: BigInt(mergedConfig.globalExposureCapCents),
-      perMarketCapCents: BigInt(mergedConfig.perMarketCapCents),
-      volatilityWidenThreshold: mergedConfig.volatilityWidenThreshold,
-      cooldownDurationMs: mergedConfig.cooldownDurationMs,
+      perMarketExposureCapCents: BigInt(mergedConfig.perMarketCapCents),
     },
   });
 
