@@ -1848,8 +1848,11 @@ export const useStore = create<AppState>((set, get) => ({
       const res = await fetch('/api/markets');
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          set({ markets: data, marketsLoaded: true, marketsLoading: false });
+        // Handle new format: { markets: [...], source: '...' }
+        const markets = data.markets || (Array.isArray(data) ? data : null);
+        if (markets && markets.length > 0) {
+          console.log(`[Markets] Loaded ${markets.length} markets from ${data.source || 'api'}`);
+          set({ markets, marketsLoaded: true, marketsLoading: false });
           return;
         }
       }
@@ -1857,6 +1860,7 @@ export const useStore = create<AppState>((set, get) => ({
       console.error('Failed to fetch markets from API, using fallback data:', err);
     }
     // If API returns empty or fails, keep mock data as fallback
+    console.log('[Markets] Using mock data fallback');
     set({ marketsLoaded: true, marketsLoading: false });
   },
 
