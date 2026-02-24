@@ -388,9 +388,6 @@ export default function MarketPage() {
                         {/* Name - Full width, no truncation */}
                         <div className="flex-1 min-w-0">
                           <p className="text-gray-900 font-semibold text-base leading-tight">{outcome.name}</p>
-                          {outcome.party && (
-                            <p className="text-gray-500 text-sm">{outcome.party}</p>
-                          )}
                         </div>
 
                         {/* Probability */}
