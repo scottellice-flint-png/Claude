@@ -28,6 +28,15 @@ export default function MarketPage() {
   const [showMobileBetModal, setShowMobileBetModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportingComment, setReportingComment] = useState<Comment | null>(null);
+  const [userAvatar, setUserAvatar] = useState<string>('koala');
+
+  // Load user's avatar from localStorage
+  useEffect(() => {
+    const savedAvatar = localStorage.getItem('userAvatar');
+    if (savedAvatar) {
+      setUserAvatar(savedAvatar);
+    }
+  }, []);
 
   const market = useStore((state) => state.getMarket(id as string));
   const updateMarketPrice = useStore((state) => state.updateMarketPrice);
@@ -103,7 +112,7 @@ export default function MarketPage() {
     if (!session?.user || !commentText.trim() || !market) return;
     // Use name (which includes firstName/lastName for better display) or fallback to username
     const displayName = session.user.name || session.user.username || session.user.email?.split('@')[0] || 'User';
-    addComment(market.id, commentText, displayName);
+    addComment(market.id, commentText, displayName, userAvatar);
     setCommentText('');
   };
 
@@ -605,8 +614,8 @@ export default function MarketPage() {
             <div className="p-4 border-b border-gray-100">
               {session?.user ? (
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-foremark-lime rounded-full flex items-center justify-center text-sm font-bold text-foremark-green">
-                    {session.user.username?.charAt(0).toUpperCase() || session.user.email?.charAt(0).toUpperCase() || 'U'}
+                  <div className="w-8 h-8 bg-gradient-to-br from-foremark-lime to-foremark-green/20 rounded-full flex items-center justify-center text-lg">
+                    {getAvatarEmoji(userAvatar)}
                   </div>
                   <div className="flex-1">
                     <textarea
@@ -761,8 +770,8 @@ function CommentItem({ comment, onReport }: { comment: Comment; onReport: (comme
   return (
     <div className="p-4">
       <div className="flex items-start gap-3">
-        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-bold text-gray-600">
-          {comment.username.charAt(0).toUpperCase()}
+        <div className="w-8 h-8 bg-gradient-to-br from-foremark-lime to-foremark-green/20 rounded-full flex items-center justify-center text-lg">
+          {comment.avatar ? getAvatarEmoji(comment.avatar) : comment.username.charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -1038,4 +1047,25 @@ function ReportCommentModal({ comment, onClose }: { comment: Comment; onClose: (
       </div>
     </div>
   );
+}
+
+// Avatar emoji lookup
+const AVATAR_EMOJIS: Record<string, string> = {
+  // Animals
+  koala: '🐨', kangaroo: '🦘', fox: '🦊', owl: '🦉', eagle: '🦅',
+  wolf: '🐺', lion: '🦁', tiger: '🐯', bear: '🐻', panda: '🐼',
+  monkey: '🐵', gorilla: '🦍', unicorn: '🦄', dragon: '🐉', shark: '🦈',
+  octopus: '🐙', dolphin: '🐬', whale: '🐳', butterfly: '🦋', bee: '🐝', parrot: '🦜',
+  // Characters
+  ninja: '🥷', astronaut: '🧑‍🚀', robot: '🤖', alien: '👽', ghost: '👻',
+  wizard: '🧙', superhero: '🦸', detective: '🕵️', pirate: '🏴‍☠️', cowboy: '🤠',
+  clown: '🤡', zombie: '🧟', vampire: '🧛', elf: '🧝',
+  // Objects
+  rocket: '🚀', crystal: '💎', fire: '🔥', lightning: '⚡', star: '⭐',
+  moon: '🌙', sun: '☀️', rainbow: '🌈', volcano: '🌋', mountain: '🏔️',
+  cactus: '🌵', tree: '🌳', mushroom: '🍄', four_leaf: '🍀',
+};
+
+function getAvatarEmoji(avatarId: string): string {
+  return AVATAR_EMOJIS[avatarId] || '🐨';
 }

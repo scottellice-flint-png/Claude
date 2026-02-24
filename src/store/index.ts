@@ -1866,7 +1866,7 @@ export const useStore = create<AppState>((set, get) => ({
     };
   },
 
-  addComment: (marketId: string, content: string, username?: string) => {
+  addComment: (marketId: string, content: string, username?: string, avatar?: string) => {
     const user = get().user;
     const position = get().positions.find(p => p.marketId === marketId && p.userId === user?.id);
     const market = get().getMarket(marketId);
@@ -1875,6 +1875,7 @@ export const useStore = create<AppState>((set, get) => ({
       id: uuidv4(),
       userId: user?.id || 'anonymous',
       username: username || user?.username || 'Anonymous',
+      avatar: avatar,
       marketId,
       content,
       position: position ? { side: position.side, marketTitle: market?.title } : undefined,

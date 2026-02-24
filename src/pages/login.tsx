@@ -7,6 +7,15 @@ import Head from 'next/head';
 type AuthMode = 'login' | 'signup';
 type SignupStep = 1 | 2;
 
+// Avatar options for signup
+const SIGNUP_AVATARS: Record<string, string> = {
+  koala: '🐨', kangaroo: '🦘', fox: '🦊', owl: '🦉', eagle: '🦅',
+  wolf: '🐺', lion: '🦁', tiger: '🐯', bear: '🐻', panda: '🐼',
+  unicorn: '🦄', dragon: '🐉', shark: '🦈', dolphin: '🐬',
+  ninja: '🥷', astronaut: '🧑‍🚀', robot: '🤖', alien: '👽', ghost: '👻',
+  wizard: '🧙', rocket: '🚀', crystal: '💎', fire: '🔥', star: '⭐',
+};
+
 interface FormData {
   // Step 1 - Personal Details
   firstName: string;
@@ -21,6 +30,8 @@ interface FormData {
   address: string;
   // Step 2 - Account Details
   username: string;
+  avatar: string;
+  bio: string;
   password: string;
   confirmPassword: string;
   agreeToTerms: boolean;
@@ -53,11 +64,14 @@ export default function LoginPage() {
     email: '',
     address: '',
     username: '',
+    avatar: 'koala',
+    bio: '',
     password: '',
     confirmPassword: '',
     agreeToTerms: false,
     marketingConsent: false,
   });
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -206,6 +220,12 @@ export default function LoginPage() {
       if (!response.ok) {
         setError(data.error || 'Registration failed');
         return;
+      }
+
+      // Save avatar and bio to localStorage
+      localStorage.setItem('userAvatar', formData.avatar);
+      if (formData.bio) {
+        localStorage.setItem('userBio', formData.bio);
       }
 
       // Auto-login after registration
@@ -638,6 +658,59 @@ export default function LoginPage() {
                           </div>
                           <p className="text-xs text-gray-500 mt-1">This will be visible to other users</p>
                           {fieldErrors.username && <p className="text-xs text-red-500 mt-1">{fieldErrors.username}</p>}
+                        </div>
+
+                        {/* Avatar Selection */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1.5">Profile Avatar</label>
+                          <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 bg-gradient-to-br from-[#C8E64C] to-[#0F4C4C]/20 rounded-full flex items-center justify-center text-2xl">
+                              {SIGNUP_AVATARS[formData.avatar] || '🐨'}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+                              className="text-sm font-medium text-[#0F4C4C] hover:underline"
+                            >
+                              {showAvatarPicker ? 'Hide avatars' : 'Choose avatar'}
+                            </button>
+                          </div>
+                          {showAvatarPicker && (
+                            <div className="mt-3 p-3 bg-gray-50 rounded-xl">
+                              <div className="grid grid-cols-7 gap-2">
+                                {Object.entries(SIGNUP_AVATARS).map(([id, emoji]) => (
+                                  <button
+                                    key={id}
+                                    type="button"
+                                    onClick={() => updateFormData('avatar', id)}
+                                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition-all ${
+                                      formData.avatar === id
+                                        ? 'bg-[#C8E64C] ring-2 ring-[#0F4C4C]'
+                                        : 'hover:bg-gray-200'
+                                    }`}
+                                  >
+                                    {emoji}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Bio (Optional) */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                            Bio <span className="text-gray-400 font-normal">(optional)</span>
+                          </label>
+                          <textarea
+                            value={formData.bio}
+                            onChange={(e) => updateFormData('bio', e.target.value)}
+                            placeholder="Tell others about yourself..."
+                            maxLength={160}
+                            rows={2}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0F4C4C] focus:border-transparent text-base resize-none"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">{formData.bio.length}/160 characters</p>
                         </div>
 
                         {/* Password */}

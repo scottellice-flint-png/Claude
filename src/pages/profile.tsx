@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/store';
 import { useSession } from 'next-auth/react';
@@ -59,6 +59,14 @@ export default function ProfilePage() {
     { id: '1', username: 'MarketMaster', avatar: 'bg-blue-400' },
     { id: '2', username: 'AussiePunter', avatar: 'bg-green-400' },
   ]);
+
+  // Load saved profile data from localStorage
+  useEffect(() => {
+    const savedAvatar = localStorage.getItem('userAvatar');
+    const savedBio = localStorage.getItem('userBio');
+    if (savedAvatar) setSelectedAvatar(savedAvatar);
+    if (savedBio) setProfileBio(savedBio);
+  }, []);
 
   // Show loading state while session is being fetched
   if (status === 'loading') {
@@ -287,6 +295,9 @@ export default function ProfilePage() {
                 <button
                   onClick={async () => {
                     setIsSavingProfile(true);
+                    // Save avatar to localStorage so it persists across pages
+                    localStorage.setItem('userAvatar', selectedAvatar);
+                    localStorage.setItem('userBio', profileBio);
                     // Simulate API call
                     await new Promise(resolve => setTimeout(resolve, 1000));
                     setIsSavingProfile(false);
