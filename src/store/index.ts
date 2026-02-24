@@ -1775,7 +1775,7 @@ interface AppState {
   getUserOrders: () => Order[];
   getMarketComments: (marketId: string) => Comment[];
   getMarketRules: (marketId: string) => MarketRules | undefined;
-  addComment: (marketId: string, content: string, username?: string) => Comment;
+  addComment: (marketId: string, content: string, username?: string, avatar?: string) => Comment;
 
   // Trading actions
   placeOrder: (
