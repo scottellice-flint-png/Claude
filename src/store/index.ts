@@ -2,7 +2,20 @@ import { create } from 'zustand';
 import { Market, Order, Position, User, Trade, OrderBook, Comment, MarketRules } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
-// Mock data - Australian-focused markets
+// Helper function to calculate overround pricing
+// On real exchanges, Yes + No > 100 (typically 101-102%) to create the market maker spread
+function calcAskPrice(probability: number): number {
+  // Add 1-2 cent spread to the probability to get the Ask price
+  const spread = probability >= 50 ? 1 : (probability >= 20 ? 1 : 1);
+  return Math.min(99, Math.max(1, probability + spread));
+}
+
+function calcNoPrice(yesAskPrice: number): number {
+  // No price is 101 - Yes price, giving a 1% overround per contract
+  return Math.min(99, Math.max(1, 101 - yesAskPrice));
+}
+
+// Mock data - Australian-focused markets with realistic overround pricing
 const mockMarkets: Market[] = [
   // Politics
   {
@@ -13,17 +26,18 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-05-21T18:00:00+10:00',
     settlementDate: '2026-05-25T12:00:00+10:00',
-    yesPrice: 52,
-    noPrice: 48,
+    yesPrice: 53, // 52% + 1 spread
+    noPrice: 48,  // 101 - 53
     volume: 0,
     liquidity: 890000,
     createdAt: '2025-01-15T10:00:00+10:00',
     icon: '🗳️',
     isFeatured: true,
     outcomes: [
-      { id: '1-labor', name: 'Labor', probability: 52, yesPrice: 52, noPrice: 48 },
-      { id: '1-coalition', name: 'Coalition', probability: 41, yesPrice: 41, noPrice: 59 },
-      { id: '1-other', name: 'Other', probability: 7, yesPrice: 7, noPrice: 93 },
+      // Sum of yesPrices: 53 + 42 + 8 = 103% (realistic overround)
+      { id: '1-labor', name: 'Labor', probability: 52, yesPrice: 53, noPrice: 48 },
+      { id: '1-coalition', name: 'Coalition', probability: 41, yesPrice: 42, noPrice: 59 },
+      { id: '1-other', name: 'Other', probability: 7, yesPrice: 8, noPrice: 93 },
     ],
   },
   {
@@ -34,8 +48,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-08-31T23:59:00+10:00',
     settlementDate: '2026-09-02T12:00:00+10:00',
-    yesPrice: 78,
-    noPrice: 22,
+    yesPrice: 79, // 78% + 1 spread
+    noPrice: 22,  // 101 - 79
     volume: 0,
     liquidity: 178000,
     createdAt: '2025-02-01T14:30:00+10:00',
@@ -49,8 +63,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-05-01T23:59:00+10:00',
     settlementDate: '2026-05-15T12:00:00+10:00',
-    yesPrice: 35,
-    noPrice: 65,
+    yesPrice: 36, // 35% + 1 spread
+    noPrice: 65,  // 101 - 36
     volume: 0,
     liquidity: 58000,
     createdAt: '2025-01-20T09:00:00+10:00',
@@ -67,15 +81,16 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-01-26T19:00:00+11:00',
     settlementDate: '2026-01-27T12:00:00+11:00',
-    yesPrice: 42,
-    noPrice: 58,
+    yesPrice: 43, // 42% + 1 spread
+    noPrice: 58,  // 101 - 43
     volume: 0,
     liquidity: 345000,
     createdAt: '2025-01-10T08:00:00+11:00',
     icon: '🎾',
     outcomes: [
-      { id: '4-sinner', name: 'Jannik Sinner', probability: 53, yesPrice: 53, noPrice: 47 },
-      { id: '4-djokovic', name: 'Novak Djokovic', probability: 42, yesPrice: 42, noPrice: 58 },
+      // Sum of yesPrices: 54 + 43 + 5 = 102% (realistic overround)
+      { id: '4-sinner', name: 'Jannik Sinner', probability: 53, yesPrice: 54, noPrice: 47 },
+      { id: '4-djokovic', name: 'Novak Djokovic', probability: 42, yesPrice: 43, noPrice: 58 },
     ],
   },
   {
@@ -88,8 +103,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-01-26T19:00:00+11:00',
     settlementDate: '2026-01-27T12:00:00+11:00',
-    yesPrice: 35,
-    noPrice: 65,
+    yesPrice: 36, // 35% + 1 spread
+    noPrice: 65,  // 101 - 36
     volume: 0,
     liquidity: 15800,
     createdAt: '2025-01-15T10:00:00+11:00',
@@ -105,8 +120,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-02-10T18:00:00+11:00',
     settlementDate: '2026-02-11T12:00:00+11:00',
-    yesPrice: 78,
-    noPrice: 22,
+    yesPrice: 79, // 78% + 1 spread
+    noPrice: 22,  // 101 - 79
     volume: 0,
     liquidity: 6800,
     createdAt: '2025-02-01T10:00:00+11:00',
@@ -123,8 +138,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00+11:00',
     settlementDate: '2027-01-05T12:00:00+11:00',
-    yesPrice: 89,
-    noPrice: 11,
+    yesPrice: 90, // 89% + 1 spread
+    noPrice: 11,  // 101 - 90
     volume: 0,
     liquidity: 45000,
     createdAt: '2025-02-15T10:00:00+11:00',
@@ -140,16 +155,17 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-09-26T17:00:00+10:00',
     settlementDate: '2026-09-27T12:00:00+10:00',
-    yesPrice: 18,
-    noPrice: 82,
+    yesPrice: 19, // 18% + 1 spread
+    noPrice: 82,  // 101 - 19
     volume: 0,
     liquidity: 465000,
     createdAt: '2025-01-20T10:00:00+11:00',
     icon: '🏉',
     outcomes: [
-      { id: 'afl-2-collingwood', name: 'Collingwood', probability: 18, yesPrice: 18, noPrice: 82 },
-      { id: 'afl-2-brisbane', name: 'Brisbane Lions', probability: 15, yesPrice: 15, noPrice: 85 },
-      { id: 'afl-2-carlton', name: 'Carlton', probability: 12, yesPrice: 12, noPrice: 88 },
+      // Sum: 19 + 16 + 13 + more = ~103% (realistic overround for multi-outcome)
+      { id: 'afl-2-collingwood', name: 'Collingwood', probability: 18, yesPrice: 19, noPrice: 82 },
+      { id: 'afl-2-brisbane', name: 'Brisbane Lions', probability: 15, yesPrice: 16, noPrice: 85 },
+      { id: 'afl-2-carlton', name: 'Carlton', probability: 12, yesPrice: 13, noPrice: 88 },
     ],
   },
   {
@@ -162,8 +178,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-04-18T19:30:00+10:00',
     settlementDate: '2026-04-19T12:00:00+10:00',
-    yesPrice: 62,
-    noPrice: 38,
+    yesPrice: 63, // 62% + 1 spread
+    noPrice: 38,  // 101 - 63
     volume: 0,
     liquidity: 12800,
     createdAt: '2025-04-10T10:00:00+10:00',
@@ -179,16 +195,17 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-09-20T19:00:00+10:00',
     settlementDate: '2026-09-21T12:00:00+10:00',
-    yesPrice: 22,
-    noPrice: 78,
+    yesPrice: 23, // 22% + 1 spread
+    noPrice: 78,  // 101 - 23
     volume: 0,
     liquidity: 142000,
     createdAt: '2025-03-01T10:00:00+11:00',
     icon: '🏆',
     outcomes: [
-      { id: 'afl-4-bontempelli', name: 'Marcus Bontempelli', probability: 22, yesPrice: 22, noPrice: 78 },
-      { id: 'afl-4-miller', name: 'Touk Miller', probability: 18, yesPrice: 18, noPrice: 82 },
-      { id: 'afl-4-wines', name: 'Ollie Wines', probability: 14, yesPrice: 14, noPrice: 86 },
+      // Sum: 23 + 19 + 15 + more = ~102% (realistic overround)
+      { id: 'afl-4-bontempelli', name: 'Marcus Bontempelli', probability: 22, yesPrice: 23, noPrice: 78 },
+      { id: 'afl-4-miller', name: 'Touk Miller', probability: 18, yesPrice: 19, noPrice: 82 },
+      { id: 'afl-4-wines', name: 'Ollie Wines', probability: 14, yesPrice: 15, noPrice: 86 },
     ],
   },
   // Sports - Rugby League
@@ -202,8 +219,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-10-01T23:59:00+10:00',
     settlementDate: '2026-10-05T12:00:00+10:00',
-    yesPrice: 15,
-    noPrice: 85,
+    yesPrice: 16, // 15% + 1 spread
+    noPrice: 85,  // 101 - 16
     volume: 0,
     liquidity: 24500,
     createdAt: '2025-03-10T15:00:00+11:00',
@@ -219,16 +236,17 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-10-04T19:30:00+10:00',
     settlementDate: '2026-10-05T12:00:00+10:00',
-    yesPrice: 24,
-    noPrice: 76,
+    yesPrice: 25, // 24% + 1 spread
+    noPrice: 76,  // 101 - 25
     volume: 0,
     liquidity: 285000,
     createdAt: '2025-02-01T10:00:00+11:00',
     icon: '🏈',
     outcomes: [
-      { id: 'nrl-2-panthers', name: 'Penrith Panthers', probability: 24, yesPrice: 24, noPrice: 76 },
-      { id: 'nrl-2-storm', name: 'Melbourne Storm', probability: 18, yesPrice: 18, noPrice: 82 },
-      { id: 'nrl-2-roosters', name: 'Sydney Roosters', probability: 14, yesPrice: 14, noPrice: 86 },
+      // Sum: 25 + 19 + 15 = 59% for top 3 (rest of field makes up ~44% = ~103% total)
+      { id: 'nrl-2-panthers', name: 'Penrith Panthers', probability: 24, yesPrice: 25, noPrice: 76 },
+      { id: 'nrl-2-storm', name: 'Melbourne Storm', probability: 18, yesPrice: 19, noPrice: 82 },
+      { id: 'nrl-2-roosters', name: 'Sydney Roosters', probability: 14, yesPrice: 15, noPrice: 86 },
     ],
   },
   {
@@ -241,8 +259,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-05-02T19:55:00+10:00',
     settlementDate: '2026-05-03T12:00:00+10:00',
-    yesPrice: 72,
-    noPrice: 28,
+    yesPrice: 73, // 72% + 1 spread
+    noPrice: 28,  // 101 - 73
     volume: 0,
     liquidity: 10400,
     createdAt: '2025-04-28T10:00:00+10:00',
@@ -258,8 +276,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-10-04T19:30:00+10:00',
     settlementDate: '2026-10-05T12:00:00+10:00',
-    yesPrice: 42,
-    noPrice: 58,
+    yesPrice: 43, // 42% + 1 spread
+    noPrice: 58,  // 101 - 43
     volume: 0,
     liquidity: 5800,
     createdAt: '2025-03-15T10:00:00+11:00',
@@ -276,16 +294,17 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2027-02-14T18:30:00-05:00',
     settlementDate: '2027-02-15T12:00:00-05:00',
-    yesPrice: 15,
-    noPrice: 85,
+    yesPrice: 16, // 15% + 1 spread
+    noPrice: 85,  // 101 - 16
     volume: 0,
     liquidity: 89000,
     createdAt: '2025-02-10T10:00:00Z',
     icon: '🏈',
     outcomes: [
-      { id: 'nfl-1-chiefs', name: 'Kansas City Chiefs', probability: 15, yesPrice: 15, noPrice: 85 },
-      { id: 'nfl-1-eagles', name: 'Philadelphia Eagles', probability: 12, yesPrice: 12, noPrice: 88 },
-      { id: 'nfl-1-bills', name: 'Buffalo Bills', probability: 10, yesPrice: 10, noPrice: 90 },
+      // Sum: 16 + 13 + 11 = 40% for top 3 (~103% total with field)
+      { id: 'nfl-1-chiefs', name: 'Kansas City Chiefs', probability: 15, yesPrice: 16, noPrice: 85 },
+      { id: 'nfl-1-eagles', name: 'Philadelphia Eagles', probability: 12, yesPrice: 13, noPrice: 88 },
+      { id: 'nfl-1-bills', name: 'Buffalo Bills', probability: 10, yesPrice: 11, noPrice: 90 },
     ],
   },
   {
@@ -298,8 +317,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-09-13T13:00:00-05:00',
     settlementDate: '2026-09-14T12:00:00-05:00',
-    yesPrice: 68,
-    noPrice: 32,
+    yesPrice: 69, // 68% + 1 spread
+    noPrice: 32,  // 101 - 69
     volume: 0,
     liquidity: 11800,
     createdAt: '2025-09-01T10:00:00Z',
@@ -315,8 +334,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2027-02-14T18:30:00-05:00',
     settlementDate: '2027-02-15T12:00:00-05:00',
-    yesPrice: 28,
-    noPrice: 72,
+    yesPrice: 29, // 28% + 1 spread
+    noPrice: 72,  // 101 - 29
     volume: 0,
     liquidity: 6800,
     createdAt: '2025-02-01T10:00:00Z',
@@ -333,16 +352,17 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-06-20T21:00:00-04:00',
     settlementDate: '2026-06-21T12:00:00-04:00',
-    yesPrice: 22,
-    noPrice: 78,
+    yesPrice: 23, // 22% + 1 spread
+    noPrice: 78,  // 101 - 23
     volume: 0,
     liquidity: 68000,
     createdAt: '2025-01-15T10:00:00Z',
     icon: '🏀',
     outcomes: [
-      { id: 'nba-1-celtics', name: 'Boston Celtics', probability: 22, yesPrice: 22, noPrice: 78 },
-      { id: 'nba-1-nuggets', name: 'Denver Nuggets', probability: 18, yesPrice: 18, noPrice: 82 },
-      { id: 'nba-1-thunder', name: 'OKC Thunder', probability: 15, yesPrice: 15, noPrice: 85 },
+      // Sum: 23 + 19 + 16 = 58% for top 3 (~103% total with field)
+      { id: 'nba-1-celtics', name: 'Boston Celtics', probability: 22, yesPrice: 23, noPrice: 78 },
+      { id: 'nba-1-nuggets', name: 'Denver Nuggets', probability: 18, yesPrice: 19, noPrice: 82 },
+      { id: 'nba-1-thunder', name: 'OKC Thunder', probability: 15, yesPrice: 16, noPrice: 85 },
     ],
   },
   {
@@ -355,8 +375,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-02-15T19:30:00-05:00',
     settlementDate: '2026-02-16T12:00:00-05:00',
-    yesPrice: 75,
-    noPrice: 25,
+    yesPrice: 76, // 75% + 1 spread
+    noPrice: 25,  // 101 - 76
     volume: 0,
     liquidity: 9000,
     createdAt: '2025-02-10T10:00:00Z',
@@ -372,16 +392,17 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-06-01T12:00:00-04:00',
     settlementDate: '2026-06-02T12:00:00-04:00',
-    yesPrice: 35,
-    noPrice: 65,
+    yesPrice: 36, // 35% + 1 spread
+    noPrice: 65,  // 101 - 36
     volume: 0,
     liquidity: 28500,
     createdAt: '2025-01-20T10:00:00Z',
     icon: '🏆',
     outcomes: [
-      { id: 'nba-3-jokic', name: 'Nikola Jokic', probability: 35, yesPrice: 35, noPrice: 65 },
-      { id: 'nba-3-sga', name: 'Shai Gilgeous-Alexander', probability: 28, yesPrice: 28, noPrice: 72 },
-      { id: 'nba-3-luka', name: 'Luka Doncic', probability: 18, yesPrice: 18, noPrice: 82 },
+      // Sum: 36 + 29 + 19 = 84% for top 3 (~103% total with field)
+      { id: 'nba-3-jokic', name: 'Nikola Jokic', probability: 35, yesPrice: 36, noPrice: 65 },
+      { id: 'nba-3-sga', name: 'Shai Gilgeous-Alexander', probability: 28, yesPrice: 29, noPrice: 72 },
+      { id: 'nba-3-luka', name: 'Luka Doncic', probability: 18, yesPrice: 19, noPrice: 82 },
     ],
   },
   // Sports - Baseball
@@ -395,16 +416,17 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-11-01T20:00:00-04:00',
     settlementDate: '2026-11-02T12:00:00-04:00',
-    yesPrice: 12,
-    noPrice: 88,
+    yesPrice: 13, // 12% + 1 spread
+    noPrice: 88,  // 101 - 13
     volume: 0,
     liquidity: 35000,
     createdAt: '2025-03-01T10:00:00Z',
     icon: '⚾',
     outcomes: [
-      { id: 'mlb-1-dodgers', name: 'LA Dodgers', probability: 12, yesPrice: 12, noPrice: 88 },
-      { id: 'mlb-1-yankees', name: 'NY Yankees', probability: 10, yesPrice: 10, noPrice: 90 },
-      { id: 'mlb-1-braves', name: 'Atlanta Braves', probability: 8, yesPrice: 8, noPrice: 92 },
+      // Sum: 13 + 11 + 9 = 33% for top 3 (~103% total with field)
+      { id: 'mlb-1-dodgers', name: 'LA Dodgers', probability: 12, yesPrice: 13, noPrice: 88 },
+      { id: 'mlb-1-yankees', name: 'NY Yankees', probability: 10, yesPrice: 11, noPrice: 90 },
+      { id: 'mlb-1-braves', name: 'Atlanta Braves', probability: 8, yesPrice: 9, noPrice: 92 },
     ],
   },
   {
@@ -417,8 +439,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-04-15T19:05:00-04:00',
     settlementDate: '2026-04-16T12:00:00-04:00',
-    yesPrice: 58,
-    noPrice: 42,
+    yesPrice: 59, // 58% + 1 spread
+    noPrice: 42,  // 101 - 59
     volume: 0,
     liquidity: 4600,
     createdAt: '2025-04-10T10:00:00Z',
@@ -434,8 +456,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-11-01T20:00:00-04:00',
     settlementDate: '2026-11-02T12:00:00-04:00',
-    yesPrice: 45,
-    noPrice: 55,
+    yesPrice: 46, // 45% + 1 spread
+    noPrice: 55,  // 101 - 46
     volume: 0,
     liquidity: 3100,
     createdAt: '2025-03-15T10:00:00Z',
@@ -452,8 +474,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-01-10T10:00:00+11:00',
     settlementDate: '2026-01-15T12:00:00+11:00',
-    yesPrice: 58,
-    noPrice: 42,
+    yesPrice: 59, // 58% + 1 spread
+    noPrice: 42,  // 101 - 59
     volume: 0,
     liquidity: 53000,
     createdAt: '2025-01-01T10:00:00+11:00',
@@ -469,16 +491,17 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2027-11-20T18:00:00+05:30',
     settlementDate: '2027-11-21T12:00:00+05:30',
-    yesPrice: 25,
-    noPrice: 75,
+    yesPrice: 26, // 25% + 1 spread
+    noPrice: 75,  // 101 - 26
     volume: 0,
     liquidity: 156000,
     createdAt: '2025-01-15T10:00:00+11:00',
     icon: '🏏',
     outcomes: [
-      { id: 'cricket-2-india', name: 'India', probability: 25, yesPrice: 25, noPrice: 75 },
-      { id: 'cricket-2-australia', name: 'Australia', probability: 20, yesPrice: 20, noPrice: 80 },
-      { id: 'cricket-2-england', name: 'England', probability: 15, yesPrice: 15, noPrice: 85 },
+      // Sum: 26 + 21 + 16 = 63% for top 3 (~103% total with field)
+      { id: 'cricket-2-india', name: 'India', probability: 25, yesPrice: 26, noPrice: 75 },
+      { id: 'cricket-2-australia', name: 'Australia', probability: 20, yesPrice: 21, noPrice: 80 },
+      { id: 'cricket-2-england', name: 'England', probability: 15, yesPrice: 16, noPrice: 85 },
     ],
   },
   {
@@ -491,8 +514,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-01-10T10:00:00+11:00',
     settlementDate: '2026-01-15T12:00:00+11:00',
-    yesPrice: 52,
-    noPrice: 48,
+    yesPrice: 53, // 52% + 1 spread
+    noPrice: 48,  // 101 - 53
     volume: 0,
     liquidity: 10400,
     createdAt: '2025-01-05T10:00:00+11:00',
@@ -509,16 +532,17 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-05-30T21:00:00+02:00',
     settlementDate: '2026-05-31T12:00:00+02:00',
-    yesPrice: 18,
-    noPrice: 82,
+    yesPrice: 19, // 18% + 1 spread
+    noPrice: 82,  // 101 - 19
     volume: 0,
     liquidity: 104000,
     createdAt: '2025-02-01T10:00:00Z',
     icon: '⚽',
     outcomes: [
-      { id: 'soccer-1-city', name: 'Manchester City', probability: 18, yesPrice: 18, noPrice: 82 },
-      { id: 'soccer-1-real', name: 'Real Madrid', probability: 15, yesPrice: 15, noPrice: 85 },
-      { id: 'soccer-1-arsenal', name: 'Arsenal', probability: 12, yesPrice: 12, noPrice: 88 },
+      // Sum: 19 + 16 + 13 = 48% for top 3 (~103% total with field)
+      { id: 'soccer-1-city', name: 'Manchester City', probability: 18, yesPrice: 19, noPrice: 82 },
+      { id: 'soccer-1-real', name: 'Real Madrid', probability: 15, yesPrice: 16, noPrice: 85 },
+      { id: 'soccer-1-arsenal', name: 'Arsenal', probability: 12, yesPrice: 13, noPrice: 88 },
     ],
   },
   {
@@ -531,8 +555,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-02-22T15:00:00Z',
     settlementDate: '2026-02-22T18:00:00Z',
-    yesPrice: 72,
-    noPrice: 28,
+    yesPrice: 73, // 72% + 1 spread
+    noPrice: 28,  // 101 - 73
     volume: 0,
     liquidity: 16500,
     createdAt: '2025-02-15T10:00:00Z',
@@ -548,8 +572,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-05-30T21:00:00+02:00',
     settlementDate: '2026-05-31T12:00:00+02:00',
-    yesPrice: 18,
-    noPrice: 82,
+    yesPrice: 19, // 18% + 1 spread
+    noPrice: 82,  // 101 - 19
     volume: 0,
     liquidity: 6800,
     createdAt: '2025-02-10T10:00:00Z',
@@ -566,16 +590,17 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-04-12T18:00:00-04:00',
     settlementDate: '2026-04-13T12:00:00-04:00',
-    yesPrice: 8,
-    noPrice: 92,
+    yesPrice: 9, // 8% + 1 spread
+    noPrice: 92,  // 101 - 9
     volume: 0,
     liquidity: 35000,
     createdAt: '2025-01-20T10:00:00Z',
     icon: '⛳',
     outcomes: [
-      { id: 'golf-1-scheffler', name: 'Scottie Scheffler', probability: 18, yesPrice: 18, noPrice: 82 },
-      { id: 'golf-1-mcilroy', name: 'Rory McIlroy', probability: 12, yesPrice: 12, noPrice: 88 },
-      { id: 'golf-1-rahm', name: 'Jon Rahm', probability: 8, yesPrice: 8, noPrice: 92 },
+      // Sum: 19 + 13 + 9 = 41% for top 3 (~103% total with field)
+      { id: 'golf-1-scheffler', name: 'Scottie Scheffler', probability: 18, yesPrice: 19, noPrice: 82 },
+      { id: 'golf-1-mcilroy', name: 'Rory McIlroy', probability: 12, yesPrice: 13, noPrice: 88 },
+      { id: 'golf-1-rahm', name: 'Jon Rahm', probability: 8, yesPrice: 9, noPrice: 92 },
     ],
   },
   {
@@ -588,8 +613,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-04-12T18:00:00-04:00',
     settlementDate: '2026-04-13T12:00:00-04:00',
-    yesPrice: 65,
-    noPrice: 35,
+    yesPrice: 66, // 65% + 1 spread
+    noPrice: 35,  // 101 - 66
     volume: 0,
     liquidity: 9000,
     createdAt: '2025-03-01T10:00:00Z',
@@ -605,8 +630,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-04-12T18:00:00-04:00',
     settlementDate: '2026-04-13T12:00:00-04:00',
-    yesPrice: 42,
-    noPrice: 58,
+    yesPrice: 43, // 42% + 1 spread
+    noPrice: 58,  // 101 - 43
     volume: 0,
     liquidity: 4600,
     createdAt: '2025-03-15T10:00:00Z',
@@ -623,8 +648,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-07-04T20:00:00+10:00',
     settlementDate: '2026-07-05T12:00:00+10:00',
-    yesPrice: 45,
-    noPrice: 55,
+    yesPrice: 46, // 45% + 1 spread
+    noPrice: 55,  // 101 - 46
     volume: 0,
     liquidity: 25000,
     createdAt: '2025-06-15T10:00:00+10:00',
@@ -640,16 +665,17 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2027-11-13T20:00:00+11:00',
     settlementDate: '2027-11-14T12:00:00+11:00',
-    yesPrice: 22,
-    noPrice: 78,
+    yesPrice: 23, // 22% + 1 spread
+    noPrice: 78,  // 101 - 23
     volume: 0,
     liquidity: 250000,
     createdAt: '2025-01-10T10:00:00+11:00',
     icon: '🏉',
     outcomes: [
-      { id: 'rugby-union-2-nz', name: 'New Zealand', probability: 22, yesPrice: 22, noPrice: 78 },
-      { id: 'rugby-union-2-sa', name: 'South Africa', probability: 20, yesPrice: 20, noPrice: 80 },
-      { id: 'rugby-union-2-ire', name: 'Ireland', probability: 18, yesPrice: 18, noPrice: 82 },
+      // Sum: 23 + 21 + 19 = 63% for top 3 (~103% total with field)
+      { id: 'rugby-union-2-nz', name: 'New Zealand', probability: 22, yesPrice: 23, noPrice: 78 },
+      { id: 'rugby-union-2-sa', name: 'South Africa', probability: 20, yesPrice: 21, noPrice: 80 },
+      { id: 'rugby-union-2-ire', name: 'Ireland', probability: 18, yesPrice: 19, noPrice: 82 },
     ],
   },
   {
@@ -662,8 +688,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-07-04T20:00:00+10:00',
     settlementDate: '2026-07-05T12:00:00+10:00',
-    yesPrice: 68,
-    noPrice: 32,
+    yesPrice: 69, // 68% + 1 spread
+    noPrice: 32,  // 101 - 69
     volume: 0,
     liquidity: 6800,
     createdAt: '2025-06-20T10:00:00+10:00',
@@ -680,8 +706,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-03-15T22:00:00Z',
     settlementDate: '2026-03-16T12:00:00Z',
-    yesPrice: 55,
-    noPrice: 45,
+    yesPrice: 56, // 55% + 1 spread
+    noPrice: 45,  // 101 - 56
     volume: 0,
     liquidity: 68000,
     createdAt: '2025-01-20T10:00:00Z',
@@ -697,8 +723,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-03-15T22:00:00Z',
     settlementDate: '2026-03-16T12:00:00Z',
-    yesPrice: 48,
-    noPrice: 52,
+    yesPrice: 49, // 48% + 1 spread
+    noPrice: 52,  // 101 - 49
     volume: 0,
     liquidity: 25000,
     createdAt: '2025-02-01T10:00:00Z',
@@ -714,8 +740,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00Z',
     settlementDate: '2027-01-02T12:00:00Z',
-    yesPrice: 35,
-    noPrice: 65,
+    yesPrice: 36, // 35% + 1 spread
+    noPrice: 65,  // 101 - 36
     volume: 0,
     liquidity: 15500,
     createdAt: '2025-01-15T10:00:00Z',
@@ -732,18 +758,19 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-11-03T14:00:00+11:00',
     settlementDate: '2026-11-03T16:00:00+11:00',
-    yesPrice: 15,
-    noPrice: 85,
+    yesPrice: 16, // 15% + 1 spread
+    noPrice: 85,  // 101 - 16
     volume: 0,
     liquidity: 680000,
     createdAt: '2025-01-10T10:00:00Z',
     icon: '🏇',
     outcomes: [
-      { id: 'racing-1-field', name: 'Field (other)', probability: 55, yesPrice: 55, noPrice: 45 },
-      { id: 'racing-1-without', name: 'Without A Fight', probability: 15, yesPrice: 15, noPrice: 85 },
-      { id: 'racing-1-vauban', name: 'Vauban', probability: 12, yesPrice: 12, noPrice: 88 },
-      { id: 'racing-1-buckaroo', name: 'Buckaroo', probability: 10, yesPrice: 10, noPrice: 90 },
-      { id: 'racing-1-land', name: 'Land Legend', probability: 8, yesPrice: 8, noPrice: 92 },
+      // Sum: 56 + 16 + 13 + 11 + 9 = 105% (realistic overround for horse racing)
+      { id: 'racing-1-field', name: 'Field (other)', probability: 55, yesPrice: 56, noPrice: 45 },
+      { id: 'racing-1-without', name: 'Without A Fight', probability: 15, yesPrice: 16, noPrice: 85 },
+      { id: 'racing-1-vauban', name: 'Vauban', probability: 12, yesPrice: 13, noPrice: 88 },
+      { id: 'racing-1-buckaroo', name: 'Buckaroo', probability: 10, yesPrice: 11, noPrice: 90 },
+      { id: 'racing-1-land', name: 'Land Legend', probability: 8, yesPrice: 9, noPrice: 92 },
     ],
   },
   {
@@ -756,17 +783,18 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-10-24T15:00:00+11:00',
     settlementDate: '2026-10-24T17:00:00+11:00',
-    yesPrice: 22,
-    noPrice: 78,
+    yesPrice: 23, // 22% + 1 spread
+    noPrice: 78,  // 101 - 23
     volume: 0,
     liquidity: 212000,
     createdAt: '2025-02-01T10:00:00Z',
     icon: '🏇',
     outcomes: [
-      { id: 'racing-2-field', name: 'Field (other)', probability: 45, yesPrice: 45, noPrice: 55 },
-      { id: 'racing-2-pride', name: 'Pride Of Jenni', probability: 22, yesPrice: 22, noPrice: 78 },
-      { id: 'racing-2-mr', name: 'Mr Brightside', probability: 18, yesPrice: 18, noPrice: 82 },
-      { id: 'racing-2-romantic', name: 'Romantic Warrior', probability: 15, yesPrice: 15, noPrice: 85 },
+      // Sum: 46 + 23 + 19 + 16 = 104% (realistic overround)
+      { id: 'racing-2-field', name: 'Field (other)', probability: 45, yesPrice: 46, noPrice: 55 },
+      { id: 'racing-2-pride', name: 'Pride Of Jenni', probability: 22, yesPrice: 23, noPrice: 78 },
+      { id: 'racing-2-mr', name: 'Mr Brightside', probability: 18, yesPrice: 19, noPrice: 82 },
+      { id: 'racing-2-romantic', name: 'Romantic Warrior', probability: 15, yesPrice: 16, noPrice: 85 },
     ],
   },
   {
@@ -779,8 +807,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-10-17T16:00:00+11:00',
     settlementDate: '2026-10-17T18:00:00+11:00',
-    yesPrice: 78,
-    noPrice: 22,
+    yesPrice: 79, // 78% + 1 spread
+    noPrice: 22,  // 101 - 79
     volume: 0,
     liquidity: 156000,
     createdAt: '2025-01-20T10:00:00Z',
@@ -796,8 +824,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-11-03T14:00:00+11:00',
     settlementDate: '2026-11-03T16:00:00+11:00',
-    yesPrice: 28,
-    noPrice: 72,
+    yesPrice: 29, // 28% + 1 spread
+    noPrice: 72,  // 101 - 29
     volume: 0,
     liquidity: 68000,
     createdAt: '2025-02-05T10:00:00Z',
@@ -813,17 +841,18 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-03-21T15:00:00+11:00',
     settlementDate: '2026-03-21T17:00:00+11:00',
-    yesPrice: 18,
-    noPrice: 82,
+    yesPrice: 19, // 18% + 1 spread
+    noPrice: 82,  // 101 - 19
     volume: 0,
     liquidity: 126000,
     createdAt: '2025-01-25T10:00:00Z',
     icon: '🏇',
     outcomes: [
-      { id: 'racing-5-field', name: 'Field (other)', probability: 60, yesPrice: 60, noPrice: 40 },
-      { id: 'racing-5-storm', name: 'Storm Boy', probability: 18, yesPrice: 18, noPrice: 82 },
-      { id: 'racing-5-lady', name: 'Lady Of Camelot', probability: 14, yesPrice: 14, noPrice: 86 },
-      { id: 'racing-5-blue', name: 'Blue Soldier', probability: 8, yesPrice: 8, noPrice: 92 },
+      // Sum: 61 + 19 + 15 + 9 = 104% (realistic overround)
+      { id: 'racing-5-field', name: 'Field (other)', probability: 60, yesPrice: 61, noPrice: 40 },
+      { id: 'racing-5-storm', name: 'Storm Boy', probability: 18, yesPrice: 19, noPrice: 82 },
+      { id: 'racing-5-lady', name: 'Lady Of Camelot', probability: 14, yesPrice: 15, noPrice: 86 },
+      { id: 'racing-5-blue', name: 'Blue Soldier', probability: 8, yesPrice: 9, noPrice: 92 },
     ],
   },
   {
@@ -836,8 +865,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-11-03T14:00:00+11:00',
     settlementDate: '2026-11-03T16:00:00+11:00',
-    yesPrice: 42,
-    noPrice: 58,
+    yesPrice: 43, // 42% + 1 spread
+    noPrice: 58,  // 101 - 43
     volume: 0,
     liquidity: 16500,
     createdAt: '2025-02-10T10:00:00Z',
@@ -852,16 +881,17 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00Z',
     settlementDate: '2027-01-10T12:00:00Z',
-    yesPrice: 62,
-    noPrice: 38,
+    yesPrice: 63, // 62% + 1 spread
+    noPrice: 38,  // 101 - 63
     volume: 0,
     liquidity: 104000,
     createdAt: '2025-01-05T12:00:00Z',
     icon: '🎬',
     outcomes: [
-      { id: '7-atj', name: 'Aaron Taylor-Johnson', probability: 62, yesPrice: 62, noPrice: 38 },
-      { id: '7-regepage', name: 'Regé-Jean Page', probability: 21, yesPrice: 21, noPrice: 79 },
-      { id: '7-other', name: 'Other', probability: 17, yesPrice: 17, noPrice: 83 },
+      // Sum: 63 + 22 + 18 = 103% (realistic overround)
+      { id: '7-atj', name: 'Aaron Taylor-Johnson', probability: 62, yesPrice: 63, noPrice: 38 },
+      { id: '7-regepage', name: 'Regé-Jean Page', probability: 21, yesPrice: 22, noPrice: 79 },
+      { id: '7-other', name: 'Other', probability: 17, yesPrice: 18, noPrice: 83 },
     ],
   },
   {
@@ -872,8 +902,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-03-01T23:59:00-08:00',
     settlementDate: '2026-03-05T12:00:00-08:00',
-    yesPrice: 28,
-    noPrice: 72,
+    yesPrice: 29, // 28% + 1 spread
+    noPrice: 72,  // 101 - 29
     volume: 0,
     liquidity: 28500,
     createdAt: '2025-02-20T12:00:00+11:00',
@@ -887,8 +917,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-05-16T23:59:00+02:00',
     settlementDate: '2026-05-18T12:00:00+02:00',
-    yesPrice: 18,
-    noPrice: 82,
+    yesPrice: 19, // 18% + 1 spread
+    noPrice: 82,  // 101 - 19
     volume: 0,
     liquidity: 19000,
     createdAt: '2025-03-01T10:00:00+11:00',
@@ -903,16 +933,17 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-02-17T14:30:00+11:00',
     settlementDate: '2026-02-18T12:00:00+11:00',
-    yesPrice: 8,
-    noPrice: 92,
+    yesPrice: 9, // 8% + 1 spread
+    noPrice: 92,  // 101 - 9
     volume: 0,
     liquidity: 178000,
     createdAt: '2025-01-08T09:00:00+11:00',
     icon: '🏦',
     outcomes: [
-      { id: '10-hold', name: 'Hold', probability: 72, yesPrice: 72, noPrice: 28 },
-      { id: '10-cut', name: 'Cut 25bps', probability: 20, yesPrice: 20, noPrice: 80 },
-      { id: '10-raise', name: 'Raise', probability: 8, yesPrice: 8, noPrice: 92 },
+      // Sum: 73 + 21 + 9 = 103% (realistic overround)
+      { id: '10-hold', name: 'Hold', probability: 72, yesPrice: 73, noPrice: 28 },
+      { id: '10-cut', name: 'Cut 25bps', probability: 20, yesPrice: 21, noPrice: 80 },
+      { id: '10-raise', name: 'Raise', probability: 8, yesPrice: 9, noPrice: 92 },
     ],
   },
   {
@@ -923,8 +954,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-04-28T11:30:00+10:00',
     settlementDate: '2026-04-29T12:00:00+10:00',
-    yesPrice: 67,
-    noPrice: 33,
+    yesPrice: 68, // 67% + 1 spread
+    noPrice: 33,  // 101 - 68
     volume: 0,
     liquidity: 104000,
     createdAt: '2025-02-10T10:00:00+11:00',
@@ -938,8 +969,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00+08:00',
     settlementDate: '2027-01-05T12:00:00+08:00',
-    yesPrice: 71,
-    noPrice: 29,
+    yesPrice: 72, // 71% + 1 spread
+    noPrice: 29,  // 101 - 72
     volume: 0,
     liquidity: 46000,
     createdAt: '2025-01-25T14:00:00+08:00',
@@ -954,8 +985,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-10-31T23:59:00+11:00',
     settlementDate: '2026-11-05T12:00:00+11:00',
-    yesPrice: 45,
-    noPrice: 55,
+    yesPrice: 46, // 45% + 1 spread
+    noPrice: 55,  // 101 - 46
     volume: 0,
     liquidity: 25000,
     createdAt: '2025-03-01T11:00:00+11:00',
@@ -969,8 +1000,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00+11:00',
     settlementDate: '2027-01-03T12:00:00+11:00',
-    yesPrice: 32,
-    noPrice: 68,
+    yesPrice: 33, // 32% + 1 spread
+    noPrice: 68,  // 101 - 33
     volume: 0,
     liquidity: 11800,
     createdAt: '2025-02-15T09:00:00+11:00',
@@ -984,8 +1015,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00+11:00',
     settlementDate: '2027-01-15T12:00:00+11:00',
-    yesPrice: 38,
-    noPrice: 62,
+    yesPrice: 39, // 38% + 1 spread
+    noPrice: 62,  // 101 - 39
     volume: 0,
     liquidity: 31000,
     createdAt: '2025-01-12T10:00:00+11:00',
@@ -1000,16 +1031,17 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2028-11-05T23:59:00-05:00',
     settlementDate: '2028-11-10T12:00:00-05:00',
-    yesPrice: 48,
-    noPrice: 52,
+    yesPrice: 49, // 48% + 1 spread
+    noPrice: 52,  // 101 - 49
     volume: 0,
     liquidity: 1170000,
     createdAt: '2025-01-01T10:00:00Z',
     icon: '🇺🇸',
     outcomes: [
-      { id: '16-dem', name: 'Democratic', probability: 48, yesPrice: 48, noPrice: 52 },
-      { id: '16-rep', name: 'Republican', probability: 45, yesPrice: 45, noPrice: 55 },
-      { id: '16-other', name: 'Other', probability: 7, yesPrice: 7, noPrice: 93 },
+      // Sum: 49 + 46 + 8 = 103% (realistic overround)
+      { id: '16-dem', name: 'Democratic', probability: 48, yesPrice: 49, noPrice: 52 },
+      { id: '16-rep', name: 'Republican', probability: 45, yesPrice: 46, noPrice: 55 },
+      { id: '16-other', name: 'Other', probability: 7, yesPrice: 8, noPrice: 93 },
     ],
   },
   {
@@ -1020,16 +1052,17 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-03-18T18:00:00-04:00',
     settlementDate: '2026-03-19T12:00:00-04:00',
-    yesPrice: 65,
-    noPrice: 35,
+    yesPrice: 66, // 65% + 1 spread
+    noPrice: 35,  // 101 - 66
     volume: 0,
     liquidity: 156000,
     createdAt: '2025-02-01T10:00:00Z',
     icon: '🏛️',
     outcomes: [
-      { id: '17-cut', name: 'Cut 25bps', probability: 65, yesPrice: 65, noPrice: 35 },
-      { id: '17-hold', name: 'Hold', probability: 30, yesPrice: 30, noPrice: 70 },
-      { id: '17-raise', name: 'Raise', probability: 5, yesPrice: 5, noPrice: 95 },
+      // Sum: 66 + 31 + 6 = 103% (realistic overround)
+      { id: '17-cut', name: 'Cut 25bps', probability: 65, yesPrice: 66, noPrice: 35 },
+      { id: '17-hold', name: 'Hold', probability: 30, yesPrice: 31, noPrice: 70 },
+      { id: '17-raise', name: 'Raise', probability: 5, yesPrice: 6, noPrice: 95 },
     ],
   },
   {
@@ -1040,8 +1073,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00Z',
     settlementDate: '2027-01-02T12:00:00Z',
-    yesPrice: 72,
-    noPrice: 28,
+    yesPrice: 73, // 72% + 1 spread
+    noPrice: 28,  // 101 - 73
     volume: 0,
     liquidity: 141000,
     createdAt: '2025-01-15T10:00:00Z',
@@ -1055,16 +1088,17 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-07-19T20:00:00-04:00',
     settlementDate: '2026-07-20T12:00:00-04:00',
-    yesPrice: 18,
-    noPrice: 82,
+    yesPrice: 19, // 18% + 1 spread
+    noPrice: 82,  // 101 - 19
     volume: 0,
     liquidity: 770000,
     createdAt: '2025-01-10T10:00:00Z',
     icon: '⚽',
     outcomes: [
-      { id: '19-brazil', name: 'Brazil', probability: 18, yesPrice: 18, noPrice: 82 },
-      { id: '19-france', name: 'France', probability: 15, yesPrice: 15, noPrice: 85 },
-      { id: '19-argentina', name: 'Argentina', probability: 14, yesPrice: 14, noPrice: 86 },
+      // Sum: 19 + 16 + 15 = 50% for top 3 (~103% total with field)
+      { id: '19-brazil', name: 'Brazil', probability: 18, yesPrice: 19, noPrice: 82 },
+      { id: '19-france', name: 'France', probability: 15, yesPrice: 16, noPrice: 85 },
+      { id: '19-argentina', name: 'Argentina', probability: 14, yesPrice: 15, noPrice: 86 },
     ],
   },
   // ==========================================
@@ -1078,8 +1112,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-06-29T23:59:00+10:00',
     settlementDate: '2026-07-01T12:00:00+10:00',
-    yesPrice: 85,
-    noPrice: 15,
+    yesPrice: 86, // 85% + 1 spread
+    noPrice: 15,  // 101 - 86
     volume: 0,
     liquidity: 141000,
     createdAt: '2025-01-15T10:00:00+10:00',
@@ -1093,8 +1127,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-05-21T18:00:00+10:00',
     settlementDate: '2026-06-01T12:00:00+10:00',
-    yesPrice: 54,
-    noPrice: 46,
+    yesPrice: 55, // 54% + 1 spread
+    noPrice: 46,  // 101 - 55
     volume: 0,
     liquidity: 178000,
     createdAt: '2025-01-10T10:00:00+10:00',
@@ -1108,8 +1142,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-05-21T18:00:00+10:00',
     settlementDate: '2026-06-01T12:00:00+10:00',
-    yesPrice: 42,
-    noPrice: 58,
+    yesPrice: 43, // 42% + 1 spread
+    noPrice: 58,  // 101 - 43
     volume: 0,
     liquidity: 89000,
     createdAt: '2025-02-01T10:00:00+10:00',
@@ -1123,8 +1157,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-05-21T18:00:00+10:00',
     settlementDate: '2026-06-15T12:00:00+10:00',
-    yesPrice: 72,
-    noPrice: 28,
+    yesPrice: 73, // 72% + 1 spread
+    noPrice: 28,  // 101 - 73
     volume: 0,
     liquidity: 35000,
     createdAt: '2025-02-15T10:00:00+10:00',
@@ -1138,8 +1172,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-05-21T18:00:00+10:00',
     settlementDate: '2026-06-15T12:00:00+10:00',
-    yesPrice: 8,
-    noPrice: 92,
+    yesPrice: 9, // 8% + 1 spread
+    noPrice: 92,  // 101 - 9
     volume: 0,
     liquidity: 19000,
     createdAt: '2025-03-01T10:00:00+10:00',
@@ -1154,8 +1188,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-06-29T23:59:00+10:00',
     settlementDate: '2026-07-05T12:00:00+10:00',
-    yesPrice: 25,
-    noPrice: 75,
+    yesPrice: 26, // 25% + 1 spread
+    noPrice: 75,  // 101 - 26
     volume: 0,
     liquidity: 68000,
     createdAt: '2025-01-20T10:00:00+10:00',
@@ -1169,8 +1203,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00+10:00',
     settlementDate: '2027-01-05T12:00:00+10:00',
-    yesPrice: 62,
-    noPrice: 38,
+    yesPrice: 63, // 62% + 1 spread
+    noPrice: 38,  // 101 - 63
     volume: 0,
     liquidity: 46000,
     createdAt: '2025-02-10T10:00:00+10:00',
@@ -1184,8 +1218,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00+10:00',
     settlementDate: '2027-01-05T12:00:00+10:00',
-    yesPrice: 45,
-    noPrice: 55,
+    yesPrice: 46, // 45% + 1 spread
+    noPrice: 55,  // 101 - 46
     volume: 0,
     liquidity: 25000,
     createdAt: '2025-03-05T10:00:00+10:00',
@@ -1200,8 +1234,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00+10:00',
     settlementDate: '2027-01-02T12:00:00+10:00',
-    yesPrice: 58,
-    noPrice: 42,
+    yesPrice: 59, // 58% + 1 spread
+    noPrice: 42,  // 101 - 59
     volume: 0,
     liquidity: 104000,
     createdAt: '2025-01-05T10:00:00+10:00',
@@ -1215,8 +1249,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-30T23:59:00+10:00',
     settlementDate: '2027-01-02T12:00:00+10:00',
-    yesPrice: 68,
-    noPrice: 32,
+    yesPrice: 69, // 68% + 1 spread
+    noPrice: 32,  // 101 - 69
     volume: 0,
     liquidity: 28500,
     createdAt: '2025-02-20T10:00:00+10:00',
@@ -1233,8 +1267,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2027-01-20T23:59:00-08:00',
     settlementDate: '2027-01-25T12:00:00-08:00',
-    yesPrice: 18,
-    noPrice: 82,
+    yesPrice: 19, // 18% + 1 spread
+    noPrice: 82,  // 101 - 19
     volume: 0,
     liquidity: 19000,
     createdAt: '2025-03-01T10:00:00+10:00',
@@ -1248,8 +1282,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2027-03-01T23:59:00-08:00',
     settlementDate: '2027-03-05T12:00:00-08:00',
-    yesPrice: 35,
-    noPrice: 65,
+    yesPrice: 36, // 35% + 1 spread
+    noPrice: 65,  // 101 - 36
     volume: 0,
     liquidity: 28500,
     createdAt: '2025-02-15T10:00:00+10:00',
@@ -1263,8 +1297,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00+10:00',
     settlementDate: '2027-01-15T12:00:00+10:00',
-    yesPrice: 28,
-    noPrice: 72,
+    yesPrice: 29, // 28% + 1 spread
+    noPrice: 72,  // 101 - 29
     volume: 0,
     liquidity: 16500,
     createdAt: '2025-01-25T10:00:00+10:00',
@@ -1279,8 +1313,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-05-16T23:59:00+02:00',
     settlementDate: '2026-05-18T12:00:00+02:00',
-    yesPrice: 32,
-    noPrice: 68,
+    yesPrice: 33, // 32% + 1 spread
+    noPrice: 68,  // 101 - 33
     volume: 0,
     liquidity: 35000,
     createdAt: '2025-02-01T10:00:00+10:00',
@@ -1294,8 +1328,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-04-10T23:59:00-07:00',
     settlementDate: '2026-04-15T12:00:00-07:00',
-    yesPrice: 15,
-    noPrice: 85,
+    yesPrice: 16, // 15% + 1 spread
+    noPrice: 85,  // 101 - 16
     volume: 0,
     liquidity: 11800,
     createdAt: '2025-01-20T10:00:00+10:00',
@@ -1310,8 +1344,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-06-15T23:59:00+10:00',
     settlementDate: '2026-07-01T12:00:00+10:00',
-    yesPrice: 72,
-    noPrice: 28,
+    yesPrice: 73, // 72% + 1 spread
+    noPrice: 28,  // 101 - 73
     volume: 0,
     liquidity: 21000,
     createdAt: '2025-03-10T10:00:00+10:00',
@@ -1325,8 +1359,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2027-03-01T23:59:00+10:00',
     settlementDate: '2027-03-05T12:00:00+10:00',
-    yesPrice: 65,
-    noPrice: 35,
+    yesPrice: 66, // 65% + 1 spread
+    noPrice: 35,  // 101 - 66
     volume: 0,
     liquidity: 10400,
     createdAt: '2025-02-25T10:00:00+10:00',
@@ -1343,8 +1377,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-05-05T14:30:00+10:00',
     settlementDate: '2026-05-06T12:00:00+10:00',
-    yesPrice: 45,
-    noPrice: 55,
+    yesPrice: 46, // 45% + 1 spread
+    noPrice: 55,  // 101 - 46
     volume: 0,
     liquidity: 156000,
     createdAt: '2025-01-15T10:00:00+10:00',
@@ -1358,8 +1392,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00+10:00',
     settlementDate: '2027-01-02T12:00:00+10:00',
-    yesPrice: 78,
-    noPrice: 22,
+    yesPrice: 79, // 78% + 1 spread
+    noPrice: 22,  // 101 - 79
     volume: 0,
     liquidity: 126000,
     createdAt: '2025-01-08T10:00:00+10:00',
@@ -1374,8 +1408,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2027-01-28T11:30:00+10:00',
     settlementDate: '2027-01-29T12:00:00+10:00',
-    yesPrice: 58,
-    noPrice: 42,
+    yesPrice: 59, // 58% + 1 spread
+    noPrice: 42,  // 101 - 59
     volume: 0,
     liquidity: 104000,
     createdAt: '2025-02-01T10:00:00+10:00',
@@ -1389,8 +1423,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2027-03-01T11:30:00+10:00',
     settlementDate: '2027-03-05T12:00:00+10:00',
-    yesPrice: 22,
-    noPrice: 78,
+    yesPrice: 23, // 22% + 1 spread
+    noPrice: 78,  // 101 - 23
     volume: 0,
     liquidity: 53000,
     createdAt: '2025-01-20T10:00:00+10:00',
@@ -1405,8 +1439,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-09-30T23:59:00+10:00',
     settlementDate: '2026-10-05T12:00:00+10:00',
-    yesPrice: 62,
-    noPrice: 38,
+    yesPrice: 63, // 62% + 1 spread
+    noPrice: 38,  // 101 - 63
     volume: 0,
     liquidity: 46000,
     createdAt: '2025-02-15T10:00:00+10:00',
@@ -1420,8 +1454,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00+08:00',
     settlementDate: '2027-01-05T12:00:00+08:00',
-    yesPrice: 55,
-    noPrice: 45,
+    yesPrice: 56, // 55% + 1 spread
+    noPrice: 45,  // 101 - 56
     volume: 0,
     liquidity: 68000,
     createdAt: '2025-01-25T10:00:00+08:00',
@@ -1435,8 +1469,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2027-02-01T11:30:00+10:00',
     settlementDate: '2027-02-05T12:00:00+10:00',
-    yesPrice: 35,
-    noPrice: 65,
+    yesPrice: 36, // 35% + 1 spread
+    noPrice: 65,  // 101 - 36
     volume: 0,
     liquidity: 35000,
     createdAt: '2025-03-01T10:00:00+10:00',
@@ -1453,8 +1487,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00+10:00',
     settlementDate: '2027-01-20T12:00:00+10:00',
-    yesPrice: 52,
-    noPrice: 48,
+    yesPrice: 53, // 52% + 1 spread
+    noPrice: 48,  // 101 - 53
     volume: 0,
     liquidity: 31000,
     createdAt: '2025-01-15T10:00:00+10:00',
@@ -1468,8 +1502,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00+10:00',
     settlementDate: '2027-01-05T12:00:00+10:00',
-    yesPrice: 42,
-    noPrice: 58,
+    yesPrice: 43, // 42% + 1 spread
+    noPrice: 58,  // 101 - 43
     volume: 0,
     liquidity: 25000,
     createdAt: '2025-02-01T10:00:00+10:00',
@@ -1483,8 +1517,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00+10:00',
     settlementDate: '2027-01-10T12:00:00+10:00',
-    yesPrice: 48,
-    noPrice: 52,
+    yesPrice: 49, // 48% + 1 spread
+    noPrice: 52,  // 101 - 49
     volume: 0,
     liquidity: 15500,
     createdAt: '2025-02-20T10:00:00+10:00',
@@ -1499,8 +1533,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00+10:00',
     settlementDate: '2027-01-03T12:00:00+10:00',
-    yesPrice: 28,
-    noPrice: 72,
+    yesPrice: 29, // 28% + 1 spread
+    noPrice: 72,  // 101 - 29
     volume: 0,
     liquidity: 21000,
     createdAt: '2025-01-25T10:00:00+10:00',
@@ -1514,8 +1548,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2027-02-01T23:59:00+10:00',
     settlementDate: '2027-02-10T12:00:00+10:00',
-    yesPrice: 72,
-    noPrice: 28,
+    yesPrice: 73, // 72% + 1 spread
+    noPrice: 28,  // 101 - 73
     volume: 0,
     liquidity: 38500,
     createdAt: '2025-03-05T10:00:00+10:00',
@@ -1532,16 +1566,17 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2028-11-05T23:59:00-05:00',
     settlementDate: '2028-11-15T12:00:00-05:00',
-    yesPrice: 48,
-    noPrice: 52,
+    yesPrice: 49, // 48% + 1 spread
+    noPrice: 52,  // 101 - 49
     volume: 0,
     liquidity: 1260000,
     createdAt: '2025-01-01T10:00:00Z',
     icon: '🇺🇸',
     outcomes: [
-      { id: 'world-2028-dem', name: 'Democratic', probability: 48, yesPrice: 48, noPrice: 52 },
-      { id: 'world-2028-rep', name: 'Republican', probability: 46, yesPrice: 46, noPrice: 54 },
-      { id: 'world-2028-other', name: 'Other', probability: 6, yesPrice: 6, noPrice: 94 },
+      // Sum: 49 + 47 + 7 = 103% (realistic overround)
+      { id: 'world-2028-dem', name: 'Democratic', probability: 48, yesPrice: 49, noPrice: 52 },
+      { id: 'world-2028-rep', name: 'Republican', probability: 46, yesPrice: 47, noPrice: 54 },
+      { id: 'world-2028-other', name: 'Other', probability: 6, yesPrice: 7, noPrice: 94 },
     ],
   },
   {
@@ -1552,8 +1587,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-30T23:59:00Z',
     settlementDate: '2027-01-02T12:00:00Z',
-    yesPrice: 12,
-    noPrice: 88,
+    yesPrice: 13, // 12% + 1 spread
+    noPrice: 88,  // 101 - 13
     volume: 0,
     liquidity: 60500,
     createdAt: '2025-02-01T10:00:00Z',
@@ -1568,8 +1603,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-03-18T18:00:00-04:00',
     settlementDate: '2026-03-19T12:00:00-04:00',
-    yesPrice: 62,
-    noPrice: 38,
+    yesPrice: 63, // 62% + 1 spread
+    noPrice: 38,  // 101 - 63
     volume: 0,
     liquidity: 178000,
     createdAt: '2025-02-15T10:00:00Z',
@@ -1583,8 +1618,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00+01:00',
     settlementDate: '2027-01-15T12:00:00+01:00',
-    yesPrice: 55,
-    noPrice: 45,
+    yesPrice: 56, // 55% + 1 spread
+    noPrice: 45,  // 101 - 56
     volume: 0,
     liquidity: 89000,
     createdAt: '2025-01-20T10:00:00Z',
@@ -1599,8 +1634,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00Z',
     settlementDate: '2027-01-02T12:00:00Z',
-    yesPrice: 68,
-    noPrice: 32,
+    yesPrice: 69, // 68% + 1 spread
+    noPrice: 32,  // 101 - 69
     volume: 0,
     liquidity: 178000,
     createdAt: '2025-01-10T10:00:00Z',
@@ -1614,8 +1649,8 @@ const mockMarkets: Market[] = [
     status: 'open',
     closeDate: '2026-12-31T23:59:00Z',
     settlementDate: '2027-01-10T12:00:00Z',
-    yesPrice: 35,
-    noPrice: 65,
+    yesPrice: 36, // 35% + 1 spread
+    noPrice: 65,  // 101 - 36
     volume: 0,
     liquidity: 104000,
     createdAt: '2025-02-05T10:00:00Z',
